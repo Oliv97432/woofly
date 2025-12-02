@@ -5,16 +5,8 @@ import tagger from "@dhiwise/component-tagger";
 
 // https://vitejs.dev/config/
 export default defineConfig({
-<<<<<<< HEAD
-  // This changes the out put dir from dist to build
-  // comment this out if that isn't relevant for your project
-  build: {
-    outDir: "build",
-=======
-  // Changed from "build" to "dist" for Vercel compatibility
   build: {
     outDir: "dist",
->>>>>>> ed4d6a9 (feat: complete app restructure + Vercel deployment config)
     chunkSizeWarningLimit: 2000,
   },
   plugins: [tsconfigPaths(), react(), tagger()],
@@ -24,8 +16,4 @@ export default defineConfig({
     strictPort: true,
     allowedHosts: ['.amazonaws.com', '.builtwithrocket.new']
   }
-<<<<<<< HEAD
 });
-=======
-});
->>>>>>> ed4d6a9 (feat: complete app restructure + Vercel deployment config)
