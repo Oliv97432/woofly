@@ -17,16 +17,17 @@ const DailyTip = () => {
   const [loadingTips, setLoadingTips] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Catégories de tips
+  // Catégories de tips (correspondent à la table tips)
   const tipCategories = [
     { id: 'all', name: 'Tous', icon: Sparkles, color: 'blue' },
-    { id: 'recipes', name: 'Recettes', icon: ChefHat, color: 'orange' },
-    { id: 'care', name: 'Soins', icon: Heart, color: 'red' },
+    { id: 'health', name: 'Santé', icon: Heart, color: 'red' },
+    { id: 'nutrition', name: 'Nutrition', icon: ChefHat, color: 'orange' },
+    { id: 'care', name: 'Soins', icon: Heart, color: 'pink' },
     { id: 'education', name: 'Éducation', icon: GraduationCap, color: 'purple' },
     { id: 'wellness', name: 'Bien-être', icon: Activity, color: 'green' }
   ];
 
-  // Contacts d'urgence (exemples - tu pourras les mettre en base de données)
+  // Contacts d'urgence
   const emergencyContacts = [
     {
       id: 1,
@@ -78,55 +79,42 @@ const DailyTip = () => {
     try {
       setLoadingTips(true);
       
+      // Utilise la table "tips" (correspond à ton SQL)
       let query = supabase
-        .from('daily_tips')
+        .from('tips')
         .select('*')
         .order('created_at', { ascending: false })
-        .limit(6);
+        .limit(9);
       
+      // Filtre par catégorie si pas "all"
       if (selectedTipCategory !== 'all') {
         query = query.eq('category', selectedTipCategory);
       }
       
-      if (searchQuery) {
+      // Filtre par recherche
+      if (searchQuery.trim()) {
         query = query.or(`title.ilike.%${searchQuery}%,content.ilike.%${searchQuery}%`);
       }
       
       const { data, error } = await query;
 
-      if (error) throw error;
+      if (error) {
+        console.error('Erreur chargement tips:', error);
+        throw error;
+      }
 
       setTips(data || []);
     } catch (error) {
       console.error('Erreur chargement tips:', error);
-      // Fallback avec des tips exemples si la table n'existe pas encore
-      setTips([
-        {
-          id: 1,
-          category: 'recipes',
-          title: 'Biscuits maison au poulet',
-          content: 'Recette simple et saine pour préparer des friandises maison pour votre chien. Ingrédients : farine, poulet, œuf.'
-        },
-        {
-          id: 2,
-          category: 'care',
-          title: 'Brosser les dents de son chien',
-          content: 'Le brossage régulier des dents prévient le tartre et les maladies dentaires. Utilisez un dentifrice adapté.'
-        },
-        {
-          id: 3,
-          category: 'education',
-          title: 'Apprendre le rappel',
-          content: 'Le rappel est essentiel pour la sécurité. Commencez dans un endroit calme avec des récompenses.'
-        }
-      ]);
+      // Si la table n'existe pas encore, afficher un message
+      setTips([]);
     } finally {
       setLoadingTips(false);
     }
   };
 
   const getCategoryInfo = (categoryId) => {
-    return tipCategories.find(c => c.id === categoryId);
+    return tipCategories.find(c => c.id === categoryId) || tipCategories[0];
   };
 
   return (
@@ -173,12 +161,14 @@ const DailyTip = () => {
           <div className="flex flex-wrap gap-3 mb-8">
             {tipCategories.map((category) => {
               const Icon = category.icon;
+              const isActive = selectedTipCategory === category.id;
+              
               return (
                 <button
                   key={category.id}
                   onClick={() => setSelectedTipCategory(category.id)}
                   className={`px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2 ${
-                    selectedTipCategory === category.id
+                    isActive
                       ? 'bg-primary text-white shadow-lg'
                       : 'bg-card border border-border text-foreground hover:shadow-md'
                   }`}
@@ -198,8 +188,14 @@ const DailyTip = () => {
           ) : tips.length === 0 ? (
             <div className="text-center py-12 bg-card rounded-xl border border-border">
               <Sparkles size={48} className="text-muted-foreground mx-auto mb-4" />
-              <p className="text-muted-foreground">
-                Aucun conseil disponible pour le moment.
+              <p className="text-muted-foreground mb-2">
+                {searchQuery 
+                  ? 'Aucun conseil trouvé pour cette recherche.'
+                  : 'Aucun conseil disponible pour le moment.'
+                }
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Les conseils seront chargés depuis la table "tips" de Supabase.
               </p>
             </div>
           ) : (
@@ -214,10 +210,10 @@ const DailyTip = () => {
                     className="bg-card border border-border rounded-xl p-6 hover:shadow-lg transition-all cursor-pointer"
                   >
                     <div className="flex items-center gap-3 mb-4">
-                      <div className={`w-10 h-10 bg-${categoryInfo?.color}-100 rounded-lg flex items-center justify-center`}>
+                      <div className={`w-10 h-10 rounded-lg flex items-center justify-center bg-${categoryInfo?.color}-100`}>
                         <Icon className={`text-${categoryInfo?.color}-600`} size={20} />
                       </div>
-                      <span className={`px-2 py-1 bg-${categoryInfo?.color}-100 text-${categoryInfo?.color}-700 rounded text-xs font-medium`}>
+                      <span className={`px-2 py-1 rounded text-xs font-medium bg-${categoryInfo?.color}-100 text-${categoryInfo?.color}-700`}>
                         {categoryInfo?.name}
                       </span>
                     </div>
@@ -284,7 +280,7 @@ const DailyTip = () => {
                     <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${
                       contact.type === 'urgence'
                         ? 'bg-red-500 text-white'
-                        : `bg-${contact.color}-100 text-${contact.color}-600`
+                        : 'bg-blue-100 text-blue-600'
                     }`}>
                       <Icon size={24} />
                     </div>
