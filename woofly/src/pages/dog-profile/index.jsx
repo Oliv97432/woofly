@@ -16,7 +16,6 @@ import AddTreatmentModal from './components/AddTreatmentModal';
 import AddWeightModal from './components/AddWeightModal';
 import EditProfileModal from './components/EditProfileModal';
 import PhotoGalleryModal from './components/PhotoGalleryModal';
-import PhotoGalleryModal from './components/PhotoGalleryModal';
 import Footer from '../../components/Footer';
 
 const DogProfile = () => {
@@ -502,9 +501,9 @@ const DogProfile = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background flex flex-col">
       <TabNavigation />
-      <div className="main-content">
+      <main className="main-content flex-1">
         <div className="max-w-7xl mx-auto px-4 py-6 lg:py-8">
           <div className="flex items-center justify-between mb-6">
             <ProfileSwitcher
@@ -512,7 +511,6 @@ const DogProfile = () => {
               currentProfile={currentProfile}
               onProfileChange={setCurrentProfile}
             />
-
             <Button
               variant="outline"
               iconName="Download"
@@ -729,7 +727,7 @@ const DogProfile = () => {
             </div>
           </div>
         </div>
-      </div>
+      </main>
 
       <AddVaccinationModal
         isOpen={modals.vaccination}
@@ -767,13 +765,15 @@ const DogProfile = () => {
         profile={currentProfile}
       />
      
-   <PhotoGalleryModal
+      <PhotoGalleryModal
         isOpen={modals.gallery}
         onClose={() => closeModal('gallery')}
         photos={photoGallery}
         onAddPhoto={() => alert('Fonctionnalité d\'ajout de photo en cours de développement')}
       />
-    </div>  {/* ← Cette div ferme le composant DogProfile */}
+
+      <Footer />
+    </div>
   );
 };
 
