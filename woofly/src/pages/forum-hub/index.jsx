@@ -6,7 +6,7 @@ import SearchBar from './components/SearchBar';
 import FeaturedDiscussion from './components/FeaturedDiscussion';
 import QuickActions from './components/QuickActions';
 import CommunityStats from './components/CommunityStats';
-import Footer from '../../components/Footer';  // ✅ AJOUTÉ
+import Footer from '../../components/Footer';
 
 const ForumHub = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -49,7 +49,7 @@ const ForumHub = () => {
     isActive: true,
     trendingTopics: ["Dressage", "Agilité"],
     latestPost: {
-      title: "Conseils pour l\'entraînement d\'obéissance avancé",
+      title: "Conseils pour l'entraînement d'obéissance avancé",
       author: "Marie Dubois",
       authorAvatar: "https://img.rocket.new/generatedImages/rocket_gen_img_1ad9e1013-1763294640440.png",
       authorAvatarAlt: "Professional woman with shoulder-length brown hair wearing casual blue sweater smiling warmly",
@@ -85,7 +85,7 @@ const ForumHub = () => {
     isActive: false,
     trendingTopics: ["Nutrition", "Musculation"],
     latestPost: {
-      title: "Programme d\'exercice pour maintenir la masse musculaire",
+      title: "Programme d'exercice pour maintenir la masse musculaire",
       author: "Thomas Leroy",
       authorAvatar: "https://img.rocket.new/generatedImages/rocket_gen_img_1b44763a5-1763295696725.png",
       authorAvatarAlt: "Athletic man with short dark hair wearing black athletic shirt with determined expression",
@@ -115,8 +115,8 @@ const ForumHub = () => {
   const featuredDiscussions = [
   {
     id: 1,
-    title: "Comment gérer l\'anxiété de séparation chez les chiots ?",
-    preview: "Mon chiot de 4 mois pleure beaucoup quand je pars travailler. J\'ai essayé plusieurs techniques mais rien ne semble fonctionner. Des conseils ?",
+    title: "Comment gérer l'anxiété de séparation chez les chiots ?",
+    preview: "Mon chiot de 4 mois pleure beaucoup quand je pars travailler. J'ai essayé plusieurs techniques mais rien ne semble fonctionner. Des conseils ?",
     author: "Claire Rousseau",
     authorAvatar: "https://img.rocket.new/generatedImages/rocket_gen_img_1a32a3733-1763295164509.png",
     authorAvatarAlt: "Young woman with long dark hair wearing white blouse with concerned expression",
@@ -202,7 +202,7 @@ const ForumHub = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background flex flex-col">
       <div className="sticky top-0 z-50 bg-card border-b border-border shadow-soft">
         <div className="max-w-screen-xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
@@ -220,7 +220,7 @@ const ForumHub = () => {
         </div>
       </div>
       <TabNavigation />
-      <main className="main-content">
+      <main className="main-content flex-1">
         <div className="max-w-screen-xl mx-auto px-4 py-6 space-y-8">
           <div className="space-y-4">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -295,7 +295,6 @@ const ForumHub = () => {
         </div>
       </main>
       
-      {/* Footer */}
       <Footer />
     </div>);
 
