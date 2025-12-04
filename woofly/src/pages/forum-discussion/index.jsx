@@ -1,373 +1,304 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
 import TabNavigation from '../../components/TabNavigation';
 import ProfileSwitcher from '../../components/ProfileSwitcher';
-import DiscussionHeader from './components/DiscussionHeader';
-import FilterControls from './components/FilterControls';
-import DiscussionPost from './components/DiscussionPost';
-import NewDiscussionModal from './components/NewDiscussionModal';
-import ImageModal from './components/ImageModal';
-import EmptyState from './components/EmptyState';
+import ForumCard from './components/ForumCard';
+import SearchBar from './components/SearchBar';
+import FeaturedDiscussion from './components/FeaturedDiscussion';
+import QuickActions from './components/QuickActions';
+import CommunityStats from './components/CommunityStats';
+import Footer from '../../components/Footer';  // ✅ AJOUTÉ
 
-const ForumDiscussion = () => {
-  const location = useLocation();
-  const breedInfo = location?.state?.breed || { name: 'Malinois', id: 'malinois' };
-
+const ForumHub = () => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [sortBy, setSortBy] = useState('recent');
-  const [filterType, setFilterType] = useState('all');
-  const [isNewDiscussionOpen, setIsNewDiscussionOpen] = useState(false);
-  const [selectedImage, setSelectedImage] = useState(null);
+  const [filteredForums, setFilteredForums] = useState([]);
   const [currentProfile, setCurrentProfile] = useState(null);
 
   const dogProfiles = [
   {
     id: 1,
-    name: 'Max',
-    breed: 'Malinois',
+    name: "Max",
+    breed: "Malinois",
     image: "https://images.unsplash.com/photo-1713917032646-4703f3feffde",
-    imageAlt: 'Malinois dog with alert expression and pointed ears sitting outdoors in natural lighting'
+    imageAlt: "Malinois dog with alert expression and pointed ears sitting outdoors in natural lighting"
   },
   {
     id: 2,
-    name: 'Luna',
-    breed: 'Shih-Tzu',
-    image: "https://images.unsplash.com/photo-1697005063767-739491d62ff3",
-    imageAlt: 'Small white and brown Shih-Tzu dog with long fluffy coat sitting on grass'
+    name: "Luna",
+    breed: "Shih-Tzu",
+    image: "https://images.unsplash.com/photo-1579466420284-ad894bf675c8",
+    imageAlt: "Small white and brown Shih-Tzu dog with long flowing coat and adorable face"
   }];
 
 
-  const [discussions, setDiscussions] = useState([
+  const communityStats = {
+    totalMembers: "12.5k",
+    totalPosts: "8.2k",
+    totalLikes: "45k",
+    activeToday: "1.2k"
+  };
+
+  const forums = [
   {
     id: 1,
-    authorName: 'Sophie Martin',
-    authorAvatar: "https://img.rocket.new/generatedImages/rocket_gen_img_1118b48b3-1763295890580.png",
-    authorAvatarAlt: 'Professional headshot of woman with shoulder-length brown hair wearing blue blouse',
-    title: 'Conseils pour l\'éducation d\'un chiot Malinois',
-    content: `Bonjour à tous,\n\nJe viens d'adopter un chiot Malinois de 3 mois et j'aimerais avoir vos conseils pour son éducation. Il est très énergique et j'ai du mal à canaliser son énergie.\n\nQuels exercices recommandez-vous pour commencer ? Merci d'avance pour votre aide !`,
-    timestamp: new Date('2025-11-30T14:30:00'),
-    likes: 24,
-    isLiked: false,
-    replyCount: 8,
-    isQuestion: true,
-    images: [],
-    replies: [
-    {
-      id: 101,
-      authorName: 'Pierre Dubois',
-      authorAvatar: "https://img.rocket.new/generatedImages/rocket_gen_img_13f55c37d-1763295063196.png",
-      authorAvatarAlt: 'Professional headshot of middle-aged man with short gray hair wearing dark suit',
-      content: `Le Malinois a besoin de beaucoup d'exercice mental et physique. Je recommande des sessions courtes de 10-15 minutes plusieurs fois par jour plutôt qu'une longue session.\n\nCommencez par les bases : assis, couché, pas bouger. Utilisez des récompenses positives.`,
-      timestamp: new Date('2025-11-30T15:45:00'),
-      likes: 12,
-      isLiked: true,
-      isQuestion: false,
-      images: []
-    },
-    {
-      id: 102,
-      authorName: 'Marie Leroy',
-      authorAvatar: "https://img.rocket.new/generatedImages/rocket_gen_img_157b8811d-1763297722763.png",
-      authorAvatarAlt: 'Professional headshot of young woman with long blonde hair wearing white shirt',
-      content: `Totalement d'accord avec Pierre ! J'ajouterais aussi l'importance de la socialisation précoce. Exposez-le à différents environnements, personnes et autres chiens dès maintenant.`,
-      timestamp: new Date('2025-11-30T16:20:00'),
-      likes: 8,
-      isLiked: false,
-      isQuestion: false,
-      images: []
-    }]
-
+    name: "Malinois",
+    description: "Berger belge malinois - Éducation et comportement",
+    image: "https://images.unsplash.com/photo-1713917032646-4703f3feffde",
+    imageAlt: "Belgian Malinois dog with alert expression standing in outdoor field with golden sunlight",
+    memberCount: "3.2k",
+    postCount: "2.1k",
+    isActive: true,
+    trendingTopics: ["Dressage", "Agilité"],
+    latestPost: {
+      title: "Conseils pour l\'entraînement d\'obéissance avancé",
+      author: "Marie Dubois",
+      authorAvatar: "https://img.rocket.new/generatedImages/rocket_gen_img_1ad9e1013-1763294640440.png",
+      authorAvatarAlt: "Professional woman with shoulder-length brown hair wearing casual blue sweater smiling warmly",
+      timeAgo: "Il y a 15 min"
+    }
   },
   {
     id: 2,
-    authorName: 'Thomas Bernard', authorAvatar: "https://img.rocket.new/generatedImages/rocket_gen_img_1c48e51fb-1763293461105.png", authorAvatarAlt: 'Professional headshot of young man with short dark hair and beard wearing casual shirt', title: 'Sortie au parc ce weekend', content: `Qui serait partant pour une sortie au parc avec nos Malinois ce dimanche matin ? Ce serait l'occasion de les faire jouer ensemble et d'échanger nos expériences.\n\nRDV proposé : Parc de la Tête d'Or à 10h`,
-    timestamp: new Date('2025-11-29T18:15:00'),
-    likes: 18,
-    isLiked: true,
-    replyCount: 5,
-    isQuestion: false,
-    images: [
-    {
-      url: "https://images.unsplash.com/photo-1588714477688-cf28a50e94f7",
-      alt: 'Malinois dog running freely in large green park with trees in background during sunny day'
-    },
-    {
-      url: "https://images.unsplash.com/photo-1703774170626-ad16f22c8a8e",
-      alt: 'Two Malinois dogs playing together on grass field with playful interaction'
-    }],
-
-    replies: []
+    name: "Shih-Tzu",
+    description: "Petits compagnons - Soins et toilettage",
+    image: "https://images.unsplash.com/photo-1599228127629-0a6d721fce06",
+    imageAlt: "Adorable Shih-Tzu dog with long silky white and brown coat sitting on grooming table",
+    memberCount: "2.8k",
+    postCount: "1.9k",
+    isActive: true,
+    trendingTopics: ["Toilettage", "Santé"],
+    latestPost: {
+      title: "Meilleures techniques de brossage pour éviter les nœuds",
+      author: "Sophie Martin",
+      authorAvatar: "https://images.unsplash.com/photo-1578006711491-890dec58badb",
+      authorAvatarAlt: "Young woman with blonde hair in ponytail wearing pink top with friendly smile",
+      timeAgo: "Il y a 32 min"
+    }
   },
   {
     id: 3,
-    authorName: 'Julie Petit',
-    authorAvatar: "https://img.rocket.new/generatedImages/rocket_gen_img_199b8eec1-1763301563721.png",
-    authorAvatarAlt: 'Professional headshot of woman with curly red hair wearing green sweater',
-    title: 'Question sur l\'alimentation',
-    content: `Bonjour,\n\nMon Malinois de 2 ans a des problèmes digestifs récurrents. Le vétérinaire m'a conseillé de changer son alimentation.\n\nQuelle marque de croquettes utilisez-vous ? Avez-vous des recommandations pour des chiens sensibles ?`, timestamp: new Date('2025-11-29T10:30:00'),
-    likes: 15,
-    isLiked: false,
-    replyCount: 12,
-    isQuestion: true,
-    images: [],
-    replies: []
+    name: "American Bully",
+    description: "Bully américain - Force et caractère",
+    image: "https://images.unsplash.com/photo-1704044985311-b363b415cb0d",
+    imageAlt: "Muscular American Bully dog with broad chest and confident stance in urban setting",
+    memberCount: "2.1k",
+    postCount: "1.4k",
+    isActive: false,
+    trendingTopics: ["Nutrition", "Musculation"],
+    latestPost: {
+      title: "Programme d\'exercice pour maintenir la masse musculaire",
+      author: "Thomas Leroy",
+      authorAvatar: "https://img.rocket.new/generatedImages/rocket_gen_img_1b44763a5-1763295696725.png",
+      authorAvatarAlt: "Athletic man with short dark hair wearing black athletic shirt with determined expression",
+      timeAgo: "Il y a 1 heure"
+    }
   },
   {
     id: 4,
-    authorName: 'Alexandre Moreau', authorAvatar: "https://img.rocket.new/generatedImages/rocket_gen_img_1cadb1dd7-1763294062930.png", authorAvatarAlt: 'Professional headshot of man with short brown hair wearing blue polo shirt', title: 'Progrès en agility', content: `Je suis tellement fier de mon Malinois ! Après 6 mois d\'entraînement en agility, il commence vraiment à exceller. Voici quelques photos de notre dernière session.\n\nSi vous hésitez à vous lancer dans l'agility, je vous encourage vivement !`,
-    timestamp: new Date('2025-11-28T16:45:00'),
-    likes: 42,
-    isLiked: true,
-    replyCount: 15,
-    isQuestion: false,
-    images: [
-    {
-      url: "https://images.unsplash.com/photo-1537316575411-ae253dc9cadc",
-      alt: 'Malinois dog jumping over agility obstacle during training session in outdoor course'
-    },
-    {
-      url: "https://img.rocket.new/generatedImages/rocket_gen_img_179341389-1764596177331.png",
-      alt: 'Malinois dog weaving through agility poles with focused expression and athletic movement'
-    },
-    {
-      url: "https://img.rocket.new/generatedImages/rocket_gen_img_15433fbff-1764596178071.png",
-      alt: 'Malinois dog completing tunnel obstacle in agility course with handler nearby'
-    }],
+    name: "Races Mixtes",
+    description: "Chiens croisés - Diversité et unicité",
+    image: "https://images.unsplash.com/photo-1683051147071-657d46aa1e3c",
+    imageAlt: "Happy mixed breed dog with brown and white coat running joyfully through green grass field",
+    memberCount: "4.4k",
+    postCount: "3.8k",
+    isActive: true,
+    trendingTopics: ["Adoption", "Comportement"],
+    latestPost: {
+      title: "Mon chien croisé a des comportements surprenants",
+      author: "Julie Bernard",
+      authorAvatar: "https://images.unsplash.com/photo-1612439289738-15a4cba74d9f",
+      authorAvatarAlt: "Middle-aged woman with curly red hair wearing green cardigan with warm smile",
+      timeAgo: "Il y a 45 min"
+    }
+  }];
 
-    replies: []
+
+  const featuredDiscussions = [
+  {
+    id: 1,
+    title: "Comment gérer l\'anxiété de séparation chez les chiots ?",
+    preview: "Mon chiot de 4 mois pleure beaucoup quand je pars travailler. J\'ai essayé plusieurs techniques mais rien ne semble fonctionner. Des conseils ?",
+    author: "Claire Rousseau",
+    authorAvatar: "https://img.rocket.new/generatedImages/rocket_gen_img_1a32a3733-1763295164509.png",
+    authorAvatarAlt: "Young woman with long dark hair wearing white blouse with concerned expression",
+    timeAgo: "Il y a 2 heures",
+    likes: 47,
+    replies: 23,
+    category: "Comportement",
+    isExpert: false
   },
   {
-    id: 5,
-    authorName: 'Camille Rousseau',
-    authorAvatar: "https://img.rocket.new/generatedImages/rocket_gen_img_1cfb54561-1763301928675.png",
-    authorAvatarAlt: 'Professional headshot of young woman with short black hair wearing red jacket',
-    title: 'Comportement agressif envers les autres chiens',
-    content: `Bonjour à tous,\n\nJ'ai besoin de vos conseils. Mon Malinois de 18 mois devient de plus en plus réactif envers les autres chiens lors des promenades. Il grogne et tire sur la laisse.\n\nAvez-vous déjà rencontré ce problème ? Comment l'avez-vous résolu ? Dois-je consulter un comportementaliste ?`,
-    timestamp: new Date('2025-11-28T09:20:00'),
-    likes: 9,
-    isLiked: false,
-    replyCount: 18,
-    isQuestion: true,
-    images: [],
-    replies: []
+    id: 2,
+    title: "Alimentation BARF : Guide complet pour débutants",
+    preview: "Après 6 mois de BARF avec mon Malinois, je partage mon expérience complète : avantages, défis, recettes et conseils pratiques pour bien commencer.",
+    author: "Dr. Antoine Moreau",
+    authorAvatar: "https://img.rocket.new/generatedImages/rocket_gen_img_1e95cb24a-1763296883553.png",
+    authorAvatarAlt: "Professional veterinarian with gray hair wearing white medical coat with stethoscope",
+    timeAgo: "Il y a 3 heures",
+    likes: 156,
+    replies: 89,
+    category: "Nutrition",
+    isExpert: true
   },
   {
-    id: 6,
-    authorName: 'Nicolas Blanc',
-    authorAvatar: "https://img.rocket.new/generatedImages/rocket_gen_img_1a789e26f-1763292638442.png",
-    authorAvatarAlt: 'Professional headshot of mature man with gray hair and glasses wearing formal shirt',
-    title: 'Recommandation vétérinaire spécialisé',
-    content: `Je cherche un vétérinaire spécialisé dans les chiens de travail dans la région lyonnaise. Mon Malinois a besoin d'un suivi particulier pour ses articulations.\n\nSi vous avez des recommandations, je suis preneur !`, timestamp: new Date('2025-11-27T14:10:00'),
-    likes: 6,
-    isLiked: false,
-    replyCount: 4,
-    isQuestion: true,
-    images: [],
-    replies: []
-  }]
-  );
+    id: 3,
+    title: "Vaccination : Nouveau protocole 2025 expliqué",
+    preview: "Les nouvelles recommandations vétérinaires pour la vaccination des chiens en 2025. Quels changements et pourquoi ?",
+    author: "Dr. Isabelle Petit",
+    authorAvatar: "https://img.rocket.new/generatedImages/rocket_gen_img_1be4365a3-1763296831000.png",
+    authorAvatarAlt: "Female veterinarian with short blonde hair wearing blue scrubs with professional smile",
+    timeAgo: "Il y a 5 heures",
+    likes: 203,
+    replies: 67,
+    category: "Santé",
+    isExpert: true
+  },
+  {
+    id: 4,
+    title: "Toilettage maison : Mes astuces pour un pelage parfait",
+    preview: "Je toilette mon Shih-Tzu moi-même depuis 2 ans. Voici tous mes secrets pour un résultat professionnel à la maison sans stress.",
+    author: "Nathalie Girard",
+    authorAvatar: "https://img.rocket.new/generatedImages/rocket_gen_img_154a96764-1763300123486.png",
+    authorAvatarAlt: "Woman with medium brown hair wearing casual pink sweater with friendly smile",
+    timeAgo: "Il y a 6 heures",
+    likes: 92,
+    replies: 41,
+    category: "Toilettage",
+    isExpert: false
+  }];
+
 
   useEffect(() => {
-    if (dogProfiles?.length > 0) {
+    const savedProfile = localStorage.getItem('currentDogProfile');
+    if (savedProfile) {
+      setCurrentProfile(JSON.parse(savedProfile));
+    } else if (dogProfiles?.length > 0) {
       setCurrentProfile(dogProfiles?.[0]);
+      localStorage.setItem('currentDogProfile', JSON.stringify(dogProfiles?.[0]));
     }
   }, []);
 
-  const handleLike = (postId) => {
-    setDiscussions((prevDiscussions) =>
-    prevDiscussions?.map((discussion) => {
-      if (discussion?.id === postId) {
-        return {
-          ...discussion,
-          isLiked: !discussion?.isLiked,
-          likes: discussion?.isLiked ? discussion?.likes - 1 : discussion?.likes + 1
-        };
-      }
-
-      if (discussion?.replies) {
-        return {
-          ...discussion,
-          replies: discussion?.replies?.map((reply) => {
-            if (reply?.id === postId) {
-              return {
-                ...reply,
-                isLiked: !reply?.isLiked,
-                likes: reply?.isLiked ? reply?.likes - 1 : reply?.likes + 1
-              };
-            }
-            return reply;
-          })
-        };
-      }
-
-      return discussion;
-    })
-    );
-  };
-
-  const handleReply = (postId, replyText) => {
-    const newReply = {
-      id: Date.now(),
-      authorName: 'Vous',
-      authorAvatar: "https://img.rocket.new/generatedImages/rocket_gen_img_1f6cd23cf-1763299999171.png",
-      authorAvatarAlt: 'Professional headshot of user with friendly smile wearing casual attire',
-      content: replyText,
-      timestamp: new Date(),
-      likes: 0,
-      isLiked: false,
-      isQuestion: false,
-      images: []
-    };
-
-    setDiscussions((prevDiscussions) =>
-    prevDiscussions?.map((discussion) => {
-      if (discussion?.id === postId) {
-        return {
-          ...discussion,
-          replies: [...(discussion?.replies || []), newReply],
-          replyCount: (discussion?.replyCount || 0) + 1
-        };
-      }
-      return discussion;
-    })
-    );
-  };
-
-  const handleNewDiscussion = (discussionData) => {
-    const newDiscussion = {
-      id: Date.now(),
-      authorName: 'Vous',
-      authorAvatar: "https://img.rocket.new/generatedImages/rocket_gen_img_1f6cd23cf-1763299999171.png",
-      authorAvatarAlt: 'Professional headshot of user with friendly smile wearing casual attire',
-      title: discussionData?.title,
-      content: discussionData?.content,
-      timestamp: new Date(),
-      likes: 0,
-      isLiked: false,
-      replyCount: 0,
-      isQuestion: discussionData?.isQuestion,
-      images: discussionData?.images?.map((img) => ({
-        url: img?.preview,
-        alt: img?.alt
-      })),
-      replies: []
-    };
-
-    setDiscussions([newDiscussion, ...discussions]);
-  };
-
-  const getFilteredDiscussions = () => {
-    let filtered = [...discussions];
-
-    if (searchQuery?.trim()) {
-      const query = searchQuery?.toLowerCase();
-      filtered = filtered?.filter(
-        (d) =>
-        d?.title?.toLowerCase()?.includes(query) ||
-        d?.content?.toLowerCase()?.includes(query) ||
-        d?.authorName?.toLowerCase()?.includes(query)
+  useEffect(() => {
+    if (searchQuery?.trim() === '') {
+      setFilteredForums(forums);
+    } else {
+      const filtered = forums?.filter((forum) =>
+      forum?.name?.toLowerCase()?.includes(searchQuery?.toLowerCase()) ||
+      forum?.description?.toLowerCase()?.includes(searchQuery?.toLowerCase()) ||
+      forum?.trendingTopics?.some((topic) =>
+      topic?.toLowerCase()?.includes(searchQuery?.toLowerCase())
+      )
       );
+      setFilteredForums(filtered);
     }
+  }, [searchQuery]);
 
-    if (filterType === 'questions') {
-      filtered = filtered?.filter((d) => d?.isQuestion);
-    } else if (filterType === 'photos') {
-      filtered = filtered?.filter((d) => d?.images && d?.images?.length > 0);
-    }
-
-    filtered?.sort((a, b) => {
-      if (sortBy === 'recent') {
-        return b?.timestamp - a?.timestamp;
-      } else if (sortBy === 'popular') {
-        return b?.likes - a?.likes;
-      } else if (sortBy === 'oldest') {
-        return a?.timestamp - b?.timestamp;
-      }
-      return 0;
-    });
-
-    return filtered;
+  const handleProfileChange = (profile) => {
+    setCurrentProfile(profile);
+    localStorage.setItem('currentDogProfile', JSON.stringify(profile));
   };
 
-  const filteredDiscussions = getFilteredDiscussions();
+  const handleSearch = (query) => {
+    setSearchQuery(query);
+  };
 
   return (
     <div className="min-h-screen bg-background">
-      <TabNavigation />
-      <div className="main-content">
-        <DiscussionHeader
-          breedName={breedInfo?.name}
-          totalDiscussions={discussions?.length}
-          onNewDiscussion={() => setIsNewDiscussionOpen(true)} />
-
-
-        <div className="max-w-screen-xl mx-auto px-4 py-2 lg:px-6">
-          <ProfileSwitcher
-            profiles={dogProfiles}
-            currentProfile={currentProfile}
-            onProfileChange={setCurrentProfile} />
-
-        </div>
-
-        <FilterControls
-          searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
-          sortBy={sortBy}
-          onSortChange={setSortBy}
-          filterType={filterType}
-          onFilterTypeChange={setFilterType} />
-
-
-        <div className="max-w-screen-xl mx-auto px-4 py-6 lg:px-6 lg:py-8">
-          {filteredDiscussions?.length === 0 ?
-          <EmptyState
-            onNewDiscussion={() => setIsNewDiscussionOpen(true)}
-            searchQuery={searchQuery} /> :
-
-
-          <div className="space-y-4 lg:space-y-6">
-              {filteredDiscussions?.map((discussion) =>
-            <div key={discussion?.id} className="space-y-4">
-                  <DiscussionPost
-                post={discussion}
-                onLike={handleLike}
-                onReply={handleReply}
-                onImageClick={(img) => setSelectedImage(img)} />
-
-
-                  {discussion?.replies && discussion?.replies?.length > 0 &&
-              <div className="space-y-4">
-                      {discussion?.replies?.map((reply) =>
-                <DiscussionPost
-                  key={reply?.id}
-                  post={reply}
-                  onLike={handleLike}
-                  onReply={handleReply}
-                  onImageClick={(img) => setSelectedImage(img)}
-                  isReply={true} />
-
-                )}
-                    </div>
-              }
-                </div>
-            )}
+      <div className="sticky top-0 z-50 bg-card border-b border-border shadow-soft">
+        <div className="max-w-screen-xl mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl font-heading font-semibold text-foreground">
+                Communauté
+              </h1>
             </div>
-          }
+            <ProfileSwitcher
+              profiles={dogProfiles}
+              currentProfile={currentProfile}
+              onProfileChange={handleProfileChange} />
+
+          </div>
         </div>
       </div>
-      <NewDiscussionModal
-        isOpen={isNewDiscussionOpen}
-        onClose={() => setIsNewDiscussionOpen(false)}
-        onSubmit={handleNewDiscussion}
-        breedName={breedInfo?.name} />
+      <TabNavigation />
+      <main className="main-content">
+        <div className="max-w-screen-xl mx-auto px-4 py-6 space-y-8">
+          <div className="space-y-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div>
+                <h2 className="text-xl font-heading font-semibold text-foreground mb-1">
+                  Rejoignez votre communauté
+                </h2>
+                <p className="text-muted-foreground font-caption">
+                  Partagez, apprenez et connectez-vous avec d'autres propriétaires
+                </p>
+              </div>
+              <QuickActions />
+            </div>
+            <SearchBar onSearch={handleSearch} />
+          </div>
 
-      <ImageModal
-        isOpen={!!selectedImage}
-        image={selectedImage}
-        onClose={() => setSelectedImage(null)} />
+          <CommunityStats stats={communityStats} />
 
+          <div>
+            <h3 className="text-lg font-heading font-semibold text-foreground mb-4">
+              Forums par race
+            </h3>
+            {filteredForums?.length > 0 ?
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
+                {filteredForums?.map((forum) =>
+              <ForumCard key={forum?.id} forum={forum} />
+              )}
+              </div> :
+
+            <div className="bg-card rounded-lg p-8 text-center border border-border">
+                <p className="text-muted-foreground font-caption">
+                  Aucun forum trouvé pour "{searchQuery}"
+                </p>
+              </div>
+            }
+          </div>
+
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-heading font-semibold text-foreground">
+                Discussions populaires
+              </h3>
+              <button className="text-sm text-primary font-medium hover:underline">
+                Voir tout
+              </button>
+            </div>
+            <div className="space-y-4">
+              {featuredDiscussions?.map((discussion) =>
+              <FeaturedDiscussion key={discussion?.id} discussion={discussion} />
+              )}
+            </div>
+          </div>
+
+          <div className="bg-gradient-to-r from-primary/10 to-secondary/10 rounded-lg p-6 border border-border">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+              <div className="text-center md:text-left">
+                <h3 className="text-xl font-heading font-semibold text-foreground mb-2">
+                  Partagez votre expérience
+                </h3>
+                <p className="text-muted-foreground font-caption">
+                  Aidez d'autres propriétaires en partageant vos connaissances et conseils
+                </p>
+              </div>
+              <button
+                onClick={() => window.location.href = '/forum-discussion'}
+                className="px-6 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-smooth whitespace-nowrap">
+
+                Créer une discussion
+              </button>
+            </div>
+          </div>
+        </div>
+      </main>
+      
+      {/* Footer */}
+      <Footer />
     </div>);
 
 };
 
-export default ForumDiscussion;
+export default ForumHub;
