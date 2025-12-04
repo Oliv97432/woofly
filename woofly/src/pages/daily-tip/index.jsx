@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  ChefHat, Heart, GraduationCap, Activity, 
+import {
+  ChefHat, Heart, GraduationCap, Activity,
   Phone, MapPin, Clock, AlertCircle, Search,
   Sparkles, Stethoscope, PhoneCall, Plus, Edit
 } from 'lucide-react';
@@ -12,7 +12,7 @@ import Footer from '../../components/Footer';
 
 /**
  * Page Daily Tip - Conseils & Contacts
- * Même structure que ForumHub
+ * Images mises à jour pour mieux correspondre au contexte.
  */
 const DailyTip = () => {
   const { user } = useAuth();
@@ -31,73 +31,81 @@ const DailyTip = () => {
     hours: ''
   });
 
-  // Profils de chiens (comme ForumHub)
+  // Profils de chiens (Images mises à jour)
   const dogProfiles = [
     {
       id: 1,
       name: "Max",
       breed: "Malinois",
-      image: "https://images.unsplash.com/photo-1713917032646-4703f3feffde",
-      imageAlt: "Malinois dog with alert expression"
+      // Nouvelle image de Malinois
+      image: "https://images.unsplash.com/photo-1623068919897-3564734a3c4b?w=400&h=400&fit=crop",
+      imageAlt: "Malinois dog outdoors"
     },
     {
       id: 2,
       name: "Luna",
       breed: "Shih-Tzu",
-      image: "https://images.unsplash.com/photo-1579466420284-ad894bf675c8",
-      imageAlt: "Small Shih-Tzu dog"
+      // Nouvelle image de Shih-Tzu
+      image: "https://images.unsplash.com/photo-1583512603805-3cc6b41f3edb?w=400&h=400&fit=crop",
+      imageAlt: "Shih-Tzu dog looking up"
     }
   ];
 
-  // Catégories avec photos Unsplash
+  // Catégories avec NOUVELLES photos Unsplash contextuelles
   const tipCategories = [
-    { 
-      id: 'all', 
-      name: 'Tous', 
-      icon: Sparkles, 
+    {
+      id: 'all',
+      name: 'Tous',
+      icon: Sparkles,
       color: 'blue',
       gradient: 'from-purple-500 to-pink-500',
-      unsplash: 'photo-1548199973-03cce0bbc87b'
+      // Image générale : un chien heureux de race mixte
+      unsplash: 'photo-1552053831-71594a27632d'
     },
-    { 
-      id: 'health', 
-      name: 'Santé', 
-      icon: Heart, 
+    {
+      id: 'health',
+      name: 'Santé',
+      icon: Heart,
       color: 'red',
       gradient: 'from-green-500 to-emerald-600',
-      unsplash: 'photo-1530281700549-e82e7bf110d6'
+      // Image santé : un vétérinaire auscultant un chien
+      unsplash: 'photo-1628009368231-760335a2a9ba'
     },
-    { 
-      id: 'nutrition', 
-      name: 'Nutrition', 
-      icon: ChefHat, 
+    {
+      id: 'nutrition',
+      name: 'Nutrition',
+      icon: ChefHat,
       color: 'orange',
       gradient: 'from-orange-500 to-red-500',
-      unsplash: 'photo-1589924691995-400dc9ecc119'
+      // Image nutrition : un chien regardant un bol de nourriture saine
+      unsplash: 'photo-1518893063132-36e465be779c'
     },
-    { 
-      id: 'care', 
-      name: 'Soins', 
-      icon: Heart, 
+    {
+      id: 'care',
+      name: 'Soins',
+      icon: Heart,
       color: 'pink',
       gradient: 'from-pink-500 to-rose-600',
-      unsplash: 'photo-1616794033691-02ce6da84f8f'
+      // Image soins : un chien recevant un bain/toilettage
+      unsplash: 'photo-1583337130417-3346a1be7dee'
     },
-    { 
-      id: 'education', 
-      name: 'Éducation', 
-      icon: GraduationCap, 
+    {
+      id: 'education',
+      name: 'Éducation',
+      icon: GraduationCap,
       color: 'purple',
       gradient: 'from-blue-500 to-indigo-600',
-      unsplash: 'photo-1587300003388-59208cc962cb'
+      // Image éducation : une séance de dressage active
+      unsplash: 'photo-1535930749574-1399327ce78f'
     },
-    { 
-      id: 'wellness', 
-      name: 'Bien-être', 
-      icon: Activity, 
+    {
+      id: 'wellness',
+      name: 'Bien-être',
+      icon: Activity,
       color: 'green',
       gradient: 'from-purple-500 to-violet-600',
-      unsplash: 'photo-1534361960057-19889db9621e'
+      // Image bien-être : un chien très détendu, dormant paisiblement
+      unsplash: 'photo-1544568100-847a948585b9'
     }
   ];
 
@@ -127,7 +135,7 @@ const DailyTip = () => {
       setCurrentProfile(dogProfiles[0]);
       localStorage.setItem('currentDogProfile', JSON.stringify(dogProfiles[0]));
     }
-    
+
     // Charger les favoris
     const savedFavorites = localStorage.getItem('woofly_favorite_tips');
     if (savedFavorites) {
@@ -145,21 +153,21 @@ const DailyTip = () => {
   const fetchTips = async () => {
     try {
       setLoadingTips(true);
-      
+
       let query = supabase
         .from('tips')
         .select('*')
         .order('created_at', { ascending: false })
         .limit(9);
-      
+
       if (selectedTipCategory !== 'all') {
         query = query.eq('category', selectedTipCategory);
       }
-      
+
       if (searchQuery.trim()) {
         query = query.or(`title.ilike.%${searchQuery}%,content.ilike.%${searchQuery}%`);
       }
-      
+
       const { data, error } = await query;
       if (error) throw error;
       setTips(data || []);
@@ -227,14 +235,14 @@ const DailyTip = () => {
     const newFavorites = favorites.includes(tipId)
       ? favorites.filter(id => id !== tipId)
       : [...favorites, tipId];
-    
+
     setFavorites(newFavorites);
     localStorage.setItem('woofly_favorite_tips', JSON.stringify(newFavorites));
   };
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      {/* Header sticky (comme ForumHub) */}
+      {/* Header sticky */}
       <div className="sticky top-0 z-50 bg-card border-b border-border shadow-soft">
         <div className="max-w-screen-xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
@@ -252,13 +260,13 @@ const DailyTip = () => {
         </div>
       </div>
 
-      {/* TabNavigation (comme ForumHub) */}
+      {/* TabNavigation */}
       <TabNavigation />
 
       {/* Main content */}
       <main className="main-content flex-1">
         <div className="max-w-screen-xl mx-auto px-4 py-6 space-y-8">
-          
+
           {/* ========== CONSEILS PRATIQUES AVEC PHOTOS ========== */}
           <section className="space-y-4">
             <div className="flex items-center justify-between">
@@ -293,8 +301,8 @@ const DailyTip = () => {
                     key={cat.id}
                     onClick={() => setSelectedTipCategory(cat.id)}
                     className={`flex-shrink-0 px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-smooth ${
-                      selectedTipCategory === cat.id 
-                        ? 'bg-primary text-primary-foreground shadow-soft' 
+                      selectedTipCategory === cat.id
+                        ? 'bg-primary text-primary-foreground shadow-soft'
                         : 'bg-card border border-border text-foreground hover:bg-muted'
                     }`}
                   >
@@ -323,23 +331,24 @@ const DailyTip = () => {
                   const catInfo = getCategoryInfo(tip.category);
                   const Icon = catInfo?.icon || Sparkles;
                   const isFavorite = favorites.includes(tip.id);
-                  
+
                   return (
-                    <div 
-                      key={tip.id} 
+                    <div
+                      key={tip.id}
                       className="bg-card rounded-lg overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1 group"
                     >
                       {/* Image cover avec gradient */}
                       <div className="relative h-40 overflow-hidden">
                         <img
-                          src={`https://images.unsplash.com/${catInfo.unsplash}?w=600&h=400&fit=crop`}
+                          // Utilisation de la nouvelle structure d'URL Unsplash
+                          src={`https://images.unsplash.com/${catInfo.unsplash}?w=600&h=400&fit=crop&q=80`}
                           alt={catInfo.name}
                           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                         />
-                        
+
                         {/* Gradient overlay */}
                         <div className={`absolute inset-0 bg-gradient-to-t ${catInfo.gradient} opacity-50`} />
-                        
+
                         {/* Badge catégorie */}
                         <div className="absolute top-3 left-3">
                           <div className="flex items-center gap-1.5 bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-full">
@@ -357,8 +366,8 @@ const DailyTip = () => {
                         >
                           <Heart
                             className={`w-5 h-5 transition-colors ${
-                              isFavorite 
-                                ? 'fill-red-500 text-red-500' 
+                              isFavorite
+                                ? 'fill-red-500 text-red-500'
                                 : 'text-gray-600'
                             }`}
                           />
@@ -569,7 +578,7 @@ const DailyTip = () => {
         </div>
       </main>
 
-      {/* Footer (comme ForumHub) */}
+      {/* Footer */}
       <Footer />
 
       <style>{`
