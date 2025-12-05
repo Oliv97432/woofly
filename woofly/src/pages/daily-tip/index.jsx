@@ -63,16 +63,13 @@ const DailyTip = () => {
     }
   ];
 
-  // ⚠️ IMPORTANT : Remplace 'TON_PROJECT_ID_ICI' par ton vrai Supabase Project ID
-  const SUPABASE_PROJECT_ID = 'TON_PROJECT_ID_ICI';
-  
-  // URLs des photos (automatiquement générées avec ton Project ID)
+  // ✅ TES VRAIES PHOTOS IMGBB
   const categoryImages = {
-    health: `https://${SUPABASE_PROJECT_ID}.supabase.co/storage/v1/object/public/daily-tips-images/health-golden-doctor.jpg`,
-    nutrition: `https://${SUPABASE_PROJECT_ID}.supabase.co/storage/v1/object/public/daily-tips-images/nutrition-golden-food.jpg`,
-    education: `https://${SUPABASE_PROJECT_ID}.supabase.co/storage/v1/object/public/daily-tips-images/education-golden-training.jpg`,
-    care: `https://${SUPABASE_PROJECT_ID}.supabase.co/storage/v1/object/public/daily-tips-images/care-golden-grooming.jpg`,
-    wellness: `https://${SUPABASE_PROJECT_ID}.supabase.co/storage/v1/object/public/daily-tips-images/wellness-golden-peace.jpg`
+    health: 'https://i.ibb.co/bjrCnNkY/health-golden-doctor.png',
+    nutrition: 'https://i.ibb.co/vCC7CYXp/nutrition-golden-food.png',
+    education: 'https://i.ibb.co/XfH5sVFq/education-golden-training.png',
+    care: 'https://i.ibb.co/q3JjBNP1/care-golden-grooming.png',
+    wellness: 'https://i.ibb.co/twjS8qyY/wellness-golden-peace.png'
   };
 
   // Catégories avec icons et couleurs
