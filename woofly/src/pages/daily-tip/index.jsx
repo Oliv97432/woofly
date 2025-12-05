@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import {
-  ChefHat, Heart, GraduationCap, Activity,
-  Phone, MapPin, Clock, AlertCircle, Search,
-  Sparkles, Stethoscope, PhoneCall, Plus, Edit
+import { 
+  Heart, Phone, MapPin, Clock, AlertCircle, Sparkles, 
+  Stethoscope, PhoneCall, Plus, Edit, ChefHat, GraduationCap, 
+  Activity, Scissors, Timer, TrendingUp, Share2
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
@@ -11,19 +11,33 @@ import ProfileSwitcher from '../../components/ProfileSwitcher';
 import Footer from '../../components/Footer';
 
 /**
- * Page Daily Tip - Conseils & Contacts
- * Images mises à jour pour mieux correspondre au contexte.
+ * Page Daily Tip - Conseil du Jour Unique
+ * Concept: 1 conseil par jour avec révélation progressive + gamification
  */
 const DailyTip = () => {
   const { user } = useAuth();
-  const [selectedTipCategory, setSelectedTipCategory] = useState('all');
-  const [tips, setTips] = useState([]);
-  const [loadingTips, setLoadingTips] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
+  
+  // États pour le conseil du jour
+  const [todayTip, setTodayTip] = useState(null);
+  const [isRevealed, setIsRevealed] = useState(false);
+  const [isLiked, setIsLiked] = useState(false);
+  const [totalLikes, setTotalLikes] = useState(0);
+  const [loadingTip, setLoadingTip] = useState(true);
+  
+  // États pour le streak
+  const [streakData, setStreakData] = useState({
+    current_streak: 0,
+    longest_streak: 0,
+    total_tips_read: 0
+  });
+  
+  // États pour le countdown
+  const [timeUntilNext, setTimeUntilNext] = useState('');
+  
+  // États vétérinaire
   const [userVet, setUserVet] = useState(null);
   const [showVetForm, setShowVetForm] = useState(false);
   const [currentProfile, setCurrentProfile] = useState(null);
-  const [favorites, setFavorites] = useState([]);
   const [vetForm, setVetForm] = useState({
     name: '',
     phone: '',
@@ -31,83 +45,74 @@ const DailyTip = () => {
     hours: ''
   });
 
-  // Profils de chiens (Images mises à jour)
+  // Profils de chiens
   const dogProfiles = [
     {
       id: 1,
       name: "Max",
       breed: "Malinois",
-      // Nouvelle image de Malinois
-      image: "https://images.unsplash.com/photo-1623068919897-3564734a3c4b?w=400&h=400&fit=crop",
-      imageAlt: "Malinois dog outdoors"
+      image: "https://images.unsplash.com/photo-1713917032646-4703f3feffde",
+      imageAlt: "Malinois dog with alert expression"
     },
     {
       id: 2,
       name: "Luna",
       breed: "Shih-Tzu",
-      // Nouvelle image de Shih-Tzu
-      image: "https://images.unsplash.com/photo-1583512603805-3cc6b41f3edb?w=400&h=400&fit=crop",
-      imageAlt: "Shih-Tzu dog looking up"
+      image: "https://images.unsplash.com/photo-1579466420284-ad894bf675c8",
+      imageAlt: "Small Shih-Tzu dog"
     }
   ];
 
-  // Catégories avec NOUVELLES photos Unsplash contextuelles
-  const tipCategories = [
-    {
-      id: 'all',
-      name: 'Tous',
-      icon: Sparkles,
-      color: 'blue',
-      gradient: 'from-purple-500 to-pink-500',
-      // Image générale : un chien heureux de race mixte
-      unsplash: 'photo-1552053831-71594a27632d'
-    },
-    {
-      id: 'health',
-      name: 'Santé',
-      icon: Heart,
-      color: 'red',
+  // ⚠️ IMPORTANT : Remplace 'TON_PROJECT_ID_ICI' par ton vrai Supabase Project ID
+  const SUPABASE_PROJECT_ID = 'TON_PROJECT_ID_ICI';
+  
+  // URLs des photos (automatiquement générées avec ton Project ID)
+  const categoryImages = {
+    health: `https://${SUPABASE_PROJECT_ID}.supabase.co/storage/v1/object/public/daily-tips-images/health-golden-doctor.jpg`,
+    nutrition: `https://${SUPABASE_PROJECT_ID}.supabase.co/storage/v1/object/public/daily-tips-images/nutrition-golden-food.jpg`,
+    education: `https://${SUPABASE_PROJECT_ID}.supabase.co/storage/v1/object/public/daily-tips-images/education-golden-training.jpg`,
+    care: `https://${SUPABASE_PROJECT_ID}.supabase.co/storage/v1/object/public/daily-tips-images/care-golden-grooming.jpg`,
+    wellness: `https://${SUPABASE_PROJECT_ID}.supabase.co/storage/v1/object/public/daily-tips-images/wellness-golden-peace.jpg`
+  };
+
+  // Catégories avec icons et couleurs
+  const categories = {
+    health: { 
+      name: 'Santé', 
+      icon: Stethoscope, 
+      color: 'green',
       gradient: 'from-green-500 to-emerald-600',
-      // Image santé : un vétérinaire auscultant un chien
-      unsplash: 'photo-1628009368231-760335a2a9ba'
+      emoji: '🏥'
     },
-    {
-      id: 'nutrition',
-      name: 'Nutrition',
-      icon: ChefHat,
+    nutrition: { 
+      name: 'Nutrition', 
+      icon: ChefHat, 
       color: 'orange',
       gradient: 'from-orange-500 to-red-500',
-      // Image nutrition : un chien regardant un bol de nourriture saine
-      unsplash: 'photo-1518893063132-36e465be779c'
+      emoji: '🍖'
     },
-    {
-      id: 'care',
-      name: 'Soins',
-      icon: Heart,
+    education: { 
+      name: 'Éducation', 
+      icon: GraduationCap, 
+      color: 'blue',
+      gradient: 'from-blue-500 to-indigo-600',
+      emoji: '🎓'
+    },
+    care: { 
+      name: 'Soins', 
+      icon: Scissors, 
       color: 'pink',
       gradient: 'from-pink-500 to-rose-600',
-      // Image soins : un chien recevant un bain/toilettage
-      unsplash: 'photo-1583337130417-3346a1be7dee'
+      emoji: '✂️'
     },
-    {
-      id: 'education',
-      name: 'Éducation',
-      icon: GraduationCap,
+    wellness: { 
+      name: 'Bien-être', 
+      icon: Activity, 
       color: 'purple',
-      gradient: 'from-blue-500 to-indigo-600',
-      // Image éducation : une séance de dressage active
-      unsplash: 'photo-1535930749574-1399327ce78f'
-    },
-    {
-      id: 'wellness',
-      name: 'Bien-être',
-      icon: Activity,
-      color: 'green',
       gradient: 'from-purple-500 to-violet-600',
-      // Image bien-être : un chien très détendu, dormant paisiblement
-      unsplash: 'photo-1544568100-847a948585b9'
+      emoji: '🧠'
     }
-  ];
+  };
 
   // Contacts SOS
   const sosContacts = [
@@ -127,6 +132,8 @@ const DailyTip = () => {
     }
   ];
 
+  // ========== EFFETS ==========
+
   useEffect(() => {
     const savedProfile = localStorage.getItem('currentDogProfile');
     if (savedProfile) {
@@ -135,47 +142,164 @@ const DailyTip = () => {
       setCurrentProfile(dogProfiles[0]);
       localStorage.setItem('currentDogProfile', JSON.stringify(dogProfiles[0]));
     }
-
-    // Charger les favoris
-    const savedFavorites = localStorage.getItem('woofly_favorite_tips');
-    if (savedFavorites) {
-      setFavorites(JSON.parse(savedFavorites));
-    }
   }, []);
 
   useEffect(() => {
-    fetchTips();
+    fetchTodayTip();
     if (user?.id) {
       fetchUserVet();
+      fetchStreakData();
     }
-  }, [selectedTipCategory, searchQuery, user?.id]);
+  }, [user?.id]);
 
-  const fetchTips = async () => {
+  useEffect(() => {
+    if (user && todayTip) {
+      checkIfAlreadyRead();
+    }
+  }, [user, todayTip]);
+
+  // Countdown timer
+  useEffect(() => {
+    const updateCountdown = () => {
+      const now = new Date();
+      const tomorrow = new Date(now);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      tomorrow.setHours(0, 0, 0, 0);
+      
+      const diff = tomorrow - now;
+      const hours = Math.floor(diff / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      
+      setTimeUntilNext(`${hours}h${minutes < 10 ? '0' : ''}${minutes}`);
+    };
+    
+    updateCountdown();
+    const interval = setInterval(updateCountdown, 60000);
+    
+    return () => clearInterval(interval);
+  }, []);
+
+  // ========== FONCTIONS ==========
+
+  const fetchTodayTip = async () => {
     try {
-      setLoadingTips(true);
-
-      let query = supabase
-        .from('tips')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(9);
-
-      if (selectedTipCategory !== 'all') {
-        query = query.eq('category', selectedTipCategory);
-      }
-
-      if (searchQuery.trim()) {
-        query = query.or(`title.ilike.%${searchQuery}%,content.ilike.%${searchQuery}%`);
-      }
-
-      const { data, error } = await query;
+      setLoadingTip(true);
+      
+      const { data, error } = await supabase
+        .rpc('get_today_tip');
+      
       if (error) throw error;
-      setTips(data || []);
+      
+      if (data && data.length > 0) {
+        setTodayTip(data[0]);
+        setTotalLikes(parseInt(data[0].total_likes) || 0);
+      }
     } catch (error) {
-      console.error('Erreur tips:', error);
-      setTips([]);
+      console.error('Erreur fetch tip:', error);
     } finally {
-      setLoadingTips(false);
+      setLoadingTip(false);
+    }
+  };
+
+  const checkIfAlreadyRead = async () => {
+    if (!user || !todayTip) return;
+    
+    try {
+      const { data } = await supabase
+        .from('user_tip_reads')
+        .select('liked')
+        .eq('user_id', user.id)
+        .eq('tip_id', todayTip.tip_id)
+        .maybeSingle();
+      
+      if (data) {
+        setIsRevealed(true);
+        setIsLiked(data.liked || false);
+      }
+    } catch (error) {
+      console.error('Erreur check read:', error);
+    }
+  };
+
+  const fetchStreakData = async () => {
+    try {
+      const { data } = await supabase
+        .from('user_streaks')
+        .select('*')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      
+      if (data) {
+        setStreakData(data);
+      }
+    } catch (error) {
+      console.error('Erreur streak:', error);
+    }
+  };
+
+  const handleReveal = async () => {
+    if (!user) {
+      alert('Connectez-vous pour découvrir le conseil !');
+      return;
+    }
+    
+    try {
+      await supabase
+        .from('user_tip_reads')
+        .insert({
+          user_id: user.id,
+          tip_id: todayTip.tip_id,
+          liked: false
+        });
+      
+      await supabase.rpc('update_user_streak', { p_user_id: user.id });
+      
+      setIsRevealed(true);
+      
+      await fetchStreakData();
+      
+    } catch (error) {
+      console.error('Erreur reveal:', error);
+      setIsRevealed(true);
+    }
+  };
+
+  const toggleLike = async () => {
+    if (!user) return;
+    
+    const newLikedState = !isLiked;
+    setIsLiked(newLikedState);
+    setTotalLikes(prev => newLikedState ? prev + 1 : prev - 1);
+    
+    try {
+      await supabase
+        .from('user_tip_reads')
+        .update({ liked: newLikedState })
+        .eq('user_id', user.id)
+        .eq('tip_id', todayTip.tip_id);
+    } catch (error) {
+      console.error('Erreur like:', error);
+      setIsLiked(!newLikedState);
+      setTotalLikes(prev => newLikedState ? prev - 1 : prev + 1);
+    }
+  };
+
+  const handleShare = async () => {
+    const text = `🐕 ${todayTip.title}\n\nDécouvrez ce conseil sur Woofly !`;
+    
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'Conseil Woofly',
+          text: text,
+          url: window.location.href
+        });
+      } catch (err) {
+        console.log('Share cancelled');
+      }
+    } else {
+      navigator.clipboard.writeText(text + '\n' + window.location.href);
+      alert('✅ Lien copié !');
     }
   };
 
@@ -227,18 +351,14 @@ const DailyTip = () => {
     localStorage.setItem('currentDogProfile', JSON.stringify(profile));
   };
 
-  const getCategoryInfo = (categoryId) => {
-    return tipCategories.find(c => c.id === categoryId) || tipCategories[0];
+  // ========== RENDER ==========
+
+  const getCategoryData = () => {
+    return todayTip ? categories[todayTip.category] : categories.health;
   };
 
-  const toggleFavorite = (tipId) => {
-    const newFavorites = favorites.includes(tipId)
-      ? favorites.filter(id => id !== tipId)
-      : [...favorites, tipId];
-
-    setFavorites(newFavorites);
-    localStorage.setItem('woofly_favorite_tips', JSON.stringify(newFavorites));
-  };
+  const categoryData = getCategoryData();
+  const Icon = categoryData.icon;
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -265,129 +385,160 @@ const DailyTip = () => {
 
       {/* Main content */}
       <main className="main-content flex-1">
-        <div className="max-w-screen-xl mx-auto px-4 py-6 space-y-8">
-
-          {/* ========== CONSEILS PRATIQUES AVEC PHOTOS ========== */}
+        <div className="max-w-3xl mx-auto px-4 py-6 space-y-8">
+          
+          {/* ========== CONSEIL DU JOUR ========== */}
           <section className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-xl font-heading font-semibold text-foreground mb-1">
-                  Conseils Pratiques
-                </h2>
-                <p className="text-muted-foreground font-caption">
-                  Recettes, soins, éducation et bien-être pour votre chien
-                </p>
-              </div>
+            <div className="text-center mb-6">
+              <h2 className="text-2xl font-heading font-bold text-foreground mb-2">
+                💡 Conseil du Jour
+              </h2>
+              <p className="text-muted-foreground font-caption">
+                {new Date().toLocaleDateString('fr-FR', { 
+                  weekday: 'long', 
+                  day: 'numeric', 
+                  month: 'long' 
+                })}
+              </p>
             </div>
 
-            {/* Recherche */}
-            <div className="relative">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={20} />
-              <input
-                type="text"
-                placeholder="Rechercher un conseil..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-12 pr-4 py-3 border border-border rounded-lg focus:ring-2 focus:ring-primary bg-card"
-              />
-            </div>
-
-            {/* Catégories */}
-            <div className="flex overflow-x-auto gap-3 pb-2 hide-scrollbar">
-              {tipCategories.map((cat) => {
-                const Icon = cat.icon;
-                return (
-                  <button
-                    key={cat.id}
-                    onClick={() => setSelectedTipCategory(cat.id)}
-                    className={`flex-shrink-0 px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-smooth ${
-                      selectedTipCategory === cat.id
-                        ? 'bg-primary text-primary-foreground shadow-soft'
-                        : 'bg-card border border-border text-foreground hover:bg-muted'
-                    }`}
-                  >
-                    <Icon size={18} />
-                    {cat.name}
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Liste tips avec photos */}
-            {loadingTips ? (
-              <div className="flex justify-center py-12">
+            {loadingTip ? (
+              <div className="flex justify-center py-20">
                 <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
               </div>
-            ) : tips.length === 0 ? (
+            ) : !todayTip ? (
               <div className="bg-card rounded-lg p-8 text-center border border-border">
                 <Sparkles size={48} className="text-muted-foreground mx-auto mb-4" />
                 <p className="text-muted-foreground font-caption">
-                  {searchQuery ? 'Aucun conseil trouvé pour votre recherche' : 'Aucun conseil disponible pour le moment'}
+                  Aucun conseil disponible pour aujourd'hui
                 </p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {tips.map((tip) => {
-                  const catInfo = getCategoryInfo(tip.category);
-                  const Icon = catInfo?.icon || Sparkles;
-                  const isFavorite = favorites.includes(tip.id);
+              <div className="bg-card rounded-2xl overflow-hidden shadow-lg">
+                {/* Image avec effet blur ou révélée */}
+                <div className="relative h-64 md:h-80 overflow-hidden">
+                  <img
+                    src={categoryImages[todayTip.category]}
+                    alt={categoryData.name}
+                    className={`w-full h-full object-cover transition-all duration-1000 ${
+                      isRevealed ? 'blur-0 scale-100' : 'blur-md scale-110'
+                    }`}
+                  />
+                  
+                  {/* Gradient overlay */}
+                  <div className={`absolute inset-0 bg-gradient-to-t ${categoryData.gradient} opacity-40`} />
+                  
+                  {/* Badge catégorie */}
+                  <div className="absolute top-4 left-4">
+                    <div className="flex items-center gap-2 bg-white/90 backdrop-blur-sm px-4 py-2 rounded-full">
+                      <Icon className="w-5 h-5" />
+                      <span className="font-bold text-gray-800">
+                        {categoryData.emoji} {categoryData.name}
+                      </span>
+                    </div>
+                  </div>
 
-                  return (
-                    <div
-                      key={tip.id}
-                      className="bg-card rounded-lg overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1 group"
-                    >
-                      {/* Image cover avec gradient */}
-                      <div className="relative h-40 overflow-hidden">
-                        <img
-                          // Utilisation de la nouvelle structure d'URL Unsplash
-                          src={`https://images.unsplash.com/${catInfo.unsplash}?w=600&h=400&fit=crop&q=80`}
-                          alt={catInfo.name}
-                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                        />
+                  {/* Bouton révéler (si pas encore révélé) */}
+                  {!isRevealed && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/20 backdrop-blur-sm">
+                      <button
+                        onClick={handleReveal}
+                        className="bg-white text-gray-900 px-8 py-4 rounded-full font-bold text-lg shadow-xl hover:scale-105 transition-transform flex items-center gap-2"
+                      >
+                        <Sparkles className="w-6 h-6" />
+                        Découvrir le conseil
+                      </button>
+                    </div>
+                  )}
+                </div>
 
-                        {/* Gradient overlay */}
-                        <div className={`absolute inset-0 bg-gradient-to-t ${catInfo.gradient} opacity-50`} />
+                {/* Contenu (visible uniquement si révélé) */}
+                {isRevealed && (
+                  <div className="p-6 space-y-4">
+                    <h3 className="text-2xl font-heading font-bold text-foreground">
+                      {todayTip.title}
+                    </h3>
+                    
+                    <p className="text-base text-foreground leading-relaxed">
+                      {todayTip.content}
+                    </p>
 
-                        {/* Badge catégorie */}
-                        <div className="absolute top-3 left-3">
-                          <div className="flex items-center gap-1.5 bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-full">
-                            <Icon className="w-4 h-4 text-gray-700" />
-                            <span className="text-xs font-bold text-gray-700">
-                              {catInfo.name}
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* Bouton favori */}
-                        <button
-                          onClick={() => toggleFavorite(tip.id)}
-                          className="absolute top-3 right-3 w-9 h-9 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center hover:scale-110 transition-transform"
-                        >
-                          <Heart
-                            className={`w-5 h-5 transition-colors ${
-                              isFavorite
-                                ? 'fill-red-500 text-red-500'
-                                : 'text-gray-600'
-                            }`}
-                          />
-                        </button>
-                      </div>
-
-                      {/* Contenu */}
-                      <div className="p-5">
-                        <h3 className="font-heading font-semibold text-foreground mb-2 line-clamp-2">
-                          {tip.title}
-                        </h3>
-                        <p className="text-sm text-muted-foreground font-caption leading-relaxed line-clamp-3">
-                          {tip.content}
+                    {todayTip.pro_tip && (
+                      <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-lg">
+                        <p className="text-sm text-blue-900 font-caption">
+                          <strong>💡 Astuce Pro :</strong> {todayTip.pro_tip}
                         </p>
                       </div>
+                    )}
+
+                    {/* Actions */}
+                    <div className="flex items-center justify-between pt-4 border-t border-border">
+                      <div className="flex items-center gap-4">
+                        <button
+                          onClick={toggleLike}
+                          className="flex items-center gap-2 hover:scale-110 transition-transform"
+                        >
+                          <Heart
+                            className={`w-6 h-6 ${
+                              isLiked ? 'fill-red-500 text-red-500' : 'text-gray-400'
+                            }`}
+                          />
+                          <span className="text-sm font-medium text-muted-foreground">
+                            {totalLikes}
+                          </span>
+                        </button>
+                        
+                        <button
+                          onClick={handleShare}
+                          className="flex items-center gap-2 text-gray-600 hover:text-primary hover:scale-110 transition-all"
+                        >
+                          <Share2 className="w-5 h-5" />
+                          <span className="text-sm font-medium">Partager</span>
+                        </button>
+                      </div>
                     </div>
-                  );
-                })}
+                  </div>
+                )}
               </div>
             )}
+
+            {/* Countdown et Streak */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Countdown */}
+              <div className="bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl p-5 text-white">
+                <div className="flex items-center gap-3 mb-2">
+                  <Timer className="w-6 h-6" />
+                  <span className="font-bold">Prochain conseil</span>
+                </div>
+                <p className="text-3xl font-heading font-bold">{timeUntilNext}</p>
+                <p className="text-sm text-blue-100 mt-1">Revenez demain !</p>
+              </div>
+
+              {/* Streak */}
+              {user && (
+                <div className="bg-gradient-to-r from-orange-500 to-red-600 rounded-xl p-5 text-white">
+                  <div className="flex items-center gap-3 mb-2">
+                    <TrendingUp className="w-6 h-6" />
+                    <span className="font-bold">Votre série</span>
+                  </div>
+                  <p className="text-3xl font-heading font-bold">
+                    🔥 {streakData.current_streak} jour{streakData.current_streak > 1 ? 's' : ''}
+                  </p>
+                  <p className="text-sm text-orange-100 mt-1">
+                    {streakData.total_tips_read}/365 conseils lus
+                  </p>
+                </div>
+              )}
+            </div>
+          </section>
+
+          {/* ========== PUB ADSENSE ========== */}
+          <section className="bg-gray-100 rounded-lg p-6 text-center border-2 border-dashed border-gray-300">
+            <p className="text-sm text-gray-500 mb-2">Publicité</p>
+            {/* TODO: Insérer le code AdSense ici */}
+            <div className="bg-white h-32 flex items-center justify-center rounded">
+              <p className="text-gray-400">Espace réservé pour AdSense</p>
+            </div>
           </section>
 
           {/* ========== MON VÉTÉRINAIRE ========== */}
@@ -413,7 +564,6 @@ const DailyTip = () => {
             </div>
 
             {showVetForm ? (
-              // Formulaire
               <div className="bg-card border border-border rounded-lg p-6">
                 <div className="space-y-4">
                   <div>
@@ -473,7 +623,6 @@ const DailyTip = () => {
                 </div>
               </div>
             ) : userVet ? (
-              // Affichage vétérinaire
               <div className="bg-card border-2 border-blue-200 rounded-lg p-6">
                 <div className="flex items-start gap-4 mb-4">
                   <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -510,7 +659,6 @@ const DailyTip = () => {
                 </a>
               </div>
             ) : (
-              // Bouton ajouter
               <button
                 onClick={() => setShowVetForm(true)}
                 className="w-full bg-card border-2 border-dashed border-border rounded-lg p-8 hover:border-primary transition-smooth"
@@ -546,12 +694,12 @@ const DailyTip = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {sosContacts.map((contact) => {
-                const Icon = contact.icon;
+                const ContactIcon = contact.icon;
                 return (
                   <div key={contact.id} className="bg-card border-2 border-red-200 rounded-lg p-6">
                     <div className="flex items-start gap-4 mb-4">
                       <div className="w-12 h-12 bg-red-500 text-white rounded-lg flex items-center justify-center flex-shrink-0">
-                        <Icon size={24} />
+                        <ContactIcon size={24} />
                       </div>
                       <div className="flex-1">
                         <h3 className="font-heading font-semibold text-foreground mb-1">{contact.name}</h3>
@@ -580,16 +728,6 @@ const DailyTip = () => {
 
       {/* Footer */}
       <Footer />
-
-      <style>{`
-        .hide-scrollbar::-webkit-scrollbar {
-          display: none;
-        }
-        .hide-scrollbar {
-          -ms-overflow-style: none;
-          scrollbar-width: none;
-        }
-      `}</style>
     </div>
   );
 };
