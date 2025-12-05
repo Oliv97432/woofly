@@ -7,7 +7,7 @@ import {
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import TabNavigation from '../../components/TabNavigation';
-import ProfileSwitcher from '../../components/ProfileSwitcher';
+import UserMenu from '../../components/UserMenu';
 import Footer from '../../components/Footer';
 
 /**
@@ -368,10 +368,10 @@ const DailyTip = () => {
                 Conseils & Contacts
               </h1>
             </div>
-            <ProfileSwitcher
-              profiles={dogProfiles}
-              currentProfile={currentProfile}
-              onProfileChange={handleProfileChange}
+            <UserMenu
+              dogProfiles={dogProfiles}
+              currentDog={currentProfile}
+              onDogChange={handleProfileChange}
             />
           </div>
         </div>
