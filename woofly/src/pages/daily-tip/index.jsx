@@ -422,8 +422,8 @@ const DailyTip = () => {
                     }`}
                   />
                   
-                  {/* Gradient overlay */}
-                  <div className={`absolute inset-0 bg-gradient-to-t ${categoryData.gradient} opacity-40`} />
+                  {/* Gradient léger pour contraste du badge */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent" />
                   
                   {/* Badge catégorie */}
                   <div className="absolute top-4 left-4">
