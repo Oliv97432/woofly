@@ -45,23 +45,8 @@ const DailyTip = () => {
     hours: ''
   });
 
-  // Profils de chiens
-  const dogProfiles = [
-    {
-      id: 1,
-      name: "Max",
-      breed: "Malinois",
-      image: "https://images.unsplash.com/photo-1713917032646-4703f3feffde",
-      imageAlt: "Malinois dog with alert expression"
-    },
-    {
-      id: 2,
-      name: "Luna",
-      breed: "Shih-Tzu",
-      image: "https://images.unsplash.com/photo-1579466420284-ad894bf675c8",
-      imageAlt: "Small Shih-Tzu dog"
-    }
-  ];
+  // Profils de chiens (chargés depuis Supabase)
+  const [dogProfiles, setDogProfiles] = useState([]);
 
   // ✅ TES VRAIES PHOTOS IMGBB
   const categoryImages = {
@@ -135,11 +120,39 @@ const DailyTip = () => {
     const savedProfile = localStorage.getItem('currentDogProfile');
     if (savedProfile) {
       setCurrentProfile(JSON.parse(savedProfile));
-    } else if (dogProfiles?.length > 0) {
-      setCurrentProfile(dogProfiles[0]);
-      localStorage.setItem('currentDogProfile', JSON.stringify(dogProfiles[0]));
     }
   }, []);
+
+  // Charger les profils de chiens depuis Supabase
+  useEffect(() => {
+    const fetchDogProfiles = async () => {
+      if (!user?.id) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from('dog_profiles')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: true });
+        
+        if (error) throw error;
+        
+        if (data && data.length > 0) {
+          setDogProfiles(data);
+          
+          // Si pas de profil actuel, sélectionner le premier
+          if (!currentProfile) {
+            setCurrentProfile(data[0]);
+            localStorage.setItem('currentDogProfile', JSON.stringify(data[0]));
+          }
+        }
+      } catch (error) {
+        console.error('Erreur chargement chiens:', error);
+      }
+    };
+    
+    fetchDogProfiles();
+  }, [user?.id]);
 
   useEffect(() => {
     fetchTodayTip();
