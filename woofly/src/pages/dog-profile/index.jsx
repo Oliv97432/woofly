@@ -28,7 +28,7 @@ const DogProfile = () => {
   const [dogProfiles, setDogProfiles] = useState([]);
   const [currentProfile, setCurrentProfile] = useState(null);
   const [vaccinations, setVaccinations] = useState([]);
-  const [treatments, setTreatments] = useState([]); // Pour vermifuge et anti-puces
+  const [treatments, setTreatments] = useState([]);
   const [weightData, setWeightData] = useState([]);
   const [healthNotes, setHealthNotes] = useState({
     allergies: '',
@@ -104,7 +104,7 @@ const DogProfile = () => {
     fetchDogs();
   }, [user?.id]);
 
-  // Charger les vaccinations du chien actuel
+  // Charger les vaccinations
   useEffect(() => {
     if (!currentProfile?.id) return;
 
@@ -136,7 +136,7 @@ const DogProfile = () => {
     fetchVaccinations();
   }, [currentProfile?.id]);
 
-  // Charger les traitements (vermifuge et anti-puces)
+  // Charger les traitements
   useEffect(() => {
     if (!currentProfile?.id) return;
 
@@ -156,7 +156,7 @@ const DogProfile = () => {
           lastDate: new Date(treat.treatment_date).toLocaleDateString('fr-FR'),
           nextDate: treat.next_due_date ? new Date(treat.next_due_date).toLocaleDateString('fr-FR') : 'Non défini',
           notes: treat.notes,
-          type: treat.treatment_type // 'worm', 'flea', 'tick', 'other'
+          type: treat.treatment_type
         }));
 
         setTreatments(formatted);
@@ -229,6 +229,29 @@ const DogProfile = () => {
     fetchHealthNotes();
   }, [currentProfile?.id]);
 
+  // ✅ NOUVEAU : Charger la galerie photos
+  useEffect(() => {
+    if (!currentProfile?.id) return;
+
+    const fetchPhotos = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('dog_photos')
+          .select('*')
+          .eq('dog_id', currentProfile.id)
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+
+        setPhotoGallery(data || []);
+      } catch (err) {
+        console.error('Erreur chargement photos:', err);
+      }
+    };
+
+    fetchPhotos();
+  }, [currentProfile?.id]);
+
   const openModal = (modalName, item = null) => {
     setEditingItem(item);
     setModals({ ...modals, [modalName]: true });
@@ -243,7 +266,6 @@ const DogProfile = () => {
   const handleSaveVaccination = async (data) => {
     try {
       if (editingItem) {
-        // Mise à jour
         const { error } = await supabase
           .from('vaccinations')
           .update({
@@ -261,7 +283,6 @@ const DogProfile = () => {
           v.id === editingItem.id ? { ...data, id: v.id } : v
         ));
       } else {
-        // Création
         const { data: newVac, error } = await supabase
           .from('vaccinations')
           .insert([{
@@ -318,7 +339,6 @@ const DogProfile = () => {
       const treatmentType = type === 'vermifuge' ? 'worm' : 'flea';
 
       if (editingItem) {
-        // Mise à jour
         const { error } = await supabase
           .from('treatments')
           .update({
@@ -336,7 +356,6 @@ const DogProfile = () => {
           t.id === editingItem.id ? { ...data, id: t.id, type: treatmentType } : t
         ));
       } else {
-        // Création
         const { data: newTreat, error } = await supabase
           .from('treatments')
           .insert([{
@@ -444,8 +463,60 @@ const DogProfile = () => {
     }
   };
 
-  const handleExportPDF = () => {
-    alert('Fonctionnalité d\'export PDF en cours de développement. Le fichier PDF sera généré avec toutes les informations de santé de ' + currentProfile?.name + '.');
+  // ✅ NOUVEAU : Upload photo fonctionnel
+  const handleAddPhoto = async (file) => {
+    if (!file) return;
+
+    // Vérifier taille (5MB max)
+    if (file.size > 5 * 1024 * 1024) {
+      alert('⚠️ L\'image est trop volumineuse (max 5MB)');
+      return;
+    }
+
+    try {
+      // 1. Upload vers Storage
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}/${currentProfile.id}/${Date.now()}.${fileExt}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('dog-photos')
+        .upload(fileName, file);
+
+      if (uploadError) {
+        // Si le bucket n'existe pas, on essaie de le créer
+        if (uploadError.message.includes('Bucket not found')) {
+          alert('⚠️ Le bucket de stockage n\'existe pas encore.\n\nCréez un bucket "dog-photos" dans Supabase Storage (Settings > Storage)');
+          return;
+        }
+        throw uploadError;
+      }
+
+      // 2. Récupérer l'URL publique
+      const { data: { publicUrl } } = supabase.storage
+        .from('dog-photos')
+        .getPublicUrl(fileName);
+
+      // 3. Enregistrer dans la DB
+      const { data: newPhoto, error: dbError } = await supabase
+        .from('dog_photos')
+        .insert([{
+          dog_id: currentProfile.id,
+          photo_url: publicUrl,
+          created_at: new Date().toISOString()
+        }])
+        .select()
+        .single();
+
+      if (dbError) throw dbError;
+
+      // 4. Mettre à jour la galerie
+      setPhotoGallery([newPhoto, ...photoGallery]);
+      
+      alert('✅ Photo ajoutée avec succès !');
+    } catch (err) {
+      console.error('Erreur upload photo:', err);
+      alert('❌ Erreur lors de l\'upload de la photo: ' + err.message);
+    }
   };
 
   const handleProfileChange = (profile) => {
@@ -506,25 +577,26 @@ const DogProfile = () => {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <TabNavigation />
-      <main className="main-content flex-1">
-        <div className="max-w-7xl mx-auto px-4 py-6 lg:py-8">
-          <div className="flex items-center justify-between mb-6">
+      {/* ✅ CORRIGÉ: Header avec UserMenu à droite */}
+      <div className="sticky top-0 z-50 bg-card border-b border-border shadow-soft">
+        <div className="max-w-7xl mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <h1 className="text-2xl font-heading font-semibold text-foreground">
+              Profil de {currentProfile.name}
+            </h1>
             <UserMenu
               dogProfiles={dogProfiles}
               currentDog={currentProfile}
               onDogChange={handleProfileChange}
             />
-            <Button
-              variant="outline"
-              iconName="Download"
-              iconPosition="left"
-              onClick={handleExportPDF}
-            >
-              Exporter PDF
-            </Button>
           </div>
+        </div>
+      </div>
 
+      <TabNavigation />
+      
+      <main className="main-content flex-1">
+        <div className="max-w-7xl mx-auto px-4 py-6 lg:py-8">
           <ProfileHeader
             profile={currentProfile}
             onEdit={() => openModal('editProfile')}
@@ -769,11 +841,12 @@ const DogProfile = () => {
         profile={currentProfile}
       />
      
+      {/* ✅ CORRIGÉ: PhotoGalleryModal avec upload fonctionnel */}
       <PhotoGalleryModal
         isOpen={modals.gallery}
         onClose={() => closeModal('gallery')}
         photos={photoGallery}
-        onAddPhoto={() => alert('Fonctionnalité d\'ajout de photo en cours de développement')}
+        onAddPhoto={handleAddPhoto}
       />
 
       <Footer />
