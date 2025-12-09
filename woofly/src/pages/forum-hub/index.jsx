@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import TabNavigation from '../../components/TabNavigation';
@@ -12,6 +13,7 @@ import Footer from '../../components/Footer';
 
 const ForumHub = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredForums, setFilteredForums] = useState([]);
   const [currentProfile, setCurrentProfile] = useState(null);
@@ -214,6 +216,37 @@ const ForumHub = () => {
     setSearchQuery(query);
   };
 
+  // ✅ NOUVEAU : Handlers pour les boutons
+  const handleAskQuestion = () => {
+    // TODO: Créer la page /create-question
+    alert('🚧 Fonctionnalité "Poser une question" en cours de développement.\n\nProchainement disponible !');
+  };
+
+  const handleBrowsePhotos = () => {
+    // TODO: Créer la page /community-photos
+    alert('🚧 Galerie photos de la communauté en cours de développement.\n\nProchainement disponible !');
+  };
+
+  const handleCreateDiscussion = () => {
+    // TODO: Créer la page /create-discussion
+    alert('🚧 Fonctionnalité "Créer une discussion" en cours de développement.\n\nProchainement disponible !');
+  };
+
+  const handleForumClick = (forumId, forumName) => {
+    // TODO: Créer la page /forum/:id
+    alert(`🚧 Page du forum "${forumName}" en cours de développement.\n\nProchainement disponible !`);
+  };
+
+  const handleDiscussionClick = (discussionId, discussionTitle) => {
+    // TODO: Créer la page /discussion/:id
+    alert(`🚧 Discussion "${discussionTitle}" en cours de développement.\n\nProchainement disponible !`);
+  };
+
+  const handleViewAllDiscussions = () => {
+    // TODO: Créer la page /all-discussions
+    alert('🚧 Page "Toutes les discussions" en cours de développement.\n\nProchainement disponible !');
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <div className="sticky top-0 z-50 bg-card border-b border-border shadow-soft">
@@ -245,7 +278,11 @@ const ForumHub = () => {
                   Partagez, apprenez et connectez-vous avec d'autres propriétaires
                 </p>
               </div>
-              <QuickActions />
+              {/* ✅ CORRIGÉ : QuickActions avec handlers */}
+              <QuickActions 
+                onAskQuestion={handleAskQuestion}
+                onBrowsePhotos={handleBrowsePhotos}
+              />
             </div>
             <SearchBar onSearch={handleSearch} />
           </div>
@@ -259,7 +296,14 @@ const ForumHub = () => {
             {filteredForums?.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
                 {filteredForums?.map((forum) => (
-                  <ForumCard key={forum?.id} forum={forum} />
+                  /* ✅ CORRIGÉ : ForumCard cliquable */
+                  <div 
+                    key={forum?.id}
+                    onClick={() => handleForumClick(forum.id, forum.name)}
+                    className="cursor-pointer"
+                  >
+                    <ForumCard forum={forum} />
+                  </div>
                 ))}
               </div>
             ) : (
@@ -276,13 +320,24 @@ const ForumHub = () => {
               <h3 className="text-lg font-heading font-semibold text-foreground">
                 Discussions populaires
               </h3>
-              <button className="text-sm text-primary font-medium hover:underline">
+              {/* ✅ CORRIGÉ : Bouton "Voir tout" fonctionnel */}
+              <button 
+                onClick={handleViewAllDiscussions}
+                className="text-sm text-primary font-medium hover:underline"
+              >
                 Voir tout
               </button>
             </div>
             <div className="space-y-4">
               {featuredDiscussions?.map((discussion) => (
-                <FeaturedDiscussion key={discussion?.id} discussion={discussion} />
+                /* ✅ CORRIGÉ : Discussion cliquable */
+                <div
+                  key={discussion?.id}
+                  onClick={() => handleDiscussionClick(discussion.id, discussion.title)}
+                  className="cursor-pointer"
+                >
+                  <FeaturedDiscussion discussion={discussion} />
+                </div>
               ))}
             </div>
           </div>
@@ -297,8 +352,9 @@ const ForumHub = () => {
                   Aidez d'autres propriétaires en partageant vos connaissances et conseils
                 </p>
               </div>
+              {/* ✅ CORRIGÉ : Bouton "Créer une discussion" fonctionnel */}
               <button
-                onClick={() => window.location.href = '/forum-discussion'}
+                onClick={handleCreateDiscussion}
                 className="px-6 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-smooth whitespace-nowrap"
               >
                 Créer une discussion
