@@ -463,6 +463,36 @@ const DogProfile = () => {
     }
   };
 
+  // ✅ NOUVEAU : Définir une photo comme photo de profil
+  const handleSetProfilePhoto = async (photoUrl) => {
+    try {
+      // Mettre à jour dans la base de données
+      const { error } = await supabase
+        .from('dogs')
+        .update({ photo_url: photoUrl })
+        .eq('id', currentProfile.id);
+
+      if (error) throw error;
+
+      // Mettre à jour l'état local
+      setCurrentProfile({
+        ...currentProfile,
+        image: photoUrl
+      });
+
+      // Mettre à jour dans la liste des profils
+      setDogProfiles(dogProfiles.map(dog => 
+        dog.id === currentProfile.id 
+          ? { ...dog, image: photoUrl }
+          : dog
+      ));
+
+    } catch (err) {
+      console.error('Erreur mise à jour photo de profil:', err);
+      alert('❌ Erreur lors de la mise à jour de la photo de profil');
+    }
+  };
+
   // ✅ CORRIGÉ : Upload photo fonctionnel avec gestion d'erreurs
   const handleAddPhoto = async (file) => {
     // Vérifications de sécurité
@@ -890,12 +920,14 @@ const DogProfile = () => {
         profile={currentProfile}
       />
      
-      {/* ✅ CORRIGÉ: PhotoGalleryModal avec upload fonctionnel */}
+      {/* ✅ CORRIGÉ: PhotoGalleryModal avec sélection de photo de profil */}
       <PhotoGalleryModal
         isOpen={modals.gallery}
         onClose={() => closeModal('gallery')}
         photos={photoGallery}
         onAddPhoto={handleAddPhoto}
+        currentProfilePhotoUrl={currentProfile?.image}
+        onSetProfilePhoto={handleSetProfilePhoto}
       />
 
       <Footer />
