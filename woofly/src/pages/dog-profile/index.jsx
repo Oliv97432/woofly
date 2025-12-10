@@ -38,6 +38,7 @@ const DogProfile = () => {
     veterinarianPhone: ''
   });
   const [photoGallery, setPhotoGallery] = useState([]);
+  const [isUploadingCover, setIsUploadingCover] = useState(false);
 
   const [modals, setModals] = useState({
     vaccination: false,
@@ -493,6 +494,91 @@ const DogProfile = () => {
     }
   };
 
+  // ✅ NOUVEAU : Upload cover photo pour le chien
+  const handleCoverPhotoUpload = async (e) => {
+    const file = e.target.files?.[0];
+    
+    if (!file) {
+      console.log('Aucun fichier sélectionné');
+      return;
+    }
+
+    // Validation
+    if (!file.name || typeof file.name !== 'string') {
+      alert('⚠️ Fichier invalide');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert('⚠️ L\'image est trop volumineuse (max 5MB)');
+      return;
+    }
+
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    if (!validTypes.includes(file.type)) {
+      alert('⚠️ Format non supporté. Utilisez JPG, PNG ou WEBP');
+      return;
+    }
+
+    setIsUploadingCover(true);
+
+    try {
+      // 1. Upload vers Storage
+      const fileExt = file.name.split('.').pop().toLowerCase();
+      const fileName = `${user.id}/${currentProfile.id}/cover_${Date.now()}.${fileExt}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('dog-photos')
+        .upload(fileName, file, {
+          contentType: file.type,
+          cacheControl: '3600',
+          upsert: false
+        });
+
+      if (uploadError) {
+        if (uploadError.message.includes('Bucket not found')) {
+          alert('⚠️ Le bucket de stockage n\'existe pas.\n\n📋 Instructions:\n1. Va dans Supabase > Storage\n2. Crée un bucket "dog-photos"\n3. Coche "Public bucket"\n4. Réessaye');
+          return;
+        }
+        throw uploadError;
+      }
+
+      // 2. Récupérer l'URL publique
+      const { data: { publicUrl } } = supabase.storage
+        .from('dog-photos')
+        .getPublicUrl(fileName);
+
+      // 3. Mettre à jour dans la DB
+      const { error: dbError } = await supabase
+        .from('dogs')
+        .update({ cover_photo_url: publicUrl })
+        .eq('id', currentProfile.id);
+
+      if (dbError) throw dbError;
+
+      // 4. Mettre à jour l'état local
+      setCurrentProfile({
+        ...currentProfile,
+        cover_photo_url: publicUrl
+      });
+
+      // 5. Mettre à jour dans la liste des profils
+      setDogProfiles(dogProfiles.map(dog => 
+        dog.id === currentProfile.id 
+          ? { ...dog, cover_photo_url: publicUrl }
+          : dog
+      ));
+      
+      alert('✅ Photo de couverture mise à jour !');
+      e.target.value = '';
+    } catch (err) {
+      console.error('Erreur upload cover:', err);
+      alert('❌ Erreur lors de l\'upload: ' + err.message);
+    } finally {
+      setIsUploadingCover(false);
+    }
+  };
+
   // ✅ CORRIGÉ : Upload photo fonctionnel avec gestion d'erreurs
   const handleAddPhoto = async (file) => {
     // Vérifications de sécurité
@@ -667,6 +753,99 @@ const DogProfile = () => {
                 currentDog={currentProfile}
                 onDogChange={handleProfileChange}
               />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ✅ NOUVEAU : Bandeau Cover Photo style Facebook */}
+      <div className="relative">
+        {/* Cover Photo */}
+        <div className="relative h-64 bg-gradient-to-br from-blue-500 to-purple-600 overflow-hidden">
+          {currentProfile.cover_photo_url ? (
+            <img
+              src={currentProfile.cover_photo_url}
+              alt={`Couverture de ${currentProfile.name}`}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-white/30">
+              <Icon name="Image" size={64} />
+            </div>
+          )}
+          
+          {/* Bouton modifier cover */}
+          <label className="absolute bottom-4 right-4 bg-white/90 hover:bg-white px-4 py-2 rounded-lg cursor-pointer shadow-lg transition-smooth flex items-center gap-2">
+            <Icon name="Camera" size={18} />
+            <span className="font-medium text-sm">
+              {isUploadingCover ? 'Upload...' : 'Modifier la couverture'}
+            </span>
+            <input
+              type="file"
+              accept="image/jpeg,image/jpg,image/png,image/webp"
+              onChange={handleCoverPhotoUpload}
+              className="hidden"
+              disabled={isUploadingCover}
+            />
+          </label>
+        </div>
+
+        {/* Avatar + Infos chien (par-dessus le bandeau) */}
+        <div className="relative max-w-7xl mx-auto px-4">
+          <div className="flex items-end gap-4 -mt-16 pb-6">
+            {/* Avatar du chien */}
+            <div className="relative">
+              <div className="w-32 h-32 rounded-full border-4 border-card bg-gradient-to-br from-blue-500 to-purple-600 overflow-hidden shadow-xl">
+                {currentProfile.image ? (
+                  <img
+                    src={currentProfile.image}
+                    alt={currentProfile.name}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-white text-4xl font-bold">
+                    {currentProfile.name?.charAt(0).toUpperCase()}
+                  </div>
+                )}
+              </div>
+              
+              {/* Bouton modifier photo profil */}
+              <button
+                onClick={() => openModal('gallery')}
+                className="absolute bottom-0 right-0 bg-primary hover:bg-primary/90 text-white p-3 rounded-full cursor-pointer shadow-lg transition-smooth"
+              >
+                <Icon name="Camera" size={20} />
+              </button>
+            </div>
+
+            {/* Infos chien */}
+            <div className="flex-1 pb-2">
+              <h2 className="text-3xl font-heading font-bold text-foreground">
+                {currentProfile.name}
+              </h2>
+              <div className="flex items-center gap-4 text-muted-foreground mt-1">
+                <span className="flex items-center gap-1">
+                  <Icon name="Dog" size={16} />
+                  {currentProfile.breed}
+                </span>
+                <span className="flex items-center gap-1">
+                  <Icon name="Calendar" size={16} />
+                  {currentProfile.age || calculateAge(currentProfile.birthdate)}
+                </span>
+                <span className="flex items-center gap-1">
+                  {currentProfile.gender === 'male' ? (
+                    <>
+                      <Icon name="Mars" size={16} />
+                      Mâle
+                    </>
+                  ) : (
+                    <>
+                      <Icon name="Venus" size={16} />
+                      Femelle
+                    </>
+                  )}
+                </span>
+              </div>
             </div>
           </div>
         </div>
