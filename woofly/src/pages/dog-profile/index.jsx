@@ -762,12 +762,13 @@ const DogProfile = () => {
       {/* ✅ NOUVEAU : Bandeau Cover Photo style Facebook */}
       <div className="relative">
         {/* Cover Photo */}
-        <div className="relative h-64 bg-gradient-to-br from-blue-500 to-purple-600 overflow-hidden">
+        <div className="relative h-80 bg-gradient-to-br from-blue-500 to-purple-600 overflow-hidden">
           {currentProfile.cover_photo_url ? (
             <img
               src={currentProfile.cover_photo_url}
               alt={`Couverture de ${currentProfile.name}`}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover object-center"
+              style={{ objectPosition: 'center 30%' }}
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-white/30">
