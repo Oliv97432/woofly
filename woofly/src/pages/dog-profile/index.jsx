@@ -776,12 +776,16 @@ const DogProfile = () => {
           )}
           
           {/* Bouton modifier cover */}
-          <label className="absolute bottom-4 right-4 bg-white/90 hover:bg-white px-4 py-2 rounded-lg cursor-pointer shadow-lg transition-smooth flex items-center gap-2">
+          <label 
+            htmlFor="cover-photo-upload-input"
+            className="absolute bottom-4 right-4 z-10 bg-white/90 hover:bg-white px-4 py-2 rounded-lg cursor-pointer shadow-lg transition-smooth flex items-center gap-2"
+          >
             <Icon name="Camera" size={18} />
             <span className="font-medium text-sm">
               {isUploadingCover ? 'Upload...' : 'Modifier la couverture'}
             </span>
             <input
+              id="cover-photo-upload-input"
               type="file"
               accept="image/jpeg,image/jpg,image/png,image/webp"
               onChange={handleCoverPhotoUpload}
