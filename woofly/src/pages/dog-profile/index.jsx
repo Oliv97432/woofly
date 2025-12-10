@@ -87,7 +87,8 @@ const DogProfile = () => {
             image: dog.photo_url || 'https://images.pexels.com/photos/1490908/pexels-photo-1490908.jpeg',
             imageAlt: `${dog.name} - ${dog.breed}`,
             microchip_number: dog.microchip_number,
-            notes: dog.notes
+            notes: dog.notes,
+            cover_photo_url: dog.cover_photo_url || null  // ✅ AJOUTÉ: Mapping cover photo
           };
         });
 
