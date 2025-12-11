@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Stethoscope, Syringe, Bug, Scale, Edit2 } from 'lucide-react';
+import { Stethoscope, Syringe, Bug, Edit2 } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
 
 export default function ProfileHeader({ dog, onEdit }) {
@@ -31,12 +31,14 @@ export default function ProfileHeader({ dog, onEdit }) {
         .from('reminders')
         .select('*')
         .eq('dog_id', dog.id)
-        .order('date', { ascending: false });
+        .order('due_date', { ascending: false });
 
       if (remindersError) {
-        console.error('Error loading reminders:', remindersError);
+        console.error('❌ Error loading reminders:', remindersError);
         return;
       }
+
+      console.log('✅ Reminders chargés:', reminders);
 
       // Récupérer toutes les notes avec photos (pour pesées)
       const { data: notes, error: notesError } = await supabase
@@ -46,29 +48,24 @@ export default function ProfileHeader({ dog, onEdit }) {
         .order('created_at', { ascending: false });
 
       if (notesError) {
-        console.error('Error loading notes:', notesError);
+        console.error('❌ Error loading notes:', notesError);
       }
 
-      // ⚠️ IMPORTANT : Utiliser "reminder_type" au lieu de "type"
       // Filtrer les données par reminder_type
-      const vaccinations = reminders?.filter(r => 
-        r.reminder_type === 'vaccination' || 
-        r.reminder_type === 'vaccine' ||
-        r.reminder_type === 'vaccin'
-      ) || [];
+      const vaccinations = reminders?.filter(r => {
+        const type = r.reminder_type?.toLowerCase();
+        return type === 'vaccination' || type === 'vaccine' || type === 'vaccin';
+      }) || [];
 
-      const vermifuges = reminders?.filter(r => 
-        r.reminder_type === 'vermifuge' || 
-        r.reminder_type === 'deworming' ||
-        r.reminder_type === 'worm'
-      ) || [];
+      const vermifuges = reminders?.filter(r => {
+        const type = r.reminder_type?.toLowerCase();
+        return type === 'vermifuge' || type === 'deworming' || type === 'worm';
+      }) || [];
 
-      const antiPuces = reminders?.filter(r => 
-        r.reminder_type === 'anti-puces' || 
-        r.reminder_type === 'flea-tick' || 
-        r.reminder_type === 'anti_puces' ||
-        r.reminder_type === 'flea'
-      ) || [];
+      const antiPuces = reminders?.filter(r => {
+        const type = r.reminder_type?.toLowerCase();
+        return type === 'anti-puces' || type === 'flea-tick' || type === 'anti_puces' || type === 'flea';
+      }) || [];
 
       const allTreatments = [...vermifuges, ...antiPuces];
 
@@ -91,24 +88,34 @@ export default function ProfileHeader({ dog, onEdit }) {
 
       // DEBUG - Afficher dans la console
       console.log('🐕 DEBUG PROFILEHEADER');
-      console.log('- Dog ID:', dog.id);
-      console.log('- Reminders bruts:', reminders);
-      console.log('- Notes brutes:', notes);
-      console.log('📊 DONNÉES REÇUES:', {
-        vaccinations: vaccinations,
-        treatments: allTreatments,
-        weightData: weightData
-      });
-      console.log('📈 STATISTIQUES:', {
-        'Total vaccinations': stats.totalVaccinations,
-        'Total treatments': stats.totalTreatments,
-        'Vermifuges': stats.totalVermifuges,
-        'Anti-puces': stats.totalAntiPuces,
-        'Pesées': stats.totalPesees
-      });
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.log('📌 Dog ID:', dog.id);
+      console.log('📌 Dog Name:', dog.name);
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.log('📦 REMINDERS BRUTS (' + (reminders?.length || 0) + '):', reminders);
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.log('📊 DONNÉES FILTRÉES:');
+      console.log('  💉 Vaccinations (' + vaccinations.length + '):', vaccinations);
+      console.log('  🐛 Vermifuges (' + vermifuges.length + '):', vermifuges);
+      console.log('  🦟 Anti-puces (' + antiPuces.length + '):', antiPuces);
+      console.log('  ⚖️ Pesées (' + weightData.length + '):', weightData);
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.log('📈 STATISTIQUES FINALES:');
+      console.log('  Total vaccinations:', stats.totalVaccinations);
+      console.log('  Total treatments:', stats.totalTreatments);
+      console.log('  Total vermifuges:', stats.totalVermifuges);
+      console.log('  Total anti-puces:', stats.totalAntiPuces);
+      console.log('  Total pesées:', stats.totalPesees);
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
+      // Si aucun reminder n'est trouvé
+      if (!reminders || reminders.length === 0) {
+        console.warn('⚠️ AUCUN REMINDER TROUVÉ POUR CE CHIEN !');
+        console.log('Vérifie dans Supabase que des reminders existent avec dog_id =', dog.id);
+      }
 
     } catch (error) {
-      console.error('Error in loadHealthData:', error);
+      console.error('💥 Error in loadHealthData:', error);
     } finally {
       setLoading(false);
     }
@@ -150,7 +157,7 @@ export default function ProfileHeader({ dog, onEdit }) {
       <div className="bg-yellow-50 border-b-2 border-yellow-200 p-4">
         <div className="flex items-center gap-2 mb-3">
           <Stethoscope className="w-5 h-5 text-yellow-600" />
-          <h3 className="font-bold text-yellow-800">MODE DEBUG - Ouvre la console (F12)</h3>
+          <h3 className="font-bold text-yellow-800">🐞 MODE DEBUG - Ouvre la console (F12)</h3>
         </div>
         <div className="grid grid-cols-4 gap-4">
           <div className="bg-white rounded-xl p-3 border border-yellow-200">
