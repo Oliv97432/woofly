@@ -26,62 +26,60 @@ export default function ProfileHeader({ profile, onEdit }) {
     try {
       setLoading(true);
 
-      // Récupérer tous les reminders pour ce chien
-      const { data: reminders, error: remindersError } = await supabase
-        .from('reminders')
+      // ✅ CHARGER LES VACCINATIONS depuis la table "vaccinations"
+      const { data: vaccinations, error: vaccinationsError } = await supabase
+        .from('vaccinations')
         .select('*')
         .eq('dog_id', profile.id)
-        .order('due_date', { ascending: false });
+        .order('vaccination_date', { ascending: false });
 
-      if (remindersError) {
-        console.error('❌ Error loading reminders:', remindersError);
-        return;
+      if (vaccinationsError) {
+        console.error('❌ Error loading vaccinations:', vaccinationsError);
       }
 
-      console.log('✅ Reminders chargés:', reminders);
-
-      // Récupérer toutes les notes avec photos (pour pesées)
-      const { data: notes, error: notesError } = await supabase
-        .from('notes')
+      // ✅ CHARGER LES TRAITEMENTS depuis la table "treatments"
+      const { data: treatments, error: treatmentsError } = await supabase
+        .from('treatments')
         .select('*')
         .eq('dog_id', profile.id)
-        .order('created_at', { ascending: false });
+        .order('treatment_date', { ascending: false });
 
-      if (notesError) {
-        console.error('❌ Error loading notes:', notesError);
+      if (treatmentsError) {
+        console.error('❌ Error loading treatments:', treatmentsError);
       }
 
-      // Filtrer les données par reminder_type
-      const vaccinations = reminders?.filter(r => {
-        const type = r.reminder_type?.toLowerCase();
-        return type === 'vaccination' || type === 'vaccine' || type === 'vaccin';
-      }) || [];
+      // ✅ CHARGER LES PESÉES depuis la table "weight_records"
+      const { data: weightRecords, error: weightError } = await supabase
+        .from('weight_records')
+        .select('*')
+        .eq('dog_id', profile.id)
+        .order('measurement_date', { ascending: true });
 
-      const vermifuges = reminders?.filter(r => {
-        const type = r.reminder_type?.toLowerCase();
-        return type === 'vermifuge' || type === 'deworming' || type === 'worm';
-      }) || [];
+      if (weightError) {
+        console.error('❌ Error loading weight records:', weightError);
+      }
 
-      const antiPuces = reminders?.filter(r => {
-        const type = r.reminder_type?.toLowerCase();
-        return type === 'anti-puces' || type === 'flea-tick' || type === 'anti_puces' || type === 'flea';
-      }) || [];
+      // Filtrer les traitements par type
+      const vermifuges = treatments?.filter(t => 
+        t.treatment_type === 'worm' || t.treatment_type === 'vermifuge'
+      ) || [];
+
+      const antiPuces = treatments?.filter(t => 
+        t.treatment_type === 'flea' || t.treatment_type === 'tick'
+      ) || [];
 
       const allTreatments = [...vermifuges, ...antiPuces];
 
-      // Extraire les pesées depuis les notes (si elles contiennent un poids)
-      const weightData = notes?.filter(n => n.weight || n.content?.includes('kg')) || [];
-
       // Calculer les statistiques
       const stats = {
-        vaccinations: vaccinations,
-        treatments: allTreatments,
-        weightData: weightData,
-        totalVaccinations: vaccinations.length,
+        vaccinations: vaccinations || [],
+        treatments: treatments || [],
+        weightData: weightRecords || [],
+        totalVaccinations: vaccinations?.length || 0,
         totalTreatments: allTreatments.length,
         totalVermifuges: vermifuges.length,
         totalAntiPuces: antiPuces.length,
-        totalPesees: weightData.length
+        totalPesees: weightRecords?.length || 0
       };
 
       setHealthStats(stats);
@@ -92,13 +90,15 @@ export default function ProfileHeader({ profile, onEdit }) {
       console.log('📌 Dog ID:', profile.id);
       console.log('📌 Dog Name:', profile.name);
       console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-      console.log('📦 REMINDERS BRUTS (' + (reminders?.length || 0) + '):', reminders);
+      console.log('📦 VACCINATIONS (' + (vaccinations?.length || 0) + '):', vaccinations);
+      console.log('📦 TREATMENTS (' + (treatments?.length || 0) + '):', treatments);
+      console.log('📦 WEIGHT RECORDS (' + (weightRecords?.length || 0) + '):', weightRecords);
       console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
       console.log('📊 DONNÉES FILTRÉES:');
-      console.log('  💉 Vaccinations (' + vaccinations.length + '):', vaccinations);
+      console.log('  💉 Vaccinations (' + stats.totalVaccinations + '):', vaccinations);
       console.log('  🐛 Vermifuges (' + vermifuges.length + '):', vermifuges);
       console.log('  🦟 Anti-puces (' + antiPuces.length + '):', antiPuces);
-      console.log('  ⚖️ Pesées (' + weightData.length + '):', weightData);
+      console.log('  ⚖️ Pesées (' + stats.totalPesees + '):', weightRecords);
       console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
       console.log('📈 STATISTIQUES FINALES:');
       console.log('  Total vaccinations:', stats.totalVaccinations);
@@ -108,10 +108,13 @@ export default function ProfileHeader({ profile, onEdit }) {
       console.log('  Total pesées:', stats.totalPesees);
       console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
-      // Si aucun reminder n'est trouvé
-      if (!reminders || reminders.length === 0) {
-        console.warn('⚠️ AUCUN REMINDER TROUVÉ POUR CE CHIEN !');
-        console.log('Vérifie dans Supabase que des reminders existent avec dog_id =', profile.id);
+      // Si aucune donnée n'est trouvée
+      if ((!vaccinations || vaccinations.length === 0) && 
+          (!treatments || treatments.length === 0) &&
+          (!weightRecords || weightRecords.length === 0)) {
+        console.warn('⚠️ AUCUNE DONNÉE TROUVÉE POUR CE CHIEN !');
+        console.log('Tables vérifiées : vaccinations, treatments, weight_records');
+        console.log('Dog ID :', profile.id);
       }
 
     } catch (error) {
