@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Stethoscope, Syringe, Bug, Edit2 } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
 
-export default function ProfileHeader({ dog, onEdit }) {
+export default function ProfileHeader({ profile, onEdit }) {
   const [healthStats, setHealthStats] = useState({
     vaccinations: [],
     treatments: [],
@@ -17,10 +17,10 @@ export default function ProfileHeader({ dog, onEdit }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (dog?.id) {
+    if (profile?.id) {
       loadHealthData();
     }
-  }, [dog?.id]);
+  }, [profile?.id]);
 
   const loadHealthData = async () => {
     try {
@@ -30,7 +30,7 @@ export default function ProfileHeader({ dog, onEdit }) {
       const { data: reminders, error: remindersError } = await supabase
         .from('reminders')
         .select('*')
-        .eq('dog_id', dog.id)
+        .eq('dog_id', profile.id)
         .order('due_date', { ascending: false });
 
       if (remindersError) {
@@ -44,7 +44,7 @@ export default function ProfileHeader({ dog, onEdit }) {
       const { data: notes, error: notesError } = await supabase
         .from('notes')
         .select('*')
-        .eq('dog_id', dog.id)
+        .eq('dog_id', profile.id)
         .order('created_at', { ascending: false });
 
       if (notesError) {
@@ -89,8 +89,8 @@ export default function ProfileHeader({ dog, onEdit }) {
       // DEBUG - Afficher dans la console
       console.log('🐕 DEBUG PROFILEHEADER');
       console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-      console.log('📌 Dog ID:', dog.id);
-      console.log('📌 Dog Name:', dog.name);
+      console.log('📌 Dog ID:', profile.id);
+      console.log('📌 Dog Name:', profile.name);
       console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
       console.log('📦 REMINDERS BRUTS (' + (reminders?.length || 0) + '):', reminders);
       console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
@@ -111,7 +111,7 @@ export default function ProfileHeader({ dog, onEdit }) {
       // Si aucun reminder n'est trouvé
       if (!reminders || reminders.length === 0) {
         console.warn('⚠️ AUCUN REMINDER TROUVÉ POUR CE CHIEN !');
-        console.log('Vérifie dans Supabase que des reminders existent avec dog_id =', dog.id);
+        console.log('Vérifie dans Supabase que des reminders existent avec dog_id =', profile.id);
       }
 
     } catch (error) {
@@ -143,7 +143,7 @@ export default function ProfileHeader({ dog, onEdit }) {
     }
   };
 
-  if (!dog) {
+  if (!profile) {
     return (
       <div className="bg-white rounded-3xl shadow-sm p-6 mb-6">
         <p className="text-gray-500">Sélectionnez un chien</p>
@@ -185,10 +185,10 @@ export default function ProfileHeader({ dog, onEdit }) {
           <div className="flex items-center gap-4">
             {/* Photo du chien */}
             <div className="w-20 h-20 rounded-full overflow-hidden bg-white/20 flex items-center justify-center">
-              {dog.photo_url ? (
+              {profile.image ? (
                 <img 
-                  src={dog.photo_url} 
-                  alt={dog.name}
+                  src={profile.image} 
+                  alt={profile.name}
                   className="w-full h-full object-cover"
                 />
               ) : (
@@ -198,9 +198,9 @@ export default function ProfileHeader({ dog, onEdit }) {
 
             {/* Infos du chien */}
             <div>
-              <h1 className="text-3xl font-bold mb-1">{dog.name}</h1>
+              <h1 className="text-3xl font-bold mb-1">{profile.name}</h1>
               <p className="text-blue-100">
-                {dog.breed || 'Race non spécifiée'} • {dog.gender === 'male' ? '♂ Mâle' : '♀ Femelle'}
+                {profile.breed || 'Race non spécifiée'} • {profile.gender === 'male' ? '♂ Mâle' : '♀ Femelle'}
               </p>
             </div>
           </div>
@@ -229,29 +229,29 @@ export default function ProfileHeader({ dog, onEdit }) {
             <div>
               <p className="text-sm text-gray-500">Race</p>
               <p className="font-semibold text-gray-900 flex items-center gap-2">
-                🐕 {dog.breed || 'Non spécifiée'}
+                🐕 {profile.breed || 'Non spécifiée'}
               </p>
             </div>
 
             <div>
               <p className="text-sm text-gray-500">Sexe</p>
               <p className="font-semibold text-gray-900 flex items-center gap-2">
-                {dog.gender === 'male' ? '♂' : '♀'} {dog.gender === 'male' ? 'male' : 'female'}
+                {profile.gender === 'male' ? '♂' : '♀'} {profile.gender === 'male' ? 'Mâle' : 'Femelle'}
               </p>
             </div>
 
             <div>
               <p className="text-sm text-gray-500">Âge</p>
               <p className="font-semibold text-gray-900 flex items-center gap-2">
-                🎂 {calculateAge(dog.birthday)}
+                🎂 {profile.age || calculateAge(profile.birthday)}
               </p>
             </div>
 
-            {dog.weight && (
+            {profile.weight && (
               <div>
                 <p className="text-sm text-gray-500">Poids</p>
                 <p className="font-semibold text-gray-900 flex items-center gap-2">
-                  ⚖️ {dog.weight} kg
+                  ⚖️ {profile.weight}
                 </p>
               </div>
             )}
@@ -259,7 +259,7 @@ export default function ProfileHeader({ dog, onEdit }) {
             <div>
               <p className="text-sm text-gray-500">Statut</p>
               <p className="font-semibold text-gray-900 flex items-center gap-2">
-                {dog.is_sterilized ? '💚 Stérilisé' : '🔵 Non stérilisé'}
+                {profile.sterilized === 'Stérilisé' ? '💚 Stérilisé' : '🔵 Non stérilisé'}
               </p>
             </div>
           </div>
