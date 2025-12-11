@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Stethoscope, Syringe, Bug, Scale, Edit2 } from 'lucide-react';
-import { supabase } from '../../lib/supabase';
+import { supabase } from '../../../lib/supabase';
 
 export default function ProfileHeader({ dog, onEdit }) {
   const [healthStats, setHealthStats] = useState({
@@ -49,17 +49,25 @@ export default function ProfileHeader({ dog, onEdit }) {
         console.error('Error loading notes:', notesError);
       }
 
-      // Filtrer les données par type
+      // ⚠️ IMPORTANT : Utiliser "reminder_type" au lieu de "type"
+      // Filtrer les données par reminder_type
       const vaccinations = reminders?.filter(r => 
-        r.type === 'vaccination' || r.type === 'vaccine'
+        r.reminder_type === 'vaccination' || 
+        r.reminder_type === 'vaccine' ||
+        r.reminder_type === 'vaccin'
       ) || [];
 
       const vermifuges = reminders?.filter(r => 
-        r.type === 'vermifuge' || r.type === 'deworming'
+        r.reminder_type === 'vermifuge' || 
+        r.reminder_type === 'deworming' ||
+        r.reminder_type === 'worm'
       ) || [];
 
       const antiPuces = reminders?.filter(r => 
-        r.type === 'anti-puces' || r.type === 'flea-tick' || r.type === 'anti_puces'
+        r.reminder_type === 'anti-puces' || 
+        r.reminder_type === 'flea-tick' || 
+        r.reminder_type === 'anti_puces' ||
+        r.reminder_type === 'flea'
       ) || [];
 
       const allTreatments = [...vermifuges, ...antiPuces];
@@ -94,8 +102,8 @@ export default function ProfileHeader({ dog, onEdit }) {
       console.log('📈 STATISTIQUES:', {
         'Total vaccinations': stats.totalVaccinations,
         'Total treatments': stats.totalTreatments,
-        'Vermifuges (type=worm)': stats.totalVermifuges,
-        'Anti-puces (type=flea/tick)': stats.totalAntiPuces,
+        'Vermifuges': stats.totalVermifuges,
+        'Anti-puces': stats.totalAntiPuces,
         'Pesées': stats.totalPesees
       });
 
