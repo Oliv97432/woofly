@@ -37,31 +37,6 @@ const ImportantContacts = () => {
       certification: "Ordre National des Vétérinaires"
     },
     {
-      id: 2,
-      category: 'emergency',
-      name: "Clinique Vétérinaire d'Urgence Paris",
-      specialization: "Urgences 24h/24",
-      phone: "+33 1 48 93 72 35",
-      address: "89 Avenue de la République, 75011 Paris",
-      hours: "24h/24, 7j/7",
-      status: "24/7",
-      rating: 4.6,
-      reviewCount: 342,
-      website: "https://example.com"
-    },
-    {
-      id: 3,
-      category: 'emergency',
-      name: "SOS Vétérinaires Île-de-France",
-      specialization: "Service d'urgence mobile",
-      phone: "+33 1 47 55 47 00",
-      address: "Service à domicile",
-      hours: "24h/24, 7j/7",
-      status: "24/7",
-      rating: 4.5,
-      reviewCount: 289
-    },
-    {
       id: 4,
       category: 'clinic',
       name: "Clinique Vétérinaire du Parc",
@@ -128,13 +103,6 @@ const ImportantContacts = () => {
       description: "Vétérinaire personnel de confiance",
       icon: "Stethoscope",
       count: contacts?.filter((c) => c?.category === 'personal')?.length
-    },
-    {
-      id: 'emergency',
-      title: "Urgences",
-      description: "Services d'urgence 24h/24",
-      icon: "AlertCircle",
-      count: contacts?.filter((c) => c?.category === 'emergency')?.length
     },
     {
       id: 'clinic',
