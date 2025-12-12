@@ -229,9 +229,9 @@ const EmergencyBanner = ({ onEmergencyCall }) => {
                   setTempSOS(emergencyNumbers.sos_animals);
                   setShowSOSModal(true);
                 }}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                className="text-sm text-blue-600 hover:text-blue-800 font-semibold"
               >
-                <Icon name="Edit" size={16} className="text-gray-600" />
+                ✏️ Modifier
               </button>
             </div>
             <h3 className="font-bold text-gray-900 mb-1">SOS Animaux en Danger</h3>
@@ -263,9 +263,9 @@ const EmergencyBanner = ({ onEmergencyCall }) => {
                   setTempPoison(emergencyNumbers.poison_center);
                   setShowPoisonModal(true);
                 }}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                className="text-sm text-blue-600 hover:text-blue-800 font-semibold"
               >
-                <Icon name="Edit" size={16} className="text-gray-600" />
+                ✏️ Modifier
               </button>
             </div>
             <h3 className="font-bold text-gray-900 mb-1">Centre Anti-Poison Animal</h3>
