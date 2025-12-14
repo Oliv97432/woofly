@@ -12,7 +12,7 @@ import ForumHub from './pages/forum-hub';
 import MultiProfileManagement from './pages/multi-profile-management';
 import Register from './pages/register';
 import UserProfile from './pages/UserProfile';
-import Settings from './pages/settings';                          // ✅ AJOUTÉ
+import Settings from './pages/settings';
 import CGU from './pages/CGU';
 import MentionsLegales from './pages/MentionsLegales';
 import PolitiqueConfidentialite from './pages/PolitiqueConfidentialite';
@@ -30,13 +30,14 @@ const Routes = () => {
         <Route path="/important-contacts" element={<ImportantContacts />} />
         <Route path="/forum-discussion" element={<ForumDiscussion />} />
         <Route path="/login" element={<Login />} />
-        <Route path="/dog-profile" element={<DogProfile />} />
+        {/* ✅ CORRIGÉ: Ajout du paramètre :id */}
+        <Route path="/dog-profile/:id" element={<DogProfile />} />
         <Route path="/daily-tip" element={<DailyTip />} />
         <Route path="/forum-hub" element={<ForumHub />} />
         <Route path="/multi-profile-management" element={<MultiProfileManagement />} />
         <Route path="/register" element={<Register />} />
         <Route path="/user-profile" element={<UserProfile />} />
-        <Route path="/settings" element={<Settings />} />           {/* ✅ AJOUTÉ */}
+        <Route path="/settings" element={<Settings />} />
         
         {/* Pages légales */}
         <Route path="/cgu" element={<CGU />} />
