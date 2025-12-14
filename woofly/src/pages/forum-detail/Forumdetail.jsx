@@ -1,17 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { 
-  ArrowLeft, Plus, Search, Filter, TrendingUp, 
-  Clock, MessageCircle, Heart, Eye
-} from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
+import { MessageSquare, Heart, Eye, Pin, Award, Plus, Search, Filter } from 'lucide-react';
 import TabNavigation from '../../components/TabNavigation';
+import UserMenu from '../../components/UserMenu';
 import Footer from '../../components/Footer';
 
-/**
- * Page ForumDetail - Affiche tous les posts d'un forum spécifique
- */
 const ForumDetail = () => {
   const { slug } = useParams();
   const { user } = useAuth();
@@ -19,78 +14,66 @@ const ForumDetail = () => {
   
   const [forum, setForum] = useState(null);
   const [posts, setPosts] = useState([]);
-  const [filteredPosts, setFilteredPosts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isMember, setIsMember] = useState(false);
+  const [showCreatePost, setShowCreatePost] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [sortBy, setSortBy] = useState('recent'); // recent, popular, discussed
-  const [categoryFilter, setCategoryFilter] = useState('');
-
-  const categories = [
-    { value: '', label: 'Toutes' },
-    { value: 'Santé', label: 'Santé' },
-    { value: 'Nutrition', label: 'Nutrition' },
-    { value: 'Comportement', label: 'Comportement' },
-    { value: 'Education', label: 'Éducation' },
-    { value: 'Toilettage', label: 'Toilettage' },
-    { value: 'Activités', label: 'Activités' },
-    { value: 'Autre', label: 'Autre' }
-  ];
-
-  // Charger le forum et ses posts
+  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [sortBy, setSortBy] = useState('recent'); // recent, popular, trending
+  
+  // Chargement du forum
   useEffect(() => {
-    fetchForumData();
-  }, [slug]);
-
-  // Filtrer et trier
+    fetchForum();
+    if (user) {
+      checkMembership();
+    }
+  }, [slug, user]);
+  
+  // Chargement des posts
   useEffect(() => {
-    let filtered = [...posts];
-    
-    // Filtre par recherche
-    if (searchQuery.trim()) {
-      filtered = filtered.filter(post =>
-        post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        post.content.toLowerCase().includes(searchQuery.toLowerCase())
-      );
+    if (forum) {
+      fetchPosts();
     }
-    
-    // Filtre par catégorie
-    if (categoryFilter) {
-      filtered = filtered.filter(post => post.category === categoryFilter);
-    }
-    
-    // Tri
-    switch (sortBy) {
-      case 'popular':
-        filtered.sort((a, b) => b.like_count - a.like_count);
-        break;
-      case 'discussed':
-        filtered.sort((a, b) => b.comment_count - a.comment_count);
-        break;
-      case 'recent':
-      default:
-        filtered.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-        break;
-    }
-    
-    setFilteredPosts(filtered);
-  }, [posts, searchQuery, sortBy, categoryFilter]);
-
-  const fetchForumData = async () => {
-    setLoading(true);
-    
+  }, [forum, selectedCategory, sortBy]);
+  
+  const fetchForum = async () => {
     try {
-      // 1. Charger le forum
-      const { data: forumData, error: forumError } = await supabase
+      const { data, error } = await supabase
         .from('forums')
         .select('*')
         .eq('slug', slug)
+        .eq('is_active', true)
         .single();
       
-      if (forumError) throw forumError;
-      setForum(forumData);
+      if (error) throw error;
+      setForum(data);
+    } catch (error) {
+      console.error('Erreur chargement forum:', error);
+      navigate('/forum-hub');
+    }
+  };
+  
+  const checkMembership = async () => {
+    if (!forum || !user) return;
+    
+    try {
+      const { data } = await supabase
+        .from('forum_memberships')
+        .select('id')
+        .eq('forum_id', forum.id)
+        .eq('user_id', user.id)
+        .maybeSingle();
       
-      // 2. Charger les posts du forum
-      const { data: postsData, error: postsError } = await supabase
+      setIsMember(!!data);
+    } catch (error) {
+      console.error('Erreur vérification membre:', error);
+    }
+  };
+  
+  const fetchPosts = async () => {
+    setLoading(true);
+    try {
+      let query = supabase
         .from('forum_posts')
         .select(`
           *,
@@ -98,275 +81,492 @@ const ForumDetail = () => {
             id,
             email,
             raw_user_meta_data
+          ),
+          images:forum_post_images (
+            image_url,
+            caption
           )
         `)
-        .eq('forum_id', forumData.id)
-        .order('created_at', { ascending: false });
+        .eq('forum_id', forum.id);
       
-      if (postsError) throw postsError;
+      // Filtre par catégorie
+      if (selectedCategory !== 'all') {
+        query = query.eq('category', selectedCategory);
+      }
       
-      // Formater les posts avec nom d'auteur
-      const formattedPosts = postsData.map(post => ({
-        ...post,
-        authorName: post.author?.raw_user_meta_data?.full_name || 
-                    post.author?.email?.split('@')[0] || 
-                    'Utilisateur'
-      }));
+      // Tri
+      if (sortBy === 'recent') {
+        query = query.order('created_at', { ascending: false });
+      } else if (sortBy === 'popular') {
+        query = query.order('like_count', { ascending: false });
+      } else if (sortBy === 'trending') {
+        query = query.order('view_count', { ascending: false });
+      }
       
-      setPosts(formattedPosts);
+      const { data, error } = await query;
       
+      if (error) throw error;
+      setPosts(data || []);
     } catch (error) {
-      console.error('Erreur chargement forum:', error);
-      alert('❌ Forum introuvable');
-      navigate('/forum-hub');
+      console.error('Erreur chargement posts:', error);
     } finally {
       setLoading(false);
     }
   };
-
-  const formatTimeAgo = (dateString) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffMs = now - date;
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMs / 3600000);
-    const diffDays = Math.floor(diffMs / 86400000);
+  
+  const handleJoinForum = async () => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
     
-    if (diffMins < 1) return 'À l\'instant';
-    if (diffMins < 60) return `Il y a ${diffMins} min`;
-    if (diffHours < 24) return `Il y a ${diffHours}h`;
-    if (diffDays < 7) return `Il y a ${diffDays}j`;
-    return date.toLocaleDateString('fr-FR');
+    try {
+      const { error } = await supabase
+        .from('forum_memberships')
+        .insert({
+          forum_id: forum.id,
+          user_id: user.id
+        });
+      
+      if (error) throw error;
+      
+      setIsMember(true);
+      // Rafraîchir le compteur de membres
+      fetchForum();
+    } catch (error) {
+      console.error('Erreur rejoindre forum:', error);
+      alert('❌ Erreur lors de l\'inscription au forum');
+    }
   };
-
-  if (loading) {
+  
+  const handleLeaveForum = async () => {
+    if (!confirm('Êtes-vous sûr de vouloir quitter ce forum ?')) return;
+    
+    try {
+      const { error } = await supabase
+        .from('forum_memberships')
+        .delete()
+        .eq('forum_id', forum.id)
+        .eq('user_id', user.id);
+      
+      if (error) throw error;
+      
+      setIsMember(false);
+      fetchForum();
+    } catch (error) {
+      console.error('Erreur quitter forum:', error);
+    }
+  };
+  
+  const handlePostClick = (postId) => {
+    navigate(`/post/${postId}`);
+  };
+  
+  if (!forum) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-          <p className="mt-4 text-muted-foreground">Chargement...</p>
-        </div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
       </div>
     );
   }
-
-  if (!forum) return null;
-
+  
+  const categories = ['all', 'Santé', 'Comportement', 'Nutrition', 'Éducation', 'Toilettage'];
+  
+  const filteredPosts = posts.filter(post =>
+    searchQuery === '' ||
+    post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    post.content.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+  
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="min-h-screen bg-background">
       {/* Header */}
       <div className="sticky top-0 z-50 bg-card border-b border-border shadow-soft">
         <div className="max-w-screen-xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => navigate('/forum-hub')}
-                className="p-2 hover:bg-muted rounded-lg transition-smooth"
-              >
-                <ArrowLeft size={24} className="text-foreground" />
-              </button>
-              <div>
-                <h1 className="text-2xl font-heading font-semibold text-foreground">
-                  Forum {forum.name}
-                </h1>
-                <p className="text-sm text-muted-foreground">
-                  {forum.member_count} membres • {forum.post_count} discussions
-                </p>
-              </div>
-            </div>
-            
-            {user && (
-              <button
-                onClick={() => navigate('/create-discussion', { state: { forumId: forum.id } })}
-                className="px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-smooth flex items-center gap-2"
-              >
-                <Plus size={18} />
-                <span className="hidden sm:inline">Nouvelle discussion</span>
-              </button>
-            )}
+            <button
+              onClick={() => navigate('/forum-hub')}
+              className="text-muted-foreground hover:text-foreground"
+            >
+              ← Retour
+            </button>
+            <UserMenu />
           </div>
         </div>
       </div>
-
+      
       <TabNavigation />
-
-      {/* Main content */}
-      <main className="main-content flex-1">
+      
+      <main className="main-content">
         <div className="max-w-screen-xl mx-auto px-4 py-6">
           
-          {/* Cover image + description */}
-          <div className="bg-card rounded-2xl border border-border overflow-hidden mb-6">
-            <div 
-              className="h-48 bg-cover bg-center relative"
-              style={{ backgroundImage: `url(${forum.cover_image_url})` }}
-            >
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-              <div className="absolute bottom-4 left-4 right-4 text-white">
-                <h2 className="text-2xl font-heading font-bold mb-1">{forum.name}</h2>
-                <p className="text-white/90">{forum.description}</p>
+          {/* Cover du forum */}
+          <div className="relative h-64 rounded-3xl overflow-hidden mb-6">
+            <img
+              src={forum.cover_image_url}
+              alt={forum.name}
+              className="w-full h-full object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent"></div>
+            <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
+              <h1 className="text-3xl font-heading font-bold mb-2">{forum.name}</h1>
+              <p className="text-white/90">{forum.description}</p>
+              <div className="flex items-center gap-6 mt-4 text-sm">
+                <span>{forum.member_count?.toLocaleString()} membres</span>
+                <span>{forum.post_count?.toLocaleString()} posts</span>
               </div>
             </div>
           </div>
-
-          {/* Filtres et recherche */}
-          <div className="bg-card rounded-2xl border border-border p-4 mb-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              
-              {/* Recherche */}
+          
+          {/* Actions */}
+          <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+            <div className="flex items-center gap-3">
+              {isMember ? (
+                <>
+                  <button
+                    onClick={() => setShowCreatePost(true)}
+                    className="px-4 py-2 bg-primary text-primary-foreground rounded-xl font-medium hover:bg-primary/90 transition-smooth flex items-center gap-2"
+                  >
+                    <Plus size={18} />
+                    Créer un post
+                  </button>
+                  <button
+                    onClick={handleLeaveForum}
+                    className="px-4 py-2 border-2 border-border rounded-xl font-medium hover:bg-muted transition-smooth"
+                  >
+                    Membre
+                  </button>
+                </>
+              ) : (
+                <button
+                  onClick={handleJoinForum}
+                  className="px-6 py-2 bg-primary text-primary-foreground rounded-xl font-medium hover:bg-primary/90 transition-smooth"
+                >
+                  Rejoindre le forum
+                </button>
+              )}
+            </div>
+            
+            {/* Tri */}
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setSortBy('recent')}
+                className={`px-4 py-2 rounded-xl text-sm font-medium transition-smooth ${
+                  sortBy === 'recent'
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-card border border-border hover:bg-muted'
+                }`}
+              >
+                Récents
+              </button>
+              <button
+                onClick={() => setSortBy('popular')}
+                className={`px-4 py-2 rounded-xl text-sm font-medium transition-smooth ${
+                  sortBy === 'popular'
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-card border border-border hover:bg-muted'
+                }`}
+              >
+                Populaires
+              </button>
+              <button
+                onClick={() => setSortBy('trending')}
+                className={`px-4 py-2 rounded-xl text-sm font-medium transition-smooth ${
+                  sortBy === 'trending'
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-card border border-border hover:bg-muted'
+                }`}
+              >
+                Tendances
+              </button>
+            </div>
+          </div>
+          
+          {/* Recherche et filtres */}
+          <div className="flex flex-wrap gap-4 mb-6">
+            <div className="flex-1 min-w-[300px]">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={20} />
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Rechercher..."
-                  className="w-full pl-10 pr-4 py-2 border border-border rounded-lg bg-card focus:outline-none focus:ring-2 focus:ring-primary"
+                  placeholder="Rechercher un post..."
+                  className="w-full pl-10 pr-4 py-3 bg-card border border-border rounded-xl focus:ring-2 focus:ring-primary"
                 />
               </div>
-
-              {/* Tri */}
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-                className="px-4 py-2 border border-border rounded-lg bg-card focus:outline-none focus:ring-2 focus:ring-primary"
-              >
-                <option value="recent">Plus récent</option>
-                <option value="popular">Plus populaire</option>
-                <option value="discussed">Plus commenté</option>
-              </select>
-
-              {/* Catégorie */}
-              <select
-                value={categoryFilter}
-                onChange={(e) => setCategoryFilter(e.target.value)}
-                className="px-4 py-2 border border-border rounded-lg bg-card focus:outline-none focus:ring-2 focus:ring-primary"
-              >
-                {categories.map(cat => (
-                  <option key={cat.value} value={cat.value}>{cat.label}</option>
-                ))}
-              </select>
             </div>
-          </div>
-
-          {/* Stats rapides */}
-          <div className="grid grid-cols-3 gap-4 mb-6">
-            <div className="bg-card rounded-xl border border-border p-4 text-center">
-              <p className="text-2xl font-bold text-primary">{posts.length}</p>
-              <p className="text-sm text-muted-foreground">Discussions</p>
-            </div>
-            <div className="bg-card rounded-xl border border-border p-4 text-center">
-              <p className="text-2xl font-bold text-primary">
-                {posts.reduce((sum, p) => sum + p.comment_count, 0)}
-              </p>
-              <p className="text-sm text-muted-foreground">Commentaires</p>
-            </div>
-            <div className="bg-card rounded-xl border border-border p-4 text-center">
-              <p className="text-2xl font-bold text-primary">
-                {posts.reduce((sum, p) => sum + p.like_count, 0)}
-              </p>
-              <p className="text-sm text-muted-foreground">Likes</p>
-            </div>
-          </div>
-
-          {/* Liste des posts */}
-          <div className="space-y-4">
-            {filteredPosts.length === 0 ? (
-              <div className="bg-card rounded-2xl border border-border p-12 text-center">
-                <MessageCircle size={48} className="mx-auto text-muted-foreground mb-3" />
-                <h3 className="text-lg font-semibold text-foreground mb-2">
-                  {searchQuery || categoryFilter ? 'Aucun résultat' : 'Aucune discussion'}
-                </h3>
-                <p className="text-muted-foreground mb-4">
-                  {searchQuery || categoryFilter 
-                    ? 'Essayez de modifier vos filtres' 
-                    : 'Soyez le premier à lancer une discussion !'}
-                </p>
-                {user && !searchQuery && !categoryFilter && (
-                  <button
-                    onClick={() => navigate('/create-discussion', { state: { forumId: forum.id } })}
-                    className="px-6 py-2 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-smooth"
-                  >
-                    Créer une discussion
-                  </button>
-                )}
-              </div>
-            ) : (
-              filteredPosts.map(post => (
-                <div
-                  key={post.id}
-                  onClick={() => navigate(`/discussion/${post.id}`)}
-                  className="bg-card rounded-2xl border border-border p-6 hover:shadow-lg transition-smooth cursor-pointer"
+            
+            <div className="flex gap-2 overflow-x-auto">
+              {categories.map((cat) => (
+                <button
+                  key={cat}
+                  onClick={() => setSelectedCategory(cat)}
+                  className={`px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-smooth ${
+                    selectedCategory === cat
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-card border border-border hover:bg-muted'
+                  }`}
                 >
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex-1">
-                      {/* Badges */}
-                      <div className="flex items-center gap-2 mb-2">
-                        {post.is_question && (
-                          <span className="px-2 py-1 bg-orange-100 text-orange-700 text-xs rounded-full font-medium">
-                            ❓ Question
-                          </span>
-                        )}
-                        {post.is_pinned && (
-                          <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full font-medium">
-                            📌 Épinglé
-                          </span>
-                        )}
-                        {post.is_expert_post && (
-                          <span className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full font-medium">
-                            ✓ Expert
-                          </span>
-                        )}
-                        {post.category && (
-                          <span className="px-2 py-1 bg-primary/10 text-primary text-xs rounded-full font-medium">
-                            {post.category}
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Titre */}
-                      <h3 className="text-lg font-heading font-semibold text-foreground mb-2 hover:text-primary transition-colors">
-                        {post.title}
-                      </h3>
-
-                      {/* Preview contenu */}
-                      <p className="text-muted-foreground text-sm line-clamp-2 mb-3">
-                        {post.content}
-                      </p>
-
-                      {/* Meta */}
-                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                        <span className="font-medium">{post.authorName}</span>
-                        <span className="flex items-center gap-1">
-                          <Clock size={14} />
-                          {formatTimeAgo(post.created_at)}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Stats */}
-                  <div className="flex items-center gap-6 pt-3 border-t border-border">
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <Heart size={16} />
-                      <span className="text-sm">{post.like_count}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <MessageCircle size={16} />
-                      <span className="text-sm">{post.comment_count}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <Eye size={16} />
-                      <span className="text-sm">{post.view_count}</span>
-                    </div>
-                  </div>
-                </div>
-              ))
-            )}
+                  {cat === 'all' ? 'Toutes' : cat}
+                </button>
+              ))}
+            </div>
           </div>
+          
+          {/* Liste des posts */}
+          {loading ? (
+            <div className="flex justify-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+            </div>
+          ) : filteredPosts.length > 0 ? (
+            <div className="space-y-4">
+              {filteredPosts.map((post) => (
+                <PostCard key={post.id} post={post} onClick={() => handlePostClick(post.id)} />
+              ))}
+            </div>
+          ) : (
+            <div className="bg-card rounded-3xl p-12 text-center border border-border">
+              <p className="text-muted-foreground mb-4">Aucun post trouvé</p>
+              {isMember && (
+                <button
+                  onClick={() => setShowCreatePost(true)}
+                  className="px-6 py-3 bg-primary text-primary-foreground rounded-xl font-medium hover:bg-primary/90 transition-smooth inline-flex items-center gap-2"
+                >
+                  <Plus size={18} />
+                  Créer le premier post
+                </button>
+              )}
+            </div>
+          )}
         </div>
       </main>
-
+      
       <Footer />
+      
+      {/* Modal Créer un post */}
+      {showCreatePost && (
+        <CreatePostModal
+          forumId={forum.id}
+          onClose={() => setShowCreatePost(false)}
+          onSuccess={() => {
+            setShowCreatePost(false);
+            fetchPosts();
+          }}
+        />
+      )}
+    </div>
+  );
+};
+
+// Composant PostCard
+const PostCard = ({ post, onClick }) => {
+  const authorName = post.author?.raw_user_meta_data?.full_name || 
+                     post.author?.email?.split('@')[0] || 
+                     'Utilisateur';
+  
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diff = now - date;
+    
+    const minutes = Math.floor(diff / 60000);
+    const hours = Math.floor(diff / 3600000);
+    const days = Math.floor(diff / 86400000);
+    
+    if (minutes < 60) return `Il y a ${minutes} min`;
+    if (hours < 24) return `Il y a ${hours}h`;
+    if (days < 7) return `Il y a ${days}j`;
+    return date.toLocaleDateString('fr-FR');
+  };
+  
+  return (
+    <div
+      onClick={onClick}
+      className="bg-card border border-border rounded-3xl p-6 hover:shadow-lg transition-smooth cursor-pointer"
+    >
+      <div className="flex items-start gap-4">
+        {/* Avatar */}
+        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold flex-shrink-0">
+          {authorName.charAt(0).toUpperCase()}
+        </div>
+        
+        <div className="flex-1 min-w-0">
+          {/* Header */}
+          <div className="flex items-center gap-2 mb-2">
+            <span className="font-medium text-foreground">{authorName}</span>
+            {post.is_expert_post && (
+              <Award size={16} className="text-yellow-500" title="Expert" />
+            )}
+            <span className="text-muted-foreground text-sm">•</span>
+            <span className="text-muted-foreground text-sm">{formatDate(post.created_at)}</span>
+            {post.is_pinned && (
+              <>
+                <span className="text-muted-foreground text-sm">•</span>
+                <Pin size={14} className="text-primary" title="Épinglé" />
+              </>
+            )}
+          </div>
+          
+          {/* Titre */}
+          <h3 className="text-lg font-semibold text-foreground mb-2">{post.title}</h3>
+          
+          {/* Contenu */}
+          <p className="text-muted-foreground line-clamp-2 mb-3">{post.content}</p>
+          
+          {/* Images */}
+          {post.images && post.images.length > 0 && (
+            <div className="grid grid-cols-2 gap-2 mb-3">
+              {post.images.slice(0, 2).map((img, idx) => (
+                <img
+                  key={idx}
+                  src={img.image_url}
+                  alt={img.caption || ''}
+                  className="w-full h-32 object-cover rounded-xl"
+                />
+              ))}
+            </div>
+          )}
+          
+          {/* Catégorie */}
+          {post.category && (
+            <span className="inline-block px-3 py-1 bg-primary/10 text-primary text-xs font-medium rounded-full mb-3">
+              {post.category}
+            </span>
+          )}
+          
+          {/* Stats */}
+          <div className="flex items-center gap-4 text-sm text-muted-foreground">
+            <div className="flex items-center gap-1">
+              <Heart size={16} />
+              <span>{post.like_count || 0}</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <MessageSquare size={16} />
+              <span>{post.comment_count || 0}</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <Eye size={16} />
+              <span>{post.view_count || 0}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Composant CreatePostModal (simplifié, sera détaillé dans un autre fichier)
+const CreatePostModal = ({ forumId, onClose, onSuccess }) => {
+  const { user } = useAuth();
+  const [title, setTitle] = useState('');
+  const [content, setContent] = useState('');
+  const [category, setCategory] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!title || !content) {
+      alert('❌ Titre et contenu requis');
+      return;
+    }
+    
+    setSubmitting(true);
+    try {
+      const { error } = await supabase
+        .from('forum_posts')
+        .insert({
+          forum_id: forumId,
+          user_id: user.id,
+          title,
+          content,
+          category: category || null
+        });
+      
+      if (error) throw error;
+      
+      alert('✅ Post créé avec succès !');
+      onSuccess();
+    } catch (error) {
+      console.error('Erreur création post:', error);
+      alert('❌ Erreur lors de la création du post');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+  
+  return (
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
+      <div className="bg-card rounded-3xl shadow-elevated max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-2xl font-heading font-bold">Créer un post</h2>
+          <button
+            onClick={onClose}
+            className="text-muted-foreground hover:text-foreground"
+          >
+            ✕
+          </button>
+        </div>
+        
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium mb-2">Titre *</label>
+            <input
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Donnez un titre à votre post..."
+              className="w-full px-4 py-3 border border-border rounded-xl focus:ring-2 focus:ring-primary"
+              required
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium mb-2">Catégorie</label>
+            <select
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              className="w-full px-4 py-3 border border-border rounded-xl focus:ring-2 focus:ring-primary"
+            >
+              <option value="">Sélectionner une catégorie</option>
+              <option value="Santé">Santé</option>
+              <option value="Comportement">Comportement</option>
+              <option value="Nutrition">Nutrition</option>
+              <option value="Éducation">Éducation</option>
+              <option value="Toilettage">Toilettage</option>
+            </select>
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium mb-2">Contenu *</label>
+            <textarea
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              placeholder="Partagez votre expérience, posez une question..."
+              rows={8}
+              className="w-full px-4 py-3 border border-border rounded-xl focus:ring-2 focus:ring-primary resize-none"
+              required
+            />
+          </div>
+          
+          <div className="flex gap-3">
+            <button
+              type="submit"
+              disabled={submitting}
+              className="flex-1 bg-primary text-primary-foreground py-3 rounded-xl font-semibold hover:bg-primary/90 transition-smooth disabled:bg-gray-300 disabled:cursor-not-allowed"
+            >
+              {submitting ? 'Publication...' : 'Publier'}
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-6 py-3 border-2 border-border rounded-xl font-medium hover:bg-muted transition-smooth"
+            >
+              Annuler
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 };
