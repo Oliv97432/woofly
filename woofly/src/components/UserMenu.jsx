@@ -25,11 +25,15 @@ const UserMenu = ({ dogProfiles = [], currentDog, onDogChange }) => {
   }, []);
 
   const handleDogSelect = (dog) => {
+    // Naviguer vers la page du profil du chien
+    navigate(`/dog-profile/${dog.id}`);
+    setIsOpen(false);
+    setShowDogsSubmenu(false);
+    
+    // Mettre à jour le chien actuel si onDogChange est fourni
     if (onDogChange) {
       onDogChange(dog);
     }
-    setIsOpen(false);
-    setShowDogsSubmenu(false);
   };
 
   const handleProfile = () => {
@@ -199,11 +203,17 @@ const UserMenu = ({ dogProfiles = [], currentDog, onDogChange }) => {
                                 : 'hover:bg-muted text-foreground'
                             }`}
                           >
-                            <img
-                              src={dog.image}
-                              alt={dog.name}
-                              className="w-6 h-6 rounded-full object-cover"
-                            />
+                            {dog.photo_url ? (
+                              <img
+                                src={dog.photo_url}
+                                alt={dog.name}
+                                className="w-6 h-6 rounded-full object-cover"
+                              />
+                            ) : (
+                              <div className="w-6 h-6 rounded-full bg-gradient-to-br from-green-400 to-blue-500 flex items-center justify-center text-white text-xs font-bold">
+                                {dog.name?.charAt(0)?.toUpperCase()}
+                              </div>
+                            )}
                             <span className="flex-1 text-left">{dog.name}</span>
                             {currentDog?.id === dog.id && (
                               <Icon name="Check" size={14} className="text-primary" />
