@@ -158,14 +158,14 @@ const ForumHub = () => {
     }
   ];
 
-  // Charger les profils de chiens depuis Supabase
+  // Charger les profils de chiens depuis Supabase - CORRIGÉ: 'dogs' au lieu de 'dog_profiles'
   useEffect(() => {
     const fetchDogProfiles = async () => {
       if (!user?.id) return;
       
       try {
         const { data, error } = await supabase
-          .from('dog_profiles')
+          .from('dogs')
           .select('*')
           .eq('user_id', user.id)
           .order('created_at', { ascending: true });
