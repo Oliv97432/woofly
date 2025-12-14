@@ -96,24 +96,6 @@ const DailyTip = () => {
     }
   };
 
-  // Contacts SOS
-  const sosContacts = [
-    {
-      id: 1,
-      name: 'SOS Animaux en Danger',
-      phone: '01 43 11 80 00',
-      description: 'Urgences vitales 24h/24',
-      icon: PhoneCall
-    },
-    {
-      id: 2,
-      name: 'Centre Anti-Poison Animal',
-      phone: '04 78 87 10 40',
-      description: 'Intoxications 24h/24',
-      icon: AlertCircle
-    }
-  ];
-
   // ========== EFFETS ==========
 
   useEffect(() => {
@@ -680,57 +662,6 @@ const DailyTip = () => {
                 </p>
               </button>
             )}
-          </section>
-
-          {/* ========== SOS ANIMAUX ========== */}
-          <section className="space-y-4">
-            <div>
-              <h2 className="text-xl font-heading font-semibold text-foreground mb-1">
-                SOS Animaux en Danger
-              </h2>
-              <p className="text-muted-foreground font-caption">
-                Contacts d'urgence disponibles 24h/24
-              </p>
-            </div>
-
-            <div className="bg-red-50 border-l-4 border-red-500 rounded-r-lg p-4">
-              <div className="flex items-start gap-3">
-                <AlertCircle className="text-red-500 flex-shrink-0 mt-0.5" size={24} />
-                <p className="text-sm text-red-900 font-caption">
-                  <strong>Urgence vitale :</strong> Contactez immédiatement un vétérinaire. Ne perdez pas de temps.
-                </p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {sosContacts.map((contact) => {
-                const ContactIcon = contact.icon;
-                return (
-                  <div key={contact.id} className="bg-card border-2 border-red-200 rounded-lg p-6">
-                    <div className="flex items-start gap-4 mb-4">
-                      <div className="w-12 h-12 bg-red-500 text-white rounded-lg flex items-center justify-center flex-shrink-0">
-                        <ContactIcon size={24} />
-                      </div>
-                      <div className="flex-1">
-                        <h3 className="font-heading font-semibold text-foreground mb-1">{contact.name}</h3>
-                        <p className="text-sm text-muted-foreground font-caption mb-3">{contact.description}</p>
-                        <a href={`tel:${contact.phone}`} className="flex items-center gap-2 text-primary font-semibold hover:underline">
-                          <Phone size={18} />
-                          {contact.phone}
-                        </a>
-                      </div>
-                    </div>
-                    <a
-                      href={`tel:${contact.phone.replace(/\s/g, '')}`}
-                      className="w-full bg-red-500 text-white py-3 rounded-lg font-medium text-center block hover:bg-red-600 transition-smooth"
-                    >
-                      <Phone size={18} className="inline mr-2" />
-                      Appeler maintenant
-                    </a>
-                  </div>
-                );
-              })}
-            </div>
           </section>
 
         </div>
