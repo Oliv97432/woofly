@@ -9,6 +9,8 @@ import Login from './pages/login';
 import DogProfile from './pages/dog-profile';
 import DailyTip from './pages/daily-tip';
 import ForumHub from './pages/forum-hub';
+import ForumDetail from './pages/forum-detail';        // ✅ AJOUTÉ
+import PostDetail from './pages/post-detail';          // ✅ AJOUTÉ
 import MultiProfileManagement from './pages/multi-profile-management';
 import Register from './pages/register';
 import UserProfile from './pages/UserProfile';
@@ -30,10 +32,11 @@ const Routes = () => {
         <Route path="/important-contacts" element={<ImportantContacts />} />
         <Route path="/forum-discussion" element={<ForumDiscussion />} />
         <Route path="/login" element={<Login />} />
-        {/* ✅ CORRIGÉ: Ajout du paramètre :id */}
         <Route path="/dog-profile/:id" element={<DogProfile />} />
         <Route path="/daily-tip" element={<DailyTip />} />
         <Route path="/forum-hub" element={<ForumHub />} />
+        <Route path="/forum/:slug" element={<ForumDetail />} />        {/* ✅ AJOUTÉ */}
+        <Route path="/post/:id" element={<PostDetail />} />            {/* ✅ AJOUTÉ */}
         <Route path="/multi-profile-management" element={<MultiProfileManagement />} />
         <Route path="/register" element={<Register />} />
         <Route path="/user-profile" element={<UserProfile />} />
