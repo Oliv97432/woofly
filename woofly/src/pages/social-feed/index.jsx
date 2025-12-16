@@ -7,7 +7,6 @@ import TabNavigation from '../../components/TabNavigation';
 import UserMenu from '../../components/UserMenu';
 import Footer from '../../components/Footer';
 import CreatePostModal from '../../components/CreatePostModal';
-import CreatePostModal from '../../components/CreatePostModal';
 
 const SocialFeed = () => {
   const { user } = useAuth();
