@@ -130,7 +130,7 @@ const CreatePostModal = ({ onClose, onSuccess }) => {
       const fileName = `${user.id}/posts/${postId}_${i + 1}.${fileExt}`;
       
       const { data, error } = await supabase.storage
-        .from('social-feed-media')
+        .from('SOCIAL-FEED-MEDIA')
         .upload(fileName, photo.file, {
           cacheControl: '3600',
           upsert: false
@@ -140,7 +140,7 @@ const CreatePostModal = ({ onClose, onSuccess }) => {
       
       // Obtenir l'URL publique
       const { data: { publicUrl } } = supabase.storage
-        .from('social-feed-media')
+        .from('SOCIAL-FEED-MEDIA')
         .getPublicUrl(fileName);
       
       uploadedUrls.push(publicUrl);
