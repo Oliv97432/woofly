@@ -19,7 +19,7 @@ const TabNavigation = () => {
       id: 'community',
       label: 'Communauté',
       icon: 'Users',
-      path: '/forum-hub',
+      path: '/social-feed',                    // ← CHANGEMENT 1 : /forum-hub → /social-feed
       tooltip: 'Rejoindre la communauté'
     },
     {
@@ -36,7 +36,7 @@ const TabNavigation = () => {
     
     if (currentPath?.includes('/dog-profile') || currentPath?.includes('/multi-profile-management')) {
       setActiveTab('profile');
-    } else if (currentPath?.includes('/forum-hub') || currentPath?.includes('/forum-discussion')) {
+    } else if (currentPath?.includes('/social-feed') || currentPath?.includes('/forum-hub') || currentPath?.includes('/forum-discussion')) {  // ← CHANGEMENT 2 : Ajouté /social-feed
       setActiveTab('community');
     } else if (currentPath?.includes('/daily-tip') || currentPath?.includes('/important-contacts')) {
       setActiveTab('resources');
