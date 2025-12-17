@@ -20,6 +20,7 @@ const SocialFeed = () => {
   const [currentProfile, setCurrentProfile] = useState(null);
   const [dogProfiles, setDogProfiles] = useState([]);
   const [userAvatar, setUserAvatar] = useState(null);
+  const [userName, setUserName] = useState('');
   
   const TAGS = ['all', 'santé', 'chiot', 'alimentation', 'comportement', 'balade', 'astuce'];
   
@@ -56,31 +57,43 @@ const SocialFeed = () => {
     fetchDogProfiles();
   }, [user?.id]);
   
-  // Charger l'avatar de l'utilisateur connecté
+  // Charger l'avatar et le nom de l'utilisateur connecté
   useEffect(() => {
-    const fetchUserAvatar = async () => {
+    const fetchUserInfo = async () => {
       if (!user?.id) return;
       
       try {
-        const avatarPath = user?.user_metadata?.avatar_url;
+        // Récupérer les infos depuis auth.users
+        const { data: userData, error } = await supabase.auth.getUser();
         
-        if (avatarPath) {
-          if (avatarPath.startsWith('http')) {
-            setUserAvatar(avatarPath);
-          } else {
-            const { data } = supabase.storage
-              .from('user-avatars')
-              .getPublicUrl(avatarPath);
-            
-            setUserAvatar(data.publicUrl);
+        if (error) throw error;
+        
+        if (userData?.user) {
+          const metadata = userData.user.user_metadata || {};
+          
+          // Nom
+          setUserName(metadata.full_name || user.email?.split('@')[0] || 'Utilisateur');
+          
+          // Avatar
+          const avatarPath = metadata.avatar_url;
+          if (avatarPath) {
+            if (avatarPath.startsWith('http')) {
+              setUserAvatar(avatarPath);
+            } else {
+              const { data } = supabase.storage
+                .from('user-avatars')
+                .getPublicUrl(avatarPath);
+              
+              setUserAvatar(data.publicUrl);
+            }
           }
         }
       } catch (error) {
-        console.error('Erreur chargement avatar:', error);
+        console.error('Erreur chargement infos utilisateur:', error);
       }
     };
     
-    fetchUserAvatar();
+    fetchUserInfo();
   }, [user?.id]);
   
   // Charger les top posts
@@ -95,41 +108,38 @@ const SocialFeed = () => {
   
   const fetchTopPosts = async () => {
     try {
-      const { data, error } = await supabase
+      // Récupérer les posts
+      const { data: postsData, error: postsError } = await supabase
         .from('forum_posts')
-        .select(`
-          *,
-          author:auth.users!forum_posts_user_id_fkey (
-            id,
-            email,
-            raw_user_meta_data
-          )
-        `)
+        .select('*')
         .is('forum_id', null)
         .eq('is_hidden', false)
         .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
         .order('like_count', { ascending: false })
         .limit(5);
       
-      if (error) {
-        console.error('Erreur query top posts:', error);
-        // Fallback sans JOIN si erreur
-        const { data: fallbackData } = await supabase
-          .from('forum_posts')
-          .select('*')
-          .is('forum_id', null)
-          .eq('is_hidden', false)
-          .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
-          .order('like_count', { ascending: false })
-          .limit(5);
-        
-        const filtered = fallbackData?.filter(post => post.like_count >= 3) || [];
-        setTopPosts(filtered);
-        return;
-      }
+      if (postsError) throw postsError;
       
-      const filtered = data.filter(post => post.like_count >= 3);
-      setTopPosts(filtered);
+      // Filtrer ceux avec au moins 3 likes
+      const filtered = postsData.filter(post => post.like_count >= 3);
+      
+      // Récupérer les infos des auteurs
+      const postsWithAuthors = await Promise.all(
+        filtered.map(async (post) => {
+          const { data: authorData } = await supabase
+            .from('users')
+            .select('id, email, raw_user_meta_data')
+            .eq('id', post.user_id)
+            .single();
+          
+          return {
+            ...post,
+            author: authorData
+          };
+        })
+      );
+      
+      setTopPosts(postsWithAuthors);
     } catch (error) {
       console.error('Erreur chargement top posts:', error);
     }
@@ -138,16 +148,10 @@ const SocialFeed = () => {
   const fetchPosts = async () => {
     setLoading(true);
     try {
+      // Construire la query
       let query = supabase
         .from('forum_posts')
-        .select(`
-          *,
-          author:auth.users!forum_posts_user_id_fkey (
-            id,
-            email,
-            raw_user_meta_data
-          )
-        `)
+        .select('*')
         .is('forum_id', null)
         .eq('is_hidden', false)
         .order('created_at', { ascending: false })
@@ -157,29 +161,37 @@ const SocialFeed = () => {
         query = query.contains('tags', [selectedTag]);
       }
       
-      const { data, error } = await query;
+      const { data: postsData, error: postsError } = await query;
       
-      if (error) {
-        console.error('Erreur query posts:', error);
-        // Fallback sans JOIN si erreur
-        let fallbackQuery = supabase
-          .from('forum_posts')
-          .select('*')
-          .is('forum_id', null)
-          .eq('is_hidden', false)
-          .order('created_at', { ascending: false })
-          .limit(50);
-        
-        if (selectedTag !== 'all') {
-          fallbackQuery = fallbackQuery.contains('tags', [selectedTag]);
-        }
-        
-        const { data: fallbackData } = await fallbackQuery;
-        setPosts(fallbackData || []);
-        return;
-      }
+      if (postsError) throw postsError;
       
-      setPosts(data || []);
+      // Récupérer les infos des auteurs séparément
+      const postsWithAuthors = await Promise.all(
+        (postsData || []).map(async (post) => {
+          // Essayer d'abord avec la table users
+          let authorData = null;
+          
+          try {
+            const { data } = await supabase
+              .from('users')
+              .select('id, email, raw_user_meta_data')
+              .eq('id', post.user_id)
+              .single();
+            
+            authorData = data;
+          } catch (err) {
+            // Si pas de table users, utiliser les métadonnées auth
+            console.log('Pas de table users, fallback sur auth');
+          }
+          
+          return {
+            ...post,
+            author: authorData
+          };
+        })
+      );
+      
+      setPosts(postsWithAuthors);
     } catch (error) {
       console.error('Erreur chargement posts:', error);
     } finally {
@@ -213,7 +225,7 @@ const SocialFeed = () => {
       <TabNavigation />
       
       <main className="main-content">
-        <div className="max-w-4xl mx-auto px-4 py-6 space-y-6">
+        <div className="max-w-2xl mx-auto px-4 py-6 space-y-6">
           
           {/* Bouton Créer un post */}
           <div className="bg-card border border-border rounded-3xl p-4">
@@ -229,7 +241,7 @@ const SocialFeed = () => {
                 />
               ) : (
                 <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold">
-                  {user?.email?.charAt(0).toUpperCase()}
+                  {userName?.charAt(0).toUpperCase() || 'U'}
                 </div>
               )}
               <span className="text-muted-foreground">Quoi de neuf avec ton chien ?</span>
@@ -254,6 +266,7 @@ const SocialFeed = () => {
                     post={post} 
                     currentUserId={user?.id}
                     currentUserAvatar={userAvatar}
+                    currentUserName={userName}
                     onUpdate={fetchPosts}
                     isTopPost={true}
                   />
@@ -298,6 +311,7 @@ const SocialFeed = () => {
                   post={post} 
                   currentUserId={user?.id}
                   currentUserAvatar={userAvatar}
+                  currentUserName={userName}
                   onUpdate={fetchPosts}
                   isTopPost={false}
                 />
@@ -385,7 +399,7 @@ const Avatar = ({ src, name, size = 'md', className = '' }) => {
 };
 
 // Composant PostCard avec commentaires inline
-const PostCard = ({ post, currentUserId, currentUserAvatar, onUpdate, isTopPost }) => {
+const PostCard = ({ post, currentUserId, currentUserAvatar, currentUserName, onUpdate, isTopPost }) => {
   const [hasLiked, setHasLiked] = useState(false);
   const [localLikeCount, setLocalLikeCount] = useState(post.like_count || 0);
   const [showComments, setShowComments] = useState(false);
@@ -397,11 +411,10 @@ const PostCard = ({ post, currentUserId, currentUserAvatar, onUpdate, isTopPost 
   const [loadingImages, setLoadingImages] = useState(true);
   
   // Extraire les infos de l'auteur
-  const authorData = post.author?.[0] || post.author || null;
-  const authorName = authorData?.raw_user_meta_data?.full_name || 
-                     authorData?.email?.split('@')[0] || 
+  const authorName = post.author?.raw_user_meta_data?.full_name || 
+                     post.author?.email?.split('@')[0] || 
                      'Utilisateur';
-  const authorAvatar = getUserAvatar(authorData);
+  const authorAvatar = getUserAvatar(post.author);
   
   useEffect(() => {
     checkIfLiked();
@@ -421,7 +434,7 @@ const PostCard = ({ post, currentUserId, currentUserAvatar, onUpdate, isTopPost 
         .from('forum_post_images')
         .select('*')
         .eq('post_id', post.id)
-        .order('display_order', { ascending: true});
+        .order('display_order', { ascending: true });
       
       if (error) throw error;
       setPostImages(data || []);
@@ -452,33 +465,35 @@ const PostCard = ({ post, currentUserId, currentUserAvatar, onUpdate, isTopPost 
   const fetchComments = async () => {
     setLoadingComments(true);
     try {
-      const { data, error } = await supabase
+      const { data: commentsData, error } = await supabase
         .from('forum_comments')
-        .select(`
-          *,
-          author:auth.users!forum_comments_user_id_fkey (
-            id,
-            email,
-            raw_user_meta_data
-          )
-        `)
+        .select('*')
         .eq('post_id', post.id)
         .order('created_at', { ascending: true });
       
-      if (error) {
-        console.error('Erreur query commentaires:', error);
-        // Fallback sans JOIN
-        const { data: fallbackData } = await supabase
-          .from('forum_comments')
-          .select('*')
-          .eq('post_id', post.id)
-          .order('created_at', { ascending: true });
-        
-        setComments(fallbackData || []);
-        return;
-      }
+      if (error) throw error;
       
-      setComments(data || []);
+      // Récupérer les infos des auteurs de commentaires
+      const commentsWithAuthors = await Promise.all(
+        (commentsData || []).map(async (comment) => {
+          try {
+            const { data: authorData } = await supabase
+              .from('users')
+              .select('id, email, raw_user_meta_data')
+              .eq('id', comment.user_id)
+              .single();
+            
+            return {
+              ...comment,
+              author: authorData
+            };
+          } catch (err) {
+            return comment;
+          }
+        })
+      );
+      
+      setComments(commentsWithAuthors);
     } catch (error) {
       console.error('Erreur chargement commentaires:', error);
     } finally {
@@ -605,14 +620,14 @@ const PostCard = ({ post, currentUserId, currentUserAvatar, onUpdate, isTopPost 
         
         <p className="text-foreground whitespace-pre-wrap mb-3">{post.content}</p>
         
-        {/* Vidéo du post (si c'est un short) */}
+        {/* Vidéo du post (si c'est un short) - FORMAT VERTICAL */}
         {post.is_short && post.video_url && (
           <div className="mb-3 flex justify-center relative">
             <video
               src={post.video_url}
               controls
-              className="max-w-full rounded-2xl"
-              style={{ maxHeight: '600px' }}
+              className="rounded-2xl"
+              style={{ maxWidth: '100%', maxHeight: '700px', width: 'auto' }}
               preload="metadata"
             >
               Votre navigateur ne supporte pas la lecture de vidéos.
@@ -625,16 +640,18 @@ const PostCard = ({ post, currentUserId, currentUserAvatar, onUpdate, isTopPost 
           </div>
         )}
         
-        {/* Images du post (seulement si pas de vidéo) */}
+        {/* Images du post (seulement si pas de vidéo) - FORMAT FACEBOOK */}
         {!post.is_short && !loadingImages && postImages.length > 0 && (
-          <div className={`mb-3 ${postImages.length === 1 ? 'grid grid-cols-1' : 'grid grid-cols-2 gap-2'}`}>
+          <div className="mb-3 space-y-2">
             {postImages.map((img) => (
-              <img
-                key={img.id}
-                src={img.image_url}
-                alt={img.caption || 'Image du post'}
-                className="w-full h-64 object-cover rounded-2xl"
-              />
+              <div key={img.id} className="w-full">
+                <img
+                  src={img.image_url}
+                  alt={img.caption || 'Image du post'}
+                  className="w-full rounded-2xl"
+                  style={{ maxHeight: '600px', objectFit: 'contain', backgroundColor: '#f3f4f6' }}
+                />
+              </div>
             ))}
           </div>
         )}
@@ -691,7 +708,7 @@ const PostCard = ({ post, currentUserId, currentUserAvatar, onUpdate, isTopPost 
         <div className="mt-6 pt-6 border-t border-border space-y-4">
           {/* Formulaire nouveau commentaire */}
           <form onSubmit={handleCommentSubmit} className="flex gap-3">
-            <Avatar src={currentUserAvatar} name="M" size="md" />
+            <Avatar src={currentUserAvatar} name={currentUserName} size="md" />
             <div className="flex-1">
               <textarea
                 value={newComment}
@@ -720,11 +737,10 @@ const PostCard = ({ post, currentUserId, currentUserAvatar, onUpdate, isTopPost 
           ) : comments.length > 0 ? (
             <div className="space-y-4">
               {comments.map((comment) => {
-                const commentAuthor = comment.author?.[0] || comment.author || null;
-                const commentAuthorName = commentAuthor?.raw_user_meta_data?.full_name || 
-                                         commentAuthor?.email?.split('@')[0] || 
+                const commentAuthorName = comment.author?.raw_user_meta_data?.full_name || 
+                                         comment.author?.email?.split('@')[0] || 
                                          'Utilisateur';
-                const commentAuthorAvatar = getUserAvatar(commentAuthor);
+                const commentAuthorAvatar = getUserAvatar(comment.author);
                 
                 return (
                   <div key={comment.id} className="flex gap-3">
