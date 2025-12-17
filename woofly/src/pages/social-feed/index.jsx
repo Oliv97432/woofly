@@ -22,6 +22,8 @@ const SocialFeed = () => {
   const [userAvatar, setUserAvatar] = useState(null);
   const [userName, setUserName] = useState('');
   const [tagStats, setTagStats] = useState([]);
+  const [suggestedUsers, setSuggestedUsers] = useState([]);
+  const [followedUsers, setFollowedUsers] = useState(new Set());
   
   const TAGS = ['all', 'santé', 'chiot', 'alimentation', 'comportement', 'balade', 'astuce'];
   
@@ -101,11 +103,100 @@ const SocialFeed = () => {
   useEffect(() => {
     fetchTopPosts();
     fetchTagStats();
-  }, []);
+    fetchSuggestedUsers();
+    fetchFollowedUsers();
+  }, [user?.id]);
   
   useEffect(() => {
     fetchPosts();
   }, [selectedTag]);
+  
+  const fetchFollowedUsers = async () => {
+    if (!user?.id) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('user_follows')
+        .select('following_id')
+        .eq('follower_id', user.id);
+      
+      if (error && error.code !== 'PGRST116') {
+        console.error('Erreur chargement follows:', error);
+        return;
+      }
+      
+      if (data) {
+        setFollowedUsers(new Set(data.map(f => f.following_id)));
+      }
+    } catch (error) {
+      console.error('Erreur follows:', error);
+    }
+  };
+  
+  const fetchSuggestedUsers = async () => {
+    if (!user?.id) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .select('id, full_name, email, avatar_url')
+        .neq('id', user.id)
+        .limit(5);
+      
+      if (error) throw error;
+      
+      const usersWithDogs = await Promise.all(
+        (data || []).map(async (profile) => {
+          const { data: dogs } = await supabase
+            .from('dogs')
+            .select('breed')
+            .eq('user_id', profile.id)
+            .limit(1)
+            .single();
+          
+          return {
+            ...profile,
+            dogBreed: dogs?.breed || 'Chien'
+          };
+        })
+      );
+      
+      setSuggestedUsers(usersWithDogs);
+    } catch (error) {
+      console.error('Erreur suggestions:', error);
+    }
+  };
+  
+  const handleFollow = async (userId) => {
+    if (!user?.id) return;
+    
+    try {
+      if (followedUsers.has(userId)) {
+        await supabase
+          .from('user_follows')
+          .delete()
+          .eq('follower_id', user.id)
+          .eq('following_id', userId);
+        
+        setFollowedUsers(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(userId);
+          return newSet;
+        });
+      } else {
+        await supabase
+          .from('user_follows')
+          .insert({
+            follower_id: user.id,
+            following_id: userId
+          });
+        
+        setFollowedUsers(prev => new Set(prev).add(userId));
+      }
+    } catch (error) {
+      console.error('Erreur follow:', error);
+    }
+  };
   
   const fetchTagStats = async () => {
     try {
@@ -388,72 +479,78 @@ const SocialFeed = () => {
         {/* Sidebar droite */}
         <aside className="hidden xl:block w-72 sticky top-24 h-fit space-y-4">
           {/* Tendances */}
-          <div className="bg-card border border-border rounded-2xl p-4">
-            <h3 className="font-heading font-bold text-foreground mb-3 flex items-center gap-2">
-              <TrendingUp size={18} className="text-orange-500" />
-              Tendances
-            </h3>
-            <div className="space-y-2">
-              {tagStats.map(({ tag, count }) => (
-                <button
-                  key={tag}
-                  onClick={() => setSelectedTag(tag)}
-                  className="w-full flex items-center justify-between px-3 py-2 rounded-lg hover:bg-muted transition-smooth text-left"
-                >
-                  <span className="text-sm font-medium text-foreground">#{tag}</span>
-                  <span className="text-xs text-muted-foreground">{count} posts</span>
-                </button>
-              ))}
+          {tagStats.length > 0 && (
+            <div className="bg-card border border-border rounded-2xl p-4">
+              <h3 className="font-heading font-bold text-foreground mb-3 flex items-center gap-2">
+                <TrendingUp size={18} className="text-orange-500" />
+                Tendances
+              </h3>
+              <div className="space-y-2">
+                {tagStats.map(({ tag, count }) => (
+                  <button
+                    key={tag}
+                    onClick={() => setSelectedTag(tag)}
+                    className="w-full flex items-center justify-between px-3 py-2 rounded-lg hover:bg-muted transition-smooth text-left"
+                  >
+                    <span className="text-sm font-medium text-foreground">#{tag}</span>
+                    <span className="text-xs text-muted-foreground">{count} posts</span>
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
           
           {/* Suggestions */}
-          <div className="bg-card border border-border rounded-2xl p-4">
-            <h3 className="font-heading font-bold text-foreground mb-3 flex items-center gap-2">
-              <User size={18} />
-              À suivre
-            </h3>
-            <div className="space-y-3">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center text-white font-bold">
-                  M
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="font-medium text-sm text-foreground">Marie</div>
-                  <div className="text-xs text-muted-foreground">Golden Retriever</div>
-                </div>
-                <button className="px-3 py-1 bg-primary text-primary-foreground rounded-lg text-xs font-medium hover:bg-primary/90 transition-smooth">
-                  Suivre
-                </button>
-              </div>
-              
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center text-white font-bold">
-                  P
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="font-medium text-sm text-foreground">Pierre</div>
-                  <div className="text-xs text-muted-foreground">Labrador</div>
-                </div>
-                <button className="px-3 py-1 bg-primary text-primary-foreground rounded-lg text-xs font-medium hover:bg-primary/90 transition-smooth">
-                  Suivre
-                </button>
-              </div>
-              
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-green-500 to-teal-600 flex items-center justify-center text-white font-bold">
-                  S
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="font-medium text-sm text-foreground">Sophie</div>
-                  <div className="text-xs text-muted-foreground">Berger Allemand</div>
-                </div>
-                <button className="px-3 py-1 bg-primary text-primary-foreground rounded-lg text-xs font-medium hover:bg-primary/90 transition-smooth">
-                  Suivre
-                </button>
+          {suggestedUsers.length > 0 && (
+            <div className="bg-card border border-border rounded-2xl p-4">
+              <h3 className="font-heading font-bold text-foreground mb-3 flex items-center gap-2">
+                <User size={18} />
+                À suivre
+              </h3>
+              <div className="space-y-3">
+                {suggestedUsers.map((suggestedUser) => {
+                  const avatarUrl = suggestedUser.avatar_url 
+                    ? (suggestedUser.avatar_url.startsWith('http') 
+                        ? suggestedUser.avatar_url 
+                        : supabase.storage.from('user-avatars').getPublicUrl(suggestedUser.avatar_url).data.publicUrl)
+                    : null;
+                  
+                  const isFollowing = followedUsers.has(suggestedUser.id);
+                  const displayName = suggestedUser.full_name || suggestedUser.email?.split('@')[0] || 'Utilisateur';
+                  
+                  return (
+                    <div key={suggestedUser.id} className="flex items-center gap-3">
+                      {avatarUrl ? (
+                        <img
+                          src={avatarUrl}
+                          alt={displayName}
+                          className="w-10 h-10 rounded-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold">
+                          {displayName.charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium text-sm text-foreground truncate">{displayName}</div>
+                        <div className="text-xs text-muted-foreground truncate">{suggestedUser.dogBreed}</div>
+                      </div>
+                      <button 
+                        onClick={() => handleFollow(suggestedUser.id)}
+                        className={`px-3 py-1 rounded-lg text-xs font-medium transition-smooth ${
+                          isFollowing
+                            ? 'bg-muted text-foreground hover:bg-muted/80'
+                            : 'bg-primary text-primary-foreground hover:bg-primary/90'
+                        }`}
+                      >
+                        {isFollowing ? 'Suivi' : 'Suivre'}
+                      </button>
+                    </div>
+                  );
+                })}
               </div>
             </div>
-          </div>
+          )}
         </aside>
       </div>
       
