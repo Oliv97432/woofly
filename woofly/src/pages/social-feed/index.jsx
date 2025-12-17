@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
-import { Heart, MessageCircle, TrendingUp, Plus, Eye, Share2, Send, ChevronDown, ChevronUp, User, Play } from 'lucide-react';
+import { Heart, MessageCircle, TrendingUp, Plus, Eye, Share2, Send, ChevronDown, ChevronUp, User, Play, Home, BookOpen, Settings, Dog } from 'lucide-react';
 import TabNavigation from '../../components/TabNavigation';
 import UserMenu from '../../components/UserMenu';
 import Footer from '../../components/Footer';
@@ -21,10 +21,10 @@ const SocialFeed = () => {
   const [dogProfiles, setDogProfiles] = useState([]);
   const [userAvatar, setUserAvatar] = useState(null);
   const [userName, setUserName] = useState('');
+  const [tagStats, setTagStats] = useState([]);
   
   const TAGS = ['all', 'santé', 'chiot', 'alimentation', 'comportement', 'balade', 'astuce'];
   
-  // Charger les profils de chiens
   useEffect(() => {
     const fetchDogProfiles = async () => {
       if (!user?.id) return;
@@ -57,13 +57,11 @@ const SocialFeed = () => {
     fetchDogProfiles();
   }, [user?.id]);
   
-  // Charger l'avatar et le nom de l'utilisateur connecté
   useEffect(() => {
     const fetchUserInfo = async () => {
       if (!user?.id) return;
       
       try {
-        // Récupérer depuis user_profiles
         const { data: profile, error } = await supabase
           .from('user_profiles')
           .select('*')
@@ -72,16 +70,13 @@ const SocialFeed = () => {
         
         if (error) {
           console.error('Erreur chargement profil:', error);
-          // Fallback sur métadonnées auth
           setUserName(user.email?.split('@')[0] || 'Utilisateur');
           return;
         }
         
         if (profile) {
-          // Nom
           setUserName(profile.full_name || user.email?.split('@')[0] || 'Utilisateur');
           
-          // Avatar
           const avatarPath = profile.avatar_url;
           if (avatarPath) {
             if (avatarPath.startsWith('http')) {
@@ -103,19 +98,47 @@ const SocialFeed = () => {
     fetchUserInfo();
   }, [user?.id]);
   
-  // Charger les top posts
   useEffect(() => {
     fetchTopPosts();
+    fetchTagStats();
   }, []);
   
-  // Charger les posts du feed
   useEffect(() => {
     fetchPosts();
   }, [selectedTag]);
   
+  const fetchTagStats = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('forum_posts')
+        .select('tags')
+        .is('forum_id', null)
+        .eq('is_hidden', false);
+      
+      if (error) throw error;
+      
+      const tagCount = {};
+      data.forEach(post => {
+        if (post.tags) {
+          post.tags.forEach(tag => {
+            tagCount[tag] = (tagCount[tag] || 0) + 1;
+          });
+        }
+      });
+      
+      const stats = Object.entries(tagCount)
+        .map(([tag, count]) => ({ tag, count }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 5);
+      
+      setTagStats(stats);
+    } catch (error) {
+      console.error('Erreur stats tags:', error);
+    }
+  };
+  
   const fetchTopPosts = async () => {
     try {
-      // Récupérer les posts
       const { data: postsData, error: postsError } = await supabase
         .from('forum_posts')
         .select('*')
@@ -127,10 +150,8 @@ const SocialFeed = () => {
       
       if (postsError) throw postsError;
       
-      // Filtrer ceux avec au moins 3 likes
       const filtered = postsData.filter(post => post.like_count >= 3);
       
-      // Récupérer les infos des auteurs
       const postsWithAuthors = await Promise.all(
         filtered.map(async (post) => {
           const { data: authorData } = await supabase
@@ -155,7 +176,6 @@ const SocialFeed = () => {
   const fetchPosts = async () => {
     setLoading(true);
     try {
-      // Construire la query
       let query = supabase
         .from('forum_posts')
         .select('*')
@@ -172,7 +192,6 @@ const SocialFeed = () => {
       
       if (postsError) throw postsError;
       
-      // Récupérer les infos des auteurs séparément
       const postsWithAuthors = await Promise.all(
         (postsData || []).map(async (post) => {
           try {
@@ -187,7 +206,6 @@ const SocialFeed = () => {
               author: data
             };
           } catch (err) {
-            console.log('Erreur récupération auteur:', err);
             return post;
           }
         })
@@ -208,7 +226,6 @@ const SocialFeed = () => {
   
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
       <div className="sticky top-0 z-50 bg-card border-b border-border shadow-soft">
         <div className="max-w-screen-xl mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
@@ -226,10 +243,46 @@ const SocialFeed = () => {
       
       <TabNavigation />
       
-      <main className="main-content">
-        <div className="max-w-2xl mx-auto px-4 py-4 space-y-3">
-          
-          {/* Bouton Créer un post */}
+      <div className="flex justify-center gap-6 px-4">
+        {/* Sidebar gauche */}
+        <aside className="hidden lg:block w-64 sticky top-24 h-fit">
+          <div className="bg-card border border-border rounded-2xl p-4 space-y-2">
+            <Link
+              to="/dog-profile"
+              className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-muted transition-smooth text-foreground"
+            >
+              <Dog size={20} />
+              <span className="font-medium">Mon Chien</span>
+            </Link>
+            
+            <Link
+              to="/social-feed"
+              className="flex items-center gap-3 px-4 py-3 rounded-xl bg-primary/10 text-primary font-medium"
+            >
+              <Home size={20} />
+              <span>Communauté</span>
+            </Link>
+            
+            <Link
+              to="/daily-tip"
+              className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-muted transition-smooth text-foreground"
+            >
+              <BookOpen size={20} />
+              <span className="font-medium">Conseils</span>
+            </Link>
+            
+            <Link
+              to="/settings"
+              className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-muted transition-smooth text-foreground"
+            >
+              <Settings size={20} />
+              <span className="font-medium">Paramètres</span>
+            </Link>
+          </div>
+        </aside>
+        
+        {/* Feed central */}
+        <main className="flex-1 max-w-2xl py-4 space-y-3">
           <div className="bg-card border border-border rounded-2xl p-3">
             <button
               onClick={() => setShowCreatePost(true)}
@@ -251,7 +304,6 @@ const SocialFeed = () => {
             </button>
           </div>
           
-          {/* Section Top Posts */}
           {topPosts.length > 0 && (
             <div className="space-y-3">
               <div className="flex items-center gap-2">
@@ -283,7 +335,6 @@ const SocialFeed = () => {
             </div>
           )}
           
-          {/* Filtres par tags */}
           <div className="flex gap-2 overflow-x-auto pb-2">
             {TAGS.map((tag) => (
               <button
@@ -300,7 +351,6 @@ const SocialFeed = () => {
             ))}
           </div>
           
-          {/* Feed des posts */}
           {loading ? (
             <div className="flex justify-center py-12">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
@@ -333,12 +383,82 @@ const SocialFeed = () => {
               </button>
             </div>
           )}
-        </div>
-      </main>
+        </main>
+        
+        {/* Sidebar droite */}
+        <aside className="hidden xl:block w-72 sticky top-24 h-fit space-y-4">
+          {/* Tendances */}
+          <div className="bg-card border border-border rounded-2xl p-4">
+            <h3 className="font-heading font-bold text-foreground mb-3 flex items-center gap-2">
+              <TrendingUp size={18} className="text-orange-500" />
+              Tendances
+            </h3>
+            <div className="space-y-2">
+              {tagStats.map(({ tag, count }) => (
+                <button
+                  key={tag}
+                  onClick={() => setSelectedTag(tag)}
+                  className="w-full flex items-center justify-between px-3 py-2 rounded-lg hover:bg-muted transition-smooth text-left"
+                >
+                  <span className="text-sm font-medium text-foreground">#{tag}</span>
+                  <span className="text-xs text-muted-foreground">{count} posts</span>
+                </button>
+              ))}
+            </div>
+          </div>
+          
+          {/* Suggestions */}
+          <div className="bg-card border border-border rounded-2xl p-4">
+            <h3 className="font-heading font-bold text-foreground mb-3 flex items-center gap-2">
+              <User size={18} />
+              À suivre
+            </h3>
+            <div className="space-y-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center text-white font-bold">
+                  M
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="font-medium text-sm text-foreground">Marie</div>
+                  <div className="text-xs text-muted-foreground">Golden Retriever</div>
+                </div>
+                <button className="px-3 py-1 bg-primary text-primary-foreground rounded-lg text-xs font-medium hover:bg-primary/90 transition-smooth">
+                  Suivre
+                </button>
+              </div>
+              
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center text-white font-bold">
+                  P
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="font-medium text-sm text-foreground">Pierre</div>
+                  <div className="text-xs text-muted-foreground">Labrador</div>
+                </div>
+                <button className="px-3 py-1 bg-primary text-primary-foreground rounded-lg text-xs font-medium hover:bg-primary/90 transition-smooth">
+                  Suivre
+                </button>
+              </div>
+              
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-green-500 to-teal-600 flex items-center justify-center text-white font-bold">
+                  S
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="font-medium text-sm text-foreground">Sophie</div>
+                  <div className="text-xs text-muted-foreground">Berger Allemand</div>
+                </div>
+                <button className="px-3 py-1 bg-primary text-primary-foreground rounded-lg text-xs font-medium hover:bg-primary/90 transition-smooth">
+                  Suivre
+                </button>
+              </div>
+            </div>
+          </div>
+        </aside>
+      </div>
       
       <Footer />
       
-      {/* Modal Créer un post */}
       {showCreatePost && (
         <CreatePostModal
           onClose={() => setShowCreatePost(false)}
@@ -346,6 +466,7 @@ const SocialFeed = () => {
             setShowCreatePost(false);
             fetchPosts();
             fetchTopPosts();
+            fetchTagStats();
           }}
         />
       )}
@@ -353,7 +474,6 @@ const SocialFeed = () => {
   );
 };
 
-// Fonction helper pour obtenir l'avatar
 const getUserAvatar = (author) => {
   if (!author) return null;
   
@@ -372,7 +492,6 @@ const getUserAvatar = (author) => {
   return data.publicUrl;
 };
 
-// Composant Avatar
 const Avatar = ({ src, name, size = 'md', className = '' }) => {
   const [imageError, setImageError] = useState(false);
   
@@ -400,7 +519,6 @@ const Avatar = ({ src, name, size = 'md', className = '' }) => {
   );
 };
 
-// Composant PostCard avec commentaires inline
 const PostCard = ({ post, currentUserId, currentUserAvatar, currentUserName, onUpdate, isTopPost }) => {
   const [hasLiked, setHasLiked] = useState(false);
   const [localLikeCount, setLocalLikeCount] = useState(post.like_count || 0);
@@ -412,7 +530,6 @@ const PostCard = ({ post, currentUserId, currentUserAvatar, currentUserName, onU
   const [postImages, setPostImages] = useState([]);
   const [loadingImages, setLoadingImages] = useState(true);
   
-  // Extraire les infos de l'auteur
   const authorName = post.author?.full_name || 
                      post.author?.email?.split('@')[0] || 
                      'Utilisateur';
@@ -475,7 +592,6 @@ const PostCard = ({ post, currentUserId, currentUserAvatar, currentUserName, onU
       
       if (error) throw error;
       
-      // Récupérer les infos des auteurs de commentaires
       const commentsWithAuthors = await Promise.all(
         (commentsData || []).map(async (comment) => {
           try {
@@ -591,7 +707,6 @@ const PostCard = ({ post, currentUserId, currentUserAvatar, currentUserName, onU
   
   return (
     <div className={cardClasses}>
-      {/* Header du post */}
       <div className="flex items-start gap-3 mb-3">
         <Avatar 
           src={authorAvatar} 
@@ -612,9 +727,7 @@ const PostCard = ({ post, currentUserId, currentUserAvatar, currentUserName, onU
         </div>
       </div>
       
-      {/* Layout principal : Contenu à gauche + Actions à droite */}
       <div className="flex gap-4">
-        {/* Colonne gauche : Contenu */}
         <div className="flex-1 min-w-0">
           {post.title && (
             <h3 className="text-base font-bold text-foreground mb-2">{post.title}</h3>
@@ -622,7 +735,6 @@ const PostCard = ({ post, currentUserId, currentUserAvatar, currentUserName, onU
           
           <p className="text-sm text-foreground whitespace-pre-wrap mb-3">{post.content}</p>
           
-          {/* Vidéo du post (si c'est un short) */}
           {post.is_short && post.video_url && (
             <div className="mb-3 flex justify-center relative">
               <video
@@ -642,7 +754,6 @@ const PostCard = ({ post, currentUserId, currentUserAvatar, currentUserName, onU
             </div>
           )}
           
-          {/* Images du post (seulement si pas de vidéo) */}
           {!post.is_short && !loadingImages && postImages.length > 0 && (
             <div className="mb-3 space-y-2">
               {postImages.map((img) => (
@@ -658,7 +769,6 @@ const PostCard = ({ post, currentUserId, currentUserAvatar, currentUserName, onU
             </div>
           )}
           
-          {/* Tags */}
           {post.tags && post.tags.length > 0 && (
             <div className="flex gap-2 flex-wrap">
               {post.tags.map((tag, idx) => (
@@ -677,9 +787,7 @@ const PostCard = ({ post, currentUserId, currentUserAvatar, currentUserName, onU
           )}
         </div>
         
-        {/* Colonne droite : Actions verticales */}
         <div className="flex flex-col items-center gap-4 pt-2">
-          {/* Like */}
           <button
             onClick={handleLike}
             className="flex flex-col items-center gap-1 transition-smooth"
@@ -696,7 +804,6 @@ const PostCard = ({ post, currentUserId, currentUserAvatar, currentUserName, onU
             </span>
           </button>
           
-          {/* Commentaires */}
           <button
             onClick={toggleComments}
             className="flex flex-col items-center gap-1 transition-smooth"
@@ -709,7 +816,6 @@ const PostCard = ({ post, currentUserId, currentUserAvatar, currentUserName, onU
             </span>
           </button>
           
-          {/* Partage */}
           <button className="flex flex-col items-center gap-1 transition-smooth">
             <div className="p-2 rounded-full hover:bg-muted">
               <Share2 size={22} className="text-muted-foreground" />
@@ -718,10 +824,8 @@ const PostCard = ({ post, currentUserId, currentUserAvatar, currentUserName, onU
         </div>
       </div>
       
-      {/* Section Commentaires */}
       {showComments && (
         <div className="mt-4 pt-4 border-t border-border space-y-3">
-          {/* Formulaire nouveau commentaire */}
           <form onSubmit={handleCommentSubmit} className="flex gap-2">
             <Avatar src={currentUserAvatar} name={currentUserName} size="sm" />
             <div className="flex-1">
@@ -744,7 +848,6 @@ const PostCard = ({ post, currentUserId, currentUserAvatar, currentUserName, onU
             </div>
           </form>
           
-          {/* Liste des commentaires */}
           {loadingComments ? (
             <div className="flex justify-center py-4">
               <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
