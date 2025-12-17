@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
-import { Heart, MessageCircle, TrendingUp, Plus, Flag, Eye, Share2 } from 'lucide-react';
+import { Heart, MessageCircle, TrendingUp, Plus, Eye, Share2 } from 'lucide-react';
 import TabNavigation from '../../components/TabNavigation';
 import UserMenu from '../../components/UserMenu';
 import Footer from '../../components/Footer';
@@ -69,19 +69,8 @@ const SocialFeed = () => {
     try {
       const { data, error } = await supabase
         .from('forum_posts')
-        .select(`
-          *,
-          author:user_id (
-            id,
-            email,
-            raw_user_meta_data
-          ),
-          images:forum_post_images (
-            image_url,
-            caption
-          )
-        `)
-        .is('forum_id', null)  // ✅ FILTRE AJOUTÉ
+        .select('*')
+        .is('forum_id', null)
         .eq('is_hidden', false)
         .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
         .order('like_count', { ascending: false })
@@ -102,19 +91,8 @@ const SocialFeed = () => {
     try {
       let query = supabase
         .from('forum_posts')
-        .select(`
-          *,
-          author:user_id (
-            id,
-            email,
-            raw_user_meta_data
-          ),
-          images:forum_post_images (
-            image_url,
-            caption
-          )
-        `)
-        .is('forum_id', null)  // ✅ FILTRE AJOUTÉ
+        .select('*')
+        .is('forum_id', null)
         .eq('is_hidden', false)
         .order('created_at', { ascending: false })
         .limit(50);
@@ -279,9 +257,7 @@ const SocialFeed = () => {
 
 // Composant TopPostCard
 const TopPostCard = ({ post, onClick }) => {
-  const authorName = post.author?.raw_user_meta_data?.full_name || 
-                     post.author?.email?.split('@')[0] || 
-                     'Utilisateur';
+  const authorName = 'Utilisateur anonyme';
   
   return (
     <div
@@ -339,9 +315,7 @@ const PostCard = ({ post, onClick, currentUserId, onUpdate }) => {
   const [hasLiked, setHasLiked] = useState(false);
   const [localLikeCount, setLocalLikeCount] = useState(post.like_count || 0);
   
-  const authorName = post.author?.raw_user_meta_data?.full_name || 
-                     post.author?.email?.split('@')[0] || 
-                     'Utilisateur';
+  const authorName = 'Utilisateur anonyme';
   
   useEffect(() => {
     checkIfLiked();
@@ -434,20 +408,6 @@ const PostCard = ({ post, onClick, currentUserId, onUpdate }) => {
         )}
         
         <p className="text-foreground whitespace-pre-wrap mb-3">{post.content}</p>
-        
-        {/* Images */}
-        {post.images && post.images.length > 0 && (
-          <div className="grid grid-cols-2 gap-2 mb-3">
-            {post.images.slice(0, 2).map((img, idx) => (
-              <img
-                key={idx}
-                src={img.image_url}
-                alt={img.caption || ''}
-                className="w-full h-48 object-cover rounded-2xl"
-              />
-            ))}
-          </div>
-        )}
         
         {/* Tags */}
         {post.tags && post.tags.length > 0 && (
