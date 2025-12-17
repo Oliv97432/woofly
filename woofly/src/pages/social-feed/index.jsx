@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
-import { Heart, MessageCircle, TrendingUp, Plus, Eye, Share2, Send, ChevronDown, ChevronUp } from 'lucide-react';
+import { Heart, MessageCircle, TrendingUp, Plus, Eye, Share2, Send, ChevronDown, ChevronUp, User } from 'lucide-react';
 import TabNavigation from '../../components/TabNavigation';
 import UserMenu from '../../components/UserMenu';
 import Footer from '../../components/Footer';
@@ -19,6 +19,7 @@ const SocialFeed = () => {
   const [selectedTag, setSelectedTag] = useState('all');
   const [currentProfile, setCurrentProfile] = useState(null);
   const [dogProfiles, setDogProfiles] = useState([]);
+  const [userAvatar, setUserAvatar] = useState(null);
   
   const TAGS = ['all', 'santé', 'chiot', 'alimentation', 'comportement', 'balade', 'astuce'];
   
@@ -53,6 +54,36 @@ const SocialFeed = () => {
     };
     
     fetchDogProfiles();
+  }, [user?.id]);
+  
+  // Charger l'avatar de l'utilisateur
+  useEffect(() => {
+    const fetchUserAvatar = async () => {
+      if (!user?.id) return;
+      
+      try {
+        // Récupérer l'avatar depuis user_profiles ou raw_user_meta_data
+        const avatarPath = user?.user_metadata?.avatar_url;
+        
+        if (avatarPath) {
+          // Si c'est déjà une URL complète
+          if (avatarPath.startsWith('http')) {
+            setUserAvatar(avatarPath);
+          } else {
+            // Si c'est un chemin dans le storage
+            const { data } = supabase.storage
+              .from('user-avatars')
+              .getPublicUrl(avatarPath);
+            
+            setUserAvatar(data.publicUrl);
+          }
+        }
+      } catch (error) {
+        console.error('Erreur chargement avatar:', error);
+      }
+    };
+    
+    fetchUserAvatar();
   }, [user?.id]);
   
   // Charger les top posts
@@ -147,9 +178,17 @@ const SocialFeed = () => {
               onClick={() => setShowCreatePost(true)}
               className="w-full flex items-center gap-3 px-4 py-3 bg-muted hover:bg-muted/80 rounded-2xl transition-smooth text-left"
             >
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold">
-                {user?.email?.charAt(0).toUpperCase()}
-              </div>
+              {userAvatar ? (
+                <img
+                  src={userAvatar}
+                  alt="Avatar"
+                  className="w-10 h-10 rounded-full object-cover"
+                />
+              ) : (
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold">
+                  {user?.email?.charAt(0).toUpperCase()}
+                </div>
+              )}
               <span className="text-muted-foreground">Quoi de neuf avec ton chien ?</span>
               <Plus size={20} className="ml-auto text-primary" />
             </button>
@@ -171,6 +210,7 @@ const SocialFeed = () => {
                     key={post.id} 
                     post={post} 
                     currentUserId={user?.id}
+                    currentUserAvatar={userAvatar}
                     onUpdate={fetchPosts}
                     isTopPost={true}
                   />
@@ -214,6 +254,7 @@ const SocialFeed = () => {
                   key={post.id} 
                   post={post} 
                   currentUserId={user?.id}
+                  currentUserAvatar={userAvatar}
                   onUpdate={fetchPosts}
                   isTopPost={false}
                 />
@@ -253,8 +294,36 @@ const SocialFeed = () => {
   );
 };
 
+// Composant Avatar
+const Avatar = ({ src, name, size = 'md', className = '' }) => {
+  const [imageError, setImageError] = useState(false);
+  
+  const sizeClasses = {
+    sm: 'w-8 h-8 text-sm',
+    md: 'w-10 h-10 text-base',
+    lg: 'w-12 h-12 text-lg'
+  };
+  
+  if (src && !imageError) {
+    return (
+      <img
+        src={src}
+        alt={name || 'Avatar'}
+        className={`${sizeClasses[size]} rounded-full object-cover ${className}`}
+        onError={() => setImageError(true)}
+      />
+    );
+  }
+  
+  return (
+    <div className={`${sizeClasses[size]} rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold ${className}`}>
+      {name ? name.charAt(0).toUpperCase() : <User size={size === 'sm' ? 14 : size === 'lg' ? 20 : 16} />}
+    </div>
+  );
+};
+
 // Composant PostCard avec commentaires inline
-const PostCard = ({ post, currentUserId, onUpdate, isTopPost }) => {
+const PostCard = ({ post, currentUserId, currentUserAvatar, onUpdate, isTopPost }) => {
   const [hasLiked, setHasLiked] = useState(false);
   const [localLikeCount, setLocalLikeCount] = useState(post.like_count || 0);
   const [showComments, setShowComments] = useState(false);
@@ -401,13 +470,12 @@ const PostCard = ({ post, currentUserId, onUpdate, isTopPost }) => {
     <div className={cardClasses}>
       {/* Header du post */}
       <div className="flex items-start gap-4 mb-4">
-        <div className={`w-12 h-12 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0 ${
-          isTopPost 
-            ? 'bg-gradient-to-br from-orange-500 to-yellow-600'
-            : 'bg-gradient-to-br from-blue-500 to-purple-600'
-        }`}>
-          {authorName.charAt(0).toUpperCase()}
-        </div>
+        <Avatar 
+          src={null} 
+          name={authorName} 
+          size="lg" 
+          className={isTopPost ? 'bg-gradient-to-br from-orange-500 to-yellow-600' : ''}
+        />
         
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between">
@@ -482,9 +550,7 @@ const PostCard = ({ post, currentUserId, onUpdate, isTopPost }) => {
         <div className="mt-6 pt-6 border-t border-border space-y-4">
           {/* Formulaire nouveau commentaire */}
           <form onSubmit={handleCommentSubmit} className="flex gap-3">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold flex-shrink-0">
-              {currentUserId ? 'M' : '?'}
-            </div>
+            <Avatar src={currentUserAvatar} name="M" size="md" />
             <div className="flex-1">
               <textarea
                 value={newComment}
@@ -514,9 +580,7 @@ const PostCard = ({ post, currentUserId, onUpdate, isTopPost }) => {
             <div className="space-y-4">
               {comments.map((comment) => (
                 <div key={comment.id} className="flex gap-3">
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-gray-400 to-gray-600 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
-                    U
-                  </div>
+                  <Avatar src={null} name="U" size="sm" className="bg-gradient-to-br from-gray-400 to-gray-600" />
                   <div className="flex-1">
                     <div className="bg-muted rounded-2xl px-4 py-3">
                       <div className="font-semibold text-sm mb-1">Utilisateur</div>
