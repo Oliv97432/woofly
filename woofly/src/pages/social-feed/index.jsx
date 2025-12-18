@@ -317,7 +317,7 @@ const SocialFeed = () => {
   
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      {/* Header sticky */}
+      {/* Header sticky - EXACT comme DailyTip */}
       <div className="sticky top-0 z-50 bg-card border-b border-border shadow-soft">
         <div className="max-w-screen-xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
@@ -335,74 +335,40 @@ const SocialFeed = () => {
       
       <TabNavigation />
       
-      <div className="flex justify-center gap-6 px-4">
-        {/* Sidebar gauche - Desktop uniquement */}
-        <aside className="hidden lg:block w-64 sticky top-24 h-fit">
-          <div className="bg-card border border-border rounded-3xl p-6 space-y-2">
-            <Link
-              to="/dog-profile"
-              className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-muted transition-smooth text-foreground"
-            >
-              <Dog size={20} />
-              <span className="font-medium">Mon Chien</span>
-            </Link>
-            
-            <Link
-              to="/social-feed"
-              className="flex items-center gap-3 px-4 py-3 rounded-xl bg-primary/10 text-primary font-medium"
-            >
-              <Home size={20} />
-              <span>Communauté</span>
-            </Link>
-            
-            <Link
-              to="/daily-tip"
-              className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-muted transition-smooth text-foreground"
-            >
-              <BookOpen size={20} />
-              <span className="font-medium">Conseils</span>
-            </Link>
-            
-            <Link
-              to="/settings"
-              className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-muted transition-smooth text-foreground"
-            >
-              <Settings size={20} />
-              <span className="font-medium">Paramètres</span>
-            </Link>
-          </div>
-        </aside>
-        
-        {/* Feed central */}
-        <main className="flex-1 max-w-3xl py-6 space-y-8">
+      {/* Main content - EXACT comme DailyTip */}
+      <main className="main-content flex-1">
+        <div className="max-w-3xl mx-auto px-4 py-6 space-y-8">
+          
           {/* Bouton créer post */}
-          <div className="bg-card border border-border rounded-3xl p-6">
-            <button
-              onClick={() => setShowCreatePost(true)}
-              className="w-full flex items-center gap-3 px-4 py-3 bg-muted hover:bg-muted/80 rounded-xl transition-smooth text-left"
-            >
-              {userAvatar ? (
-                <img
-                  src={userAvatar}
-                  alt="Avatar"
-                  className="w-12 h-12 rounded-full object-cover flex-shrink-0"
-                />
-              ) : (
-                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold flex-shrink-0">
-                  {userName?.charAt(0).toUpperCase() || 'U'}
-                </div>
-              )}
-              <span className="text-muted-foreground">Quoi de neuf avec ton chien ?</span>
-              <Plus size={20} className="ml-auto text-primary flex-shrink-0" />
-            </button>
-          </div>
+          <section className="space-y-4">
+            <div className="bg-white rounded-3xl shadow-sm border border-gray-200 p-6">
+              <button
+                onClick={() => setShowCreatePost(true)}
+                className="w-full flex items-center gap-3 px-4 py-3 bg-gray-100 hover:bg-gray-200 rounded-xl transition-smooth text-left"
+              >
+                {userAvatar ? (
+                  <img
+                    src={userAvatar}
+                    alt="Avatar"
+                    className="w-12 h-12 rounded-full object-cover flex-shrink-0"
+                  />
+                ) : (
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold flex-shrink-0">
+                    {userName?.charAt(0).toUpperCase() || 'U'}
+                  </div>
+                )}
+                <span className="text-gray-600">Quoi de neuf avec ton chien ?</span>
+                <Plus size={20} className="ml-auto text-blue-500 flex-shrink-0" />
+              </button>
+            </div>
+          </section>
           
           {/* Top posts */}
           {topPosts.length > 0 && (
-            <div className="space-y-4">
+            <section className="space-y-4">
               <div className="flex items-center gap-2">
                 <TrendingUp className="text-orange-500" size={24} />
-                <h2 className="text-xl font-heading font-semibold text-foreground">
+                <h2 className="text-xl font-heading font-semibold text-gray-900">
                   🔥 Les posts les plus utiles
                 </h2>
               </div>
@@ -421,12 +387,12 @@ const SocialFeed = () => {
                 ))}
               </div>
               
-              <div className="border-t border-border pt-4">
-                <h3 className="text-base font-heading font-semibold text-foreground mb-3">
+              <div className="border-t border-gray-200 pt-4">
+                <h3 className="text-base font-heading font-semibold text-gray-900 mb-3">
                   Tous les posts
                 </h3>
               </div>
-            </div>
+            </section>
           )}
           
           {/* Tags */}
@@ -437,8 +403,8 @@ const SocialFeed = () => {
                 onClick={() => setSelectedTag(tag)}
                 className={`px-4 py-3 rounded-full text-sm font-medium whitespace-nowrap transition-smooth flex-shrink-0 ${
                   selectedTag === tag
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-card border border-border hover:bg-muted'
+                    ? 'bg-blue-500 text-white'
+                    : 'bg-white border border-gray-200 hover:bg-gray-50 text-gray-700'
                 }`}
               >
                 {tag === 'all' ? 'Tous' : `#${tag}`}
@@ -449,10 +415,10 @@ const SocialFeed = () => {
           {/* Liste des posts */}
           {loading ? (
             <div className="flex justify-center py-20">
-              <div className="animate-spin h-12 w-12 border-4 border-primary border-t-transparent rounded-full"></div>
+              <div className="animate-spin h-12 w-12 border-4 border-blue-500 border-t-transparent rounded-full"></div>
             </div>
           ) : posts.length > 0 ? (
-            <div className="space-y-4">
+            <section className="space-y-4">
               {posts.map((post) => (
                 <PostCard 
                   key={post.id} 
@@ -464,108 +430,23 @@ const SocialFeed = () => {
                   isTopPost={false}
                 />
               ))}
-            </div>
+            </section>
           ) : (
-            <div className="bg-card rounded-3xl p-12 text-center border border-border">
-              <p className="text-muted-foreground mb-4">
+            <div className="bg-white rounded-3xl p-12 text-center border border-gray-200">
+              <p className="text-gray-600 mb-4">
                 Aucun post pour le moment
               </p>
               <button
                 onClick={() => setShowCreatePost(true)}
-                className="px-6 py-3 bg-primary text-primary-foreground rounded-xl font-medium hover:bg-primary/90 transition-smooth inline-flex items-center gap-2"
+                className="px-6 py-3 bg-blue-500 text-white rounded-xl font-medium hover:bg-blue-600 transition-smooth inline-flex items-center gap-2"
               >
                 <Plus size={20} />
                 Créer le premier post
               </button>
             </div>
           )}
-        </main>
-        
-        {/* Sidebar droite - Desktop uniquement */}
-        <aside className="hidden xl:block w-72 sticky top-24 h-fit space-y-4">
-          {/* Tendances */}
-          {tagStats.length > 0 && (
-            <div className="bg-card border border-border rounded-3xl p-6">
-              <h3 className="font-heading font-semibold text-foreground mb-3 flex items-center gap-2">
-                <TrendingUp size={20} className="text-orange-500" />
-                Tendances
-              </h3>
-              <div className="space-y-2">
-                {tagStats.map(({ tag, count }) => (
-                  <button
-                    key={tag}
-                    onClick={() => setSelectedTag(tag)}
-                    className="w-full flex items-center justify-between px-3 py-3 rounded-xl hover:bg-muted transition-smooth text-left"
-                  >
-                    <span className="text-sm font-medium text-foreground">#{tag}</span>
-                    <span className="text-sm text-muted-foreground">{count} posts</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-          
-          {/* Suggestions */}
-          {suggestedUsers.length > 0 && (
-            <div className="bg-card border border-border rounded-3xl p-6">
-              <h3 className="font-heading font-semibold text-foreground mb-3 flex items-center gap-2">
-                <User size={20} />
-                À suivre
-              </h3>
-              <div className="space-y-3">
-                {suggestedUsers.map((suggestedUser) => {
-                  const avatarUrl = suggestedUser.avatar_url 
-                    ? (suggestedUser.avatar_url.startsWith('http') 
-                        ? suggestedUser.avatar_url 
-                        : supabase.storage.from('user-avatars').getPublicUrl(suggestedUser.avatar_url).data.publicUrl)
-                    : null;
-                  
-                  const isFollowing = followedUsers.has(suggestedUser.id);
-                  const displayName = suggestedUser.full_name || suggestedUser.email?.split('@')[0] || 'Utilisateur';
-                  
-                  return (
-                    <div key={suggestedUser.id} className="flex items-center gap-3">
-                      <button 
-                        onClick={() => navigate(`/profile/${suggestedUser.id}`)}
-                        className="flex-shrink-0"
-                      >
-                        {avatarUrl ? (
-                          <img
-                            src={avatarUrl}
-                            alt={displayName}
-                            className="w-12 h-12 rounded-full object-cover cursor-pointer hover:opacity-80 transition-smooth"
-                          />
-                        ) : (
-                          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold cursor-pointer hover:opacity-80 transition-smooth">
-                            {displayName.charAt(0).toUpperCase()}
-                          </div>
-                        )}
-                      </button>
-                      <button 
-                        onClick={() => navigate(`/profile/${suggestedUser.id}`)}
-                        className="flex-1 min-w-0 text-left"
-                      >
-                        <div className="font-medium text-sm text-foreground truncate hover:underline">{displayName}</div>
-                        <div className="text-sm text-muted-foreground truncate">{suggestedUser.dogBreed}</div>
-                      </button>
-                      <button 
-                        onClick={() => handleFollow(suggestedUser.id)}
-                        className={`px-4 py-2 rounded-xl text-sm font-medium transition-smooth ${
-                          isFollowing
-                            ? 'bg-muted text-foreground hover:bg-muted/80'
-                            : 'bg-primary text-primary-foreground hover:bg-primary/90'
-                        }`}
-                      >
-                        {isFollowing ? 'Suivi' : 'Suivre'}
-                      </button>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-        </aside>
-      </div>
+        </div>
+      </main>
       
       <Footer />
       
@@ -584,7 +465,7 @@ const SocialFeed = () => {
   );
 };
 
-// Composant PostCard
+// Composant PostCard - Style DailyTip
 const PostCard = ({ post, currentUserId, currentUserAvatar, currentUserName, onUpdate, isTopPost }) => {
   const navigate = useNavigate();
   const [hasLiked, setHasLiked] = useState(false);
@@ -762,7 +643,7 @@ const PostCard = ({ post, currentUserId, currentUserAvatar, currentUserName, onU
       setTimeout(() => setShowShareToast(false), 3000);
       setShowShareModal(false);
     } catch (err) {
-      alert('Texte copié :\n\n' + textToCopy);
+      alert('Texte copié !');
     }
   };
   
@@ -775,7 +656,7 @@ const PostCard = ({ post, currentUserId, currentUserAvatar, currentUserName, onU
       setTimeout(() => setShowShareToast(false), 3000);
       setShowShareModal(false);
     } catch (err) {
-      alert('Lien : ' + postUrl);
+      alert('Lien copié !');
     }
   };
   
@@ -784,37 +665,6 @@ const PostCard = ({ post, currentUserId, currentUserAvatar, currentUserName, onU
     const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(text)}`;
     window.open(whatsappUrl, '_blank');
     setShowShareModal(false);
-  };
-  
-  const shareToFacebook = () => {
-    const postUrl = `${window.location.origin}/social-feed?post=${post.id}`;
-    const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(postUrl)}&quote=${encodeURIComponent(post.content)}`;
-    window.open(facebookUrl, '_blank', 'width=600,height=400');
-    setShowShareModal(false);
-  };
-  
-  const downloadImage = async () => {
-    if (postImages.length === 0) return;
-    
-    try {
-      const imageUrl = postImages[0].image_url;
-      const response = await fetch(imageUrl);
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `doogybook-post-${post.id}.jpg`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-      setShowShareToast(true);
-      setTimeout(() => setShowShareToast(false), 3000);
-      setShowShareModal(false);
-    } catch (err) {
-      console.error('Erreur téléchargement:', err);
-      alert('Erreur lors du téléchargement de l\'image');
-    }
   };
   
   const formatDate = (dateString) => {
@@ -833,88 +683,52 @@ const PostCard = ({ post, currentUserId, currentUserAvatar, currentUserName, onU
   };
   
   const cardClasses = isTopPost 
-    ? "bg-gradient-to-br from-orange-50 to-yellow-50 border-2 border-orange-200 rounded-3xl p-6 transition-smooth"
-    : "bg-card border border-border rounded-3xl p-6 transition-smooth";
+    ? "bg-gradient-to-br from-orange-50 to-yellow-50 border-2 border-orange-200 rounded-3xl shadow-sm p-6 transition-smooth"
+    : "bg-white border border-gray-200 rounded-3xl shadow-sm p-6 transition-smooth";
   
   return (
     <div className={cardClasses}>
-      {/* En-tête du post */}
+      {/* En-tête */}
       <div className="flex items-start gap-3 mb-4">
-        <button 
-          onClick={() => navigate(`/profile/${post.user_id}`)}
-          className="flex-shrink-0"
-        >
-          {authorAvatar ? (
-            <img
-              src={authorAvatar}
-              alt={authorName}
-              className="w-12 h-12 rounded-full object-cover cursor-pointer hover:opacity-80 transition-smooth"
-            />
-          ) : (
-            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold cursor-pointer hover:opacity-80 transition-smooth">
-              {authorName.charAt(0).toUpperCase()}
-            </div>
-          )}
-        </button>
-        
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <button 
-              onClick={() => navigate(`/profile/${post.user_id}`)}
-              className="font-semibold text-foreground hover:underline"
-            >
-              {authorName}
-            </button>
-            {isTopPost && <TrendingUp size={16} className="text-orange-500 flex-shrink-0" />}
-            {post.is_short && <Play size={16} className="text-primary flex-shrink-0" />}
+        {authorAvatar ? (
+          <img
+            src={authorAvatar}
+            alt={authorName}
+            className="w-12 h-12 rounded-full object-cover flex-shrink-0"
+          />
+        ) : (
+          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold flex-shrink-0">
+            {authorName.charAt(0).toUpperCase()}
           </div>
-          <span className="text-sm text-muted-foreground block mt-1">
-            {formatDate(post.created_at)}
-          </span>
-        </div>
-      </div>
-      
-      {/* Contenu du post */}
-      <div className="mb-4">
-        {post.title && (
-          <h3 className="text-lg font-heading font-semibold text-foreground mb-2">{post.title}</h3>
         )}
         
-        <p className="text-base text-foreground whitespace-pre-wrap leading-relaxed">{post.content}</p>
+        <div className="flex-1">
+          <div className="flex items-center gap-2">
+            <span className="font-semibold text-gray-900">{authorName}</span>
+            {isTopPost && <TrendingUp size={16} className="text-orange-500" />}
+          </div>
+          <span className="text-sm text-gray-600">{formatDate(post.created_at)}</span>
+        </div>
       </div>
       
-      {/* Vidéo (si short) */}
-      {post.is_short && post.video_url && (
-        <div className="mb-4 relative">
-          <video
-            src={post.video_url}
-            controls
-            className="w-full rounded-xl"
-            style={{ maxHeight: '400px' }}
-            preload="metadata"
-          >
-            Votre navigateur ne supporte pas la lecture de vidéos.
-          </video>
-          {post.video_duration && (
-            <div className="absolute bottom-2 right-2 bg-black/70 text-white px-2 py-1 rounded-lg text-sm font-medium">
-              {post.video_duration}s
-            </div>
-          )}
-        </div>
+      {/* Contenu */}
+      {post.title && (
+        <h3 className="text-lg font-heading font-semibold text-gray-900 mb-2">{post.title}</h3>
       )}
       
+      <p className="text-base text-gray-900 whitespace-pre-wrap leading-relaxed mb-4">{post.content}</p>
+      
       {/* Images */}
-      {!post.is_short && !loadingImages && postImages.length > 0 && (
+      {!loadingImages && postImages.length > 0 && (
         <div className="mb-4 space-y-2">
           {postImages.map((img) => (
-            <div key={img.id} className="w-full">
-              <img
-                src={img.image_url}
-                alt={img.caption || 'Image du post'}
-                className="w-full rounded-xl"
-                style={{ maxHeight: '400px', objectFit: 'contain', backgroundColor: '#f3f4f6' }}
-              />
-            </div>
+            <img
+              key={img.id}
+              src={img.image_url}
+              alt={img.caption || 'Image'}
+              className="w-full rounded-xl"
+              style={{ maxHeight: '400px', objectFit: 'contain' }}
+            />
           ))}
         </div>
       )}
@@ -926,9 +740,7 @@ const PostCard = ({ post, currentUserId, currentUserAvatar, currentUserName, onU
             <span 
               key={idx} 
               className={`px-3 py-1 text-sm font-medium rounded-full ${
-                isTopPost
-                  ? 'bg-orange-100 text-orange-700'
-                  : 'bg-primary/10 text-primary'
+                isTopPost ? 'bg-orange-100 text-orange-700' : 'bg-blue-100 text-blue-700'
               }`}
             >
               #{tag}
@@ -938,51 +750,34 @@ const PostCard = ({ post, currentUserId, currentUserAvatar, currentUserName, onU
       )}
       
       {/* Actions */}
-      <div className="flex items-center gap-6 pt-4 border-t border-border">
-        <button
-          onClick={handleLike}
-          className="flex items-center gap-2 transition-smooth"
-        >
+      <div className="flex items-center gap-6 pt-4 border-t border-gray-200">
+        <button onClick={handleLike} className="flex items-center gap-2">
           <Heart 
             size={24} 
-            className={hasLiked ? 'text-red-600' : 'text-muted-foreground'} 
+            className={hasLiked ? 'text-red-600' : 'text-gray-400'} 
             fill={hasLiked ? 'currentColor' : 'none'} 
           />
-          <span className={`text-base font-medium ${hasLiked ? 'text-red-600' : 'text-muted-foreground'}`}>
-            {localLikeCount}
-          </span>
+          <span className="text-base font-medium text-gray-700">{localLikeCount}</span>
         </button>
         
-        <button
-          onClick={() => setShowComments(!showComments)}
-          className="flex items-center gap-2 transition-smooth"
-        >
-          <MessageCircle size={24} className="text-muted-foreground" />
-          <span className="text-base font-medium text-muted-foreground">
-            {post.comment_count || 0}
-          </span>
+        <button onClick={() => setShowComments(!showComments)} className="flex items-center gap-2">
+          <MessageCircle size={24} className="text-gray-400" />
+          <span className="text-base font-medium text-gray-700">{post.comment_count || 0}</span>
         </button>
         
-        <button 
-          onClick={() => setShowShareModal(true)}
-          className="flex items-center gap-2 transition-smooth ml-auto"
-        >
-          <Share2 size={24} className="text-muted-foreground" />
+        <button onClick={() => setShowShareModal(true)} className="flex items-center gap-2 ml-auto">
+          <Share2 size={24} className="text-gray-400" />
         </button>
       </div>
       
-      {/* Section commentaires */}
+      {/* Commentaires */}
       {showComments && (
-        <div className="mt-6 pt-6 border-t border-border space-y-4">
+        <div className="mt-6 pt-6 border-t border-gray-200 space-y-4">
           <form onSubmit={handleCommentSubmit} className="flex gap-3">
             {currentUserAvatar ? (
-              <img
-                src={currentUserAvatar}
-                alt="Avatar"
-                className="w-10 h-10 rounded-full object-cover flex-shrink-0"
-              />
+              <img src={currentUserAvatar} alt="Avatar" className="w-10 h-10 rounded-full object-cover" />
             ) : (
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold flex-shrink-0">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold">
                 {currentUserName?.charAt(0).toUpperCase() || 'U'}
               </div>
             )}
@@ -991,14 +786,13 @@ const PostCard = ({ post, currentUserId, currentUserAvatar, currentUserName, onU
                 value={newComment}
                 onChange={(e) => setNewComment(e.target.value)}
                 placeholder="Écrivez un commentaire..."
-                className="w-full px-4 py-3 text-base border border-border rounded-xl focus:ring-2 focus:ring-primary resize-none"
+                className="w-full px-4 py-3 text-base border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 resize-none"
                 rows={3}
-                disabled={submittingComment}
               />
               <button
                 type="submit"
                 disabled={!newComment.trim() || submittingComment}
-                className="mt-2 px-4 py-3 text-base bg-primary text-primary-foreground rounded-xl font-medium hover:bg-primary/90 transition-smooth disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center gap-2"
+                className="mt-2 px-4 py-3 bg-blue-500 text-white rounded-xl font-medium hover:bg-blue-600 transition-smooth disabled:bg-gray-300 flex items-center gap-2"
               >
                 <Send size={18} />
                 {submittingComment ? 'Envoi...' : 'Commenter'}
@@ -1008,7 +802,7 @@ const PostCard = ({ post, currentUserId, currentUserAvatar, currentUserName, onU
           
           {loadingComments ? (
             <div className="flex justify-center py-8">
-              <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
+              <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full"></div>
             </div>
           ) : comments.length > 0 ? (
             <div className="space-y-4">
@@ -1022,164 +816,67 @@ const PostCard = ({ post, currentUserId, currentUserAvatar, currentUserName, onU
                 
                 return (
                   <div key={comment.id} className="flex gap-3">
-                    <button 
-                      onClick={() => navigate(`/profile/${comment.user_id}`)}
-                      className="flex-shrink-0"
-                    >
-                      {commentAuthorAvatar ? (
-                        <img
-                          src={commentAuthorAvatar}
-                          alt={commentAuthorName}
-                          className="w-10 h-10 rounded-full object-cover cursor-pointer hover:opacity-80 transition-smooth"
-                        />
-                      ) : (
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold cursor-pointer hover:opacity-80 transition-smooth">
-                          {commentAuthorName.charAt(0).toUpperCase()}
-                        </div>
-                      )}
-                    </button>
+                    {commentAuthorAvatar ? (
+                      <img src={commentAuthorAvatar} alt={commentAuthorName} className="w-10 h-10 rounded-full object-cover" />
+                    ) : (
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold">
+                        {commentAuthorName.charAt(0).toUpperCase()}
+                      </div>
+                    )}
                     <div className="flex-1">
-                      <div className="bg-muted rounded-xl px-4 py-3">
-                        <button 
-                          onClick={() => navigate(`/profile/${comment.user_id}`)}
-                          className="font-semibold text-sm mb-1 hover:underline block"
-                        >
-                          {commentAuthorName}
-                        </button>
-                        <p className="text-base text-foreground">{comment.content}</p>
+                      <div className="bg-gray-100 rounded-xl px-4 py-3">
+                        <p className="font-semibold text-sm text-gray-900 mb-1">{commentAuthorName}</p>
+                        <p className="text-base text-gray-900">{comment.content}</p>
                       </div>
-                      <div className="text-sm text-muted-foreground mt-1 ml-3">
-                        {formatDate(comment.created_at)}
-                      </div>
+                      <p className="text-sm text-gray-600 mt-1 ml-3">{formatDate(comment.created_at)}</p>
                     </div>
                   </div>
                 );
               })}
             </div>
           ) : (
-            <p className="text-muted-foreground text-center text-base py-8">
-              Aucun commentaire pour le moment. Soyez le premier à commenter !
-            </p>
+            <p className="text-gray-600 text-center py-8">Aucun commentaire</p>
           )}
         </div>
       )}
       
-      {/* Modal de partage */}
+      {/* Modal partage */}
       {showShareModal && (
-        <div 
-          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50"
-          onClick={() => setShowShareModal(false)}
-        >
-          <div 
-            className="bg-card rounded-t-3xl sm:rounded-3xl p-6 max-w-md w-full space-y-4 shadow-xl animate-in slide-in-from-bottom-4"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-heading font-semibold text-foreground">Partager ce post</h3>
-              <button 
-                onClick={() => setShowShareModal(false)}
-                className="p-2 hover:bg-muted rounded-full transition-smooth"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50" onClick={() => setShowShareModal(false)}>
+          <div className="bg-white rounded-t-3xl sm:rounded-3xl p-6 max-w-md w-full space-y-4" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-xl font-heading font-semibold text-gray-900 mb-4">Partager</h3>
+            <button onClick={copyText} className="w-full flex items-center gap-4 px-4 py-4 rounded-xl hover:bg-gray-100 text-left">
+              <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
+                <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
-              </button>
-            </div>
-            
-            <div className="space-y-3">
-              {/* Copier le texte */}
-              <button
-                onClick={copyText}
-                className="w-full flex items-center gap-4 px-4 py-4 rounded-xl hover:bg-muted transition-smooth text-left"
-              >
-                <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
-                  <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
-                </div>
-                <div className="flex-1">
-                  <div className="font-medium text-foreground">Copier le texte</div>
-                  <div className="text-sm text-muted-foreground">Texte du post</div>
-                </div>
-              </button>
-              
-              {/* WhatsApp */}
-              <button
-                onClick={shareToWhatsApp}
-                className="w-full flex items-center gap-4 px-4 py-4 rounded-xl hover:bg-muted transition-smooth text-left"
-              >
-                <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
-                  <svg className="w-6 h-6 text-green-600" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
-                  </svg>
-                </div>
-                <div className="flex-1">
-                  <div className="font-medium text-foreground">WhatsApp</div>
-                  <div className="text-sm text-muted-foreground">Partager sur WhatsApp</div>
-                </div>
-              </button>
-              
-              {/* Facebook */}
-              <button
-                onClick={shareToFacebook}
-                className="w-full flex items-center gap-4 px-4 py-4 rounded-xl hover:bg-muted transition-smooth text-left"
-              >
-                <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
-                  <svg className="w-6 h-6 text-blue-600" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
-                  </svg>
-                </div>
-                <div className="flex-1">
-                  <div className="font-medium text-foreground">Facebook</div>
-                  <div className="text-sm text-muted-foreground">Partager sur Facebook</div>
-                </div>
-              </button>
-              
-              {/* Télécharger image */}
-              {postImages.length > 0 && (
-                <button
-                  onClick={downloadImage}
-                  className="w-full flex items-center gap-4 px-4 py-4 rounded-xl hover:bg-muted transition-smooth text-left"
-                >
-                  <div className="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center flex-shrink-0">
-                    <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                  </div>
-                  <div className="flex-1">
-                    <div className="font-medium text-foreground">Télécharger l'image</div>
-                    <div className="text-sm text-muted-foreground">Enregistrer</div>
-                  </div>
-                </button>
-              )}
-              
-              {/* Copier le lien */}
-              <button
-                onClick={copyLink}
-                className="w-full flex items-center gap-4 px-4 py-4 rounded-xl hover:bg-muted transition-smooth text-left"
-              >
-                <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
-                  <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-                  </svg>
-                </div>
-                <div className="flex-1">
-                  <div className="font-medium text-foreground">Copier le lien</div>
-                  <div className="text-sm text-muted-foreground">URL du post</div>
-                </div>
-              </button>
-            </div>
+              </div>
+              <span className="font-medium text-gray-900">Copier le texte</span>
+            </button>
+            <button onClick={shareToWhatsApp} className="w-full flex items-center gap-4 px-4 py-4 rounded-xl hover:bg-gray-100 text-left">
+              <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center">
+                <svg className="w-6 h-6 text-green-600" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+                </svg>
+              </div>
+              <span className="font-medium text-gray-900">WhatsApp</span>
+            </button>
+            <button onClick={copyLink} className="w-full flex items-center gap-4 px-4 py-4 rounded-xl hover:bg-gray-100 text-left">
+              <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center">
+                <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                </svg>
+              </div>
+              <span className="font-medium text-gray-900">Copier le lien</span>
+            </button>
           </div>
         </div>
       )}
       
-      {/* Toast confirmation */}
+      {/* Toast */}
       {showShareToast && (
-        <div className="fixed bottom-24 left-1/2 transform -translate-x-1/2 z-50 bg-green-600 text-white px-6 py-3 rounded-xl shadow-xl flex items-center gap-3 animate-in fade-in slide-in-from-bottom-2">
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-          </svg>
-          <span className="font-medium">Copié avec succès !</span>
+        <div className="fixed bottom-24 left-1/2 transform -translate-x-1/2 z-50 bg-green-600 text-white px-6 py-3 rounded-xl shadow-xl">
+          ✅ Copié !
         </div>
       )}
     </div>
