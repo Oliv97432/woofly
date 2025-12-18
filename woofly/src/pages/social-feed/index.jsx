@@ -316,12 +316,12 @@ const SocialFeed = () => {
   };
   
   return (
-    <div className="min-h-screen bg-background pb-20">
-      {/* Header fixe */}
+    <div className="min-h-screen bg-background flex flex-col">
+      {/* Header sticky */}
       <div className="sticky top-0 z-50 bg-card border-b border-border shadow-soft">
         <div className="max-w-screen-xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            <h1 className="text-xl font-heading font-bold text-foreground">
+            <h1 className="text-2xl font-heading font-semibold text-foreground">
               Communauté
             </h1>
             <UserMenu
@@ -338,7 +338,7 @@ const SocialFeed = () => {
       <div className="flex justify-center gap-6 px-4">
         {/* Sidebar gauche - Desktop uniquement */}
         <aside className="hidden lg:block w-64 sticky top-24 h-fit">
-          <div className="bg-card border border-border rounded-2xl p-4 space-y-2">
+          <div className="bg-card border border-border rounded-3xl p-6 space-y-2">
             <Link
               to="/dog-profile"
               className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-muted transition-smooth text-foreground"
@@ -374,40 +374,40 @@ const SocialFeed = () => {
         </aside>
         
         {/* Feed central */}
-        <main className="flex-1 max-w-2xl py-4 space-y-4">
+        <main className="flex-1 max-w-3xl py-6 space-y-8">
           {/* Bouton créer post */}
-          <div className="bg-card border border-border rounded-2xl p-4">
+          <div className="bg-card border border-border rounded-3xl p-6">
             <button
               onClick={() => setShowCreatePost(true)}
-              className="w-full flex items-center gap-3 px-4 py-3 bg-muted hover:bg-muted/80 rounded-xl transition-smooth text-left min-h-[56px]"
+              className="w-full flex items-center gap-3 px-4 py-3 bg-muted hover:bg-muted/80 rounded-xl transition-smooth text-left"
             >
               {userAvatar ? (
                 <img
                   src={userAvatar}
                   alt="Avatar"
-                  className="w-10 h-10 rounded-full object-cover flex-shrink-0"
+                  className="w-12 h-12 rounded-full object-cover flex-shrink-0"
                 />
               ) : (
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold flex-shrink-0">
+                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold flex-shrink-0">
                   {userName?.charAt(0).toUpperCase() || 'U'}
                 </div>
               )}
-              <span className="text-muted-foreground text-base">Quoi de neuf avec ton chien ?</span>
+              <span className="text-muted-foreground">Quoi de neuf avec ton chien ?</span>
               <Plus size={20} className="ml-auto text-primary flex-shrink-0" />
             </button>
           </div>
           
           {/* Top posts */}
           {topPosts.length > 0 && (
-            <div className="space-y-3">
-              <div className="flex items-center gap-2 px-2">
-                <TrendingUp className="text-orange-500" size={20} />
-                <h2 className="text-lg font-heading font-bold text-foreground">
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <TrendingUp className="text-orange-500" size={24} />
+                <h2 className="text-xl font-heading font-semibold text-foreground">
                   🔥 Les posts les plus utiles
                 </h2>
               </div>
               
-              <div className="grid grid-cols-1 gap-4">
+              <div className="space-y-4">
                 {topPosts.map((post) => (
                   <PostCard 
                     key={post.id} 
@@ -422,7 +422,7 @@ const SocialFeed = () => {
               </div>
               
               <div className="border-t border-border pt-4">
-                <h3 className="text-base font-heading font-semibold text-foreground mb-3 px-2">
+                <h3 className="text-base font-heading font-semibold text-foreground mb-3">
                   Tous les posts
                 </h3>
               </div>
@@ -430,12 +430,12 @@ const SocialFeed = () => {
           )}
           
           {/* Tags */}
-          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide px-1">
+          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
             {TAGS.map((tag) => (
               <button
                 key={tag}
                 onClick={() => setSelectedTag(tag)}
-                className={`px-4 py-2.5 rounded-full text-sm font-medium whitespace-nowrap transition-smooth flex-shrink-0 min-h-[44px] ${
+                className={`px-4 py-3 rounded-full text-sm font-medium whitespace-nowrap transition-smooth flex-shrink-0 ${
                   selectedTag === tag
                     ? 'bg-primary text-primary-foreground'
                     : 'bg-card border border-border hover:bg-muted'
@@ -448,8 +448,8 @@ const SocialFeed = () => {
           
           {/* Liste des posts */}
           {loading ? (
-            <div className="flex justify-center py-12">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+            <div className="flex justify-center py-20">
+              <div className="animate-spin h-12 w-12 border-4 border-primary border-t-transparent rounded-full"></div>
             </div>
           ) : posts.length > 0 ? (
             <div className="space-y-4">
@@ -467,12 +467,12 @@ const SocialFeed = () => {
             </div>
           ) : (
             <div className="bg-card rounded-3xl p-12 text-center border border-border">
-              <p className="text-muted-foreground mb-4 text-base">
+              <p className="text-muted-foreground mb-4">
                 Aucun post pour le moment
               </p>
               <button
                 onClick={() => setShowCreatePost(true)}
-                className="px-6 py-3 bg-primary text-primary-foreground rounded-xl font-medium hover:bg-primary/90 transition-smooth inline-flex items-center gap-2 min-h-[48px]"
+                className="px-6 py-3 bg-primary text-primary-foreground rounded-xl font-medium hover:bg-primary/90 transition-smooth inline-flex items-center gap-2"
               >
                 <Plus size={20} />
                 Créer le premier post
@@ -485,9 +485,9 @@ const SocialFeed = () => {
         <aside className="hidden xl:block w-72 sticky top-24 h-fit space-y-4">
           {/* Tendances */}
           {tagStats.length > 0 && (
-            <div className="bg-card border border-border rounded-2xl p-4">
-              <h3 className="font-heading font-bold text-foreground mb-3 flex items-center gap-2">
-                <TrendingUp size={18} className="text-orange-500" />
+            <div className="bg-card border border-border rounded-3xl p-6">
+              <h3 className="font-heading font-semibold text-foreground mb-3 flex items-center gap-2">
+                <TrendingUp size={20} className="text-orange-500" />
                 Tendances
               </h3>
               <div className="space-y-2">
@@ -495,10 +495,10 @@ const SocialFeed = () => {
                   <button
                     key={tag}
                     onClick={() => setSelectedTag(tag)}
-                    className="w-full flex items-center justify-between px-3 py-2 rounded-lg hover:bg-muted transition-smooth text-left min-h-[44px]"
+                    className="w-full flex items-center justify-between px-3 py-3 rounded-xl hover:bg-muted transition-smooth text-left"
                   >
                     <span className="text-sm font-medium text-foreground">#{tag}</span>
-                    <span className="text-xs text-muted-foreground">{count} posts</span>
+                    <span className="text-sm text-muted-foreground">{count} posts</span>
                   </button>
                 ))}
               </div>
@@ -507,9 +507,9 @@ const SocialFeed = () => {
           
           {/* Suggestions */}
           {suggestedUsers.length > 0 && (
-            <div className="bg-card border border-border rounded-2xl p-4">
-              <h3 className="font-heading font-bold text-foreground mb-3 flex items-center gap-2">
-                <User size={18} />
+            <div className="bg-card border border-border rounded-3xl p-6">
+              <h3 className="font-heading font-semibold text-foreground mb-3 flex items-center gap-2">
+                <User size={20} />
                 À suivre
               </h3>
               <div className="space-y-3">
@@ -546,11 +546,11 @@ const SocialFeed = () => {
                         className="flex-1 min-w-0 text-left"
                       >
                         <div className="font-medium text-sm text-foreground truncate hover:underline">{displayName}</div>
-                        <div className="text-xs text-muted-foreground truncate">{suggestedUser.dogBreed}</div>
+                        <div className="text-sm text-muted-foreground truncate">{suggestedUser.dogBreed}</div>
                       </button>
                       <button 
                         onClick={() => handleFollow(suggestedUser.id)}
-                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-smooth min-h-[40px] ${
+                        className={`px-4 py-2 rounded-xl text-sm font-medium transition-smooth ${
                           isFollowing
                             ? 'bg-muted text-foreground hover:bg-muted/80'
                             : 'bg-primary text-primary-foreground hover:bg-primary/90'
@@ -580,34 +580,6 @@ const SocialFeed = () => {
           }}
         />
       )}
-    </div>
-  );
-};
-
-// Composant Avatar
-const Avatar = ({ src, name, size = 'md', className = '' }) => {
-  const [imageError, setImageError] = useState(false);
-  
-  const sizeClasses = {
-    sm: 'w-10 h-10 text-sm',
-    md: 'w-12 h-12 text-base',
-    lg: 'w-14 h-14 text-lg'
-  };
-  
-  if (src && !imageError) {
-    return (
-      <img
-        src={src}
-        alt={name || 'Avatar'}
-        className={`${sizeClasses[size]} rounded-full object-cover ${className}`}
-        onError={() => setImageError(true)}
-      />
-    );
-  }
-  
-  return (
-    <div className={`${sizeClasses[size]} rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold ${className}`}>
-      {name ? name.charAt(0).toUpperCase() : <User size={size === 'sm' ? 16 : size === 'lg' ? 24 : 20} />}
     </div>
   );
 };
@@ -861,46 +833,51 @@ const PostCard = ({ post, currentUserId, currentUserAvatar, currentUserName, onU
   };
   
   const cardClasses = isTopPost 
-    ? "bg-gradient-to-br from-orange-50 to-yellow-50 border-2 border-orange-200 rounded-2xl p-4 transition-smooth"
-    : "bg-card border border-border rounded-2xl p-4 transition-smooth";
+    ? "bg-gradient-to-br from-orange-50 to-yellow-50 border-2 border-orange-200 rounded-3xl p-6 transition-smooth"
+    : "bg-card border border-border rounded-3xl p-6 transition-smooth";
   
   return (
     <div className={cardClasses}>
       {/* En-tête du post */}
-      <div className="flex items-start gap-3 mb-3">
+      <div className="flex items-start gap-3 mb-4">
         <button 
           onClick={() => navigate(`/profile/${post.user_id}`)}
           className="flex-shrink-0"
         >
-          <Avatar 
-            src={authorAvatar} 
-            name={authorName} 
-            size="md" 
-            className={`cursor-pointer hover:opacity-80 transition-smooth ${isTopPost ? 'bg-gradient-to-br from-orange-500 to-yellow-600' : ''}`}
-          />
+          {authorAvatar ? (
+            <img
+              src={authorAvatar}
+              alt={authorName}
+              className="w-12 h-12 rounded-full object-cover cursor-pointer hover:opacity-80 transition-smooth"
+            />
+          ) : (
+            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold cursor-pointer hover:opacity-80 transition-smooth">
+              {authorName.charAt(0).toUpperCase()}
+            </div>
+          )}
         </button>
         
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <button 
               onClick={() => navigate(`/profile/${post.user_id}`)}
-              className="font-semibold text-foreground text-base hover:underline"
+              className="font-semibold text-foreground hover:underline"
             >
               {authorName}
             </button>
             {isTopPost && <TrendingUp size={16} className="text-orange-500 flex-shrink-0" />}
             {post.is_short && <Play size={16} className="text-primary flex-shrink-0" />}
           </div>
-          <span className="text-muted-foreground text-sm block mt-0.5">
+          <span className="text-sm text-muted-foreground block mt-1">
             {formatDate(post.created_at)}
           </span>
         </div>
       </div>
       
       {/* Contenu du post */}
-      <div className="mb-3">
+      <div className="mb-4">
         {post.title && (
-          <h3 className="text-base font-bold text-foreground mb-2">{post.title}</h3>
+          <h3 className="text-lg font-heading font-semibold text-foreground mb-2">{post.title}</h3>
         )}
         
         <p className="text-base text-foreground whitespace-pre-wrap leading-relaxed">{post.content}</p>
@@ -908,7 +885,7 @@ const PostCard = ({ post, currentUserId, currentUserAvatar, currentUserName, onU
       
       {/* Vidéo (si short) */}
       {post.is_short && post.video_url && (
-        <div className="mb-3 relative">
+        <div className="mb-4 relative">
           <video
             src={post.video_url}
             controls
@@ -919,7 +896,7 @@ const PostCard = ({ post, currentUserId, currentUserAvatar, currentUserName, onU
             Votre navigateur ne supporte pas la lecture de vidéos.
           </video>
           {post.video_duration && (
-            <div className="absolute bottom-2 right-2 bg-black/70 text-white px-2 py-1 rounded-lg text-xs font-medium">
+            <div className="absolute bottom-2 right-2 bg-black/70 text-white px-2 py-1 rounded-lg text-sm font-medium">
               {post.video_duration}s
             </div>
           )}
@@ -928,7 +905,7 @@ const PostCard = ({ post, currentUserId, currentUserAvatar, currentUserName, onU
       
       {/* Images */}
       {!post.is_short && !loadingImages && postImages.length > 0 && (
-        <div className="mb-3 space-y-2">
+        <div className="mb-4 space-y-2">
           {postImages.map((img) => (
             <div key={img.id} className="w-full">
               <img
@@ -948,7 +925,7 @@ const PostCard = ({ post, currentUserId, currentUserAvatar, currentUserName, onU
           {post.tags.map((tag, idx) => (
             <span 
               key={idx} 
-              className={`px-3 py-1.5 text-sm font-medium rounded-full ${
+              className={`px-3 py-1 text-sm font-medium rounded-full ${
                 isTopPost
                   ? 'bg-orange-100 text-orange-700'
                   : 'bg-primary/10 text-primary'
@@ -961,10 +938,10 @@ const PostCard = ({ post, currentUserId, currentUserAvatar, currentUserName, onU
       )}
       
       {/* Actions */}
-      <div className="flex items-center gap-6 pt-3 border-t border-border">
+      <div className="flex items-center gap-6 pt-4 border-t border-border">
         <button
           onClick={handleLike}
-          className="flex items-center gap-2 transition-smooth min-h-[44px]"
+          className="flex items-center gap-2 transition-smooth"
         >
           <Heart 
             size={24} 
@@ -978,7 +955,7 @@ const PostCard = ({ post, currentUserId, currentUserAvatar, currentUserName, onU
         
         <button
           onClick={() => setShowComments(!showComments)}
-          className="flex items-center gap-2 transition-smooth min-h-[44px]"
+          className="flex items-center gap-2 transition-smooth"
         >
           <MessageCircle size={24} className="text-muted-foreground" />
           <span className="text-base font-medium text-muted-foreground">
@@ -988,7 +965,7 @@ const PostCard = ({ post, currentUserId, currentUserAvatar, currentUserName, onU
         
         <button 
           onClick={() => setShowShareModal(true)}
-          className="flex items-center gap-2 transition-smooth min-h-[44px] ml-auto"
+          className="flex items-center gap-2 transition-smooth ml-auto"
         >
           <Share2 size={24} className="text-muted-foreground" />
         </button>
@@ -996,9 +973,19 @@ const PostCard = ({ post, currentUserId, currentUserAvatar, currentUserName, onU
       
       {/* Section commentaires */}
       {showComments && (
-        <div className="mt-4 pt-4 border-t border-border space-y-4">
+        <div className="mt-6 pt-6 border-t border-border space-y-4">
           <form onSubmit={handleCommentSubmit} className="flex gap-3">
-            <Avatar src={currentUserAvatar} name={currentUserName} size="sm" />
+            {currentUserAvatar ? (
+              <img
+                src={currentUserAvatar}
+                alt="Avatar"
+                className="w-10 h-10 rounded-full object-cover flex-shrink-0"
+              />
+            ) : (
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold flex-shrink-0">
+                {currentUserName?.charAt(0).toUpperCase() || 'U'}
+              </div>
+            )}
             <div className="flex-1">
               <textarea
                 value={newComment}
@@ -1011,7 +998,7 @@ const PostCard = ({ post, currentUserId, currentUserAvatar, currentUserName, onU
               <button
                 type="submit"
                 disabled={!newComment.trim() || submittingComment}
-                className="mt-2 px-4 py-2.5 text-base bg-primary text-primary-foreground rounded-xl font-medium hover:bg-primary/90 transition-smooth disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center gap-2 min-h-[44px]"
+                className="mt-2 px-4 py-3 text-base bg-primary text-primary-foreground rounded-xl font-medium hover:bg-primary/90 transition-smooth disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center gap-2"
               >
                 <Send size={18} />
                 {submittingComment ? 'Envoi...' : 'Commenter'}
@@ -1020,8 +1007,8 @@ const PostCard = ({ post, currentUserId, currentUserAvatar, currentUserName, onU
           </form>
           
           {loadingComments ? (
-            <div className="flex justify-center py-6">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            <div className="flex justify-center py-8">
+              <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
             </div>
           ) : comments.length > 0 ? (
             <div className="space-y-4">
@@ -1039,7 +1026,17 @@ const PostCard = ({ post, currentUserId, currentUserAvatar, currentUserName, onU
                       onClick={() => navigate(`/profile/${comment.user_id}`)}
                       className="flex-shrink-0"
                     >
-                      <Avatar src={commentAuthorAvatar} name={commentAuthorName} size="sm" className="cursor-pointer hover:opacity-80 transition-smooth" />
+                      {commentAuthorAvatar ? (
+                        <img
+                          src={commentAuthorAvatar}
+                          alt={commentAuthorName}
+                          className="w-10 h-10 rounded-full object-cover cursor-pointer hover:opacity-80 transition-smooth"
+                        />
+                      ) : (
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold cursor-pointer hover:opacity-80 transition-smooth">
+                          {commentAuthorName.charAt(0).toUpperCase()}
+                        </div>
+                      )}
                     </button>
                     <div className="flex-1">
                       <div className="bg-muted rounded-xl px-4 py-3">
@@ -1060,7 +1057,7 @@ const PostCard = ({ post, currentUserId, currentUserAvatar, currentUserName, onU
               })}
             </div>
           ) : (
-            <p className="text-muted-foreground text-center text-base py-6">
+            <p className="text-muted-foreground text-center text-base py-8">
               Aucun commentaire pour le moment. Soyez le premier à commenter !
             </p>
           )}
@@ -1070,18 +1067,18 @@ const PostCard = ({ post, currentUserId, currentUserAvatar, currentUserName, onU
       {/* Modal de partage */}
       {showShareModal && (
         <div 
-          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 p-4"
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50"
           onClick={() => setShowShareModal(false)}
         >
           <div 
-            className="bg-card rounded-t-3xl sm:rounded-3xl p-6 max-w-md w-full space-y-4 shadow-xl animate-in slide-in-from-bottom-4 sm:slide-in-from-bottom-0"
+            className="bg-card rounded-t-3xl sm:rounded-3xl p-6 max-w-md w-full space-y-4 shadow-xl animate-in slide-in-from-bottom-4"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-bold text-foreground">Partager ce post</h3>
+              <h3 className="text-xl font-heading font-semibold text-foreground">Partager ce post</h3>
               <button 
                 onClick={() => setShowShareModal(false)}
-                className="p-2 hover:bg-muted rounded-full transition-smooth min-h-[44px] min-w-[44px] flex items-center justify-center"
+                className="p-2 hover:bg-muted rounded-full transition-smooth"
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -1089,11 +1086,11 @@ const PostCard = ({ post, currentUserId, currentUserAvatar, currentUserName, onU
               </button>
             </div>
             
-            <div className="space-y-2">
+            <div className="space-y-3">
               {/* Copier le texte */}
               <button
                 onClick={copyText}
-                className="w-full flex items-center gap-4 px-4 py-4 rounded-xl hover:bg-muted transition-smooth text-left min-h-[60px]"
+                className="w-full flex items-center gap-4 px-4 py-4 rounded-xl hover:bg-muted transition-smooth text-left"
               >
                 <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
                   <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1101,7 +1098,7 @@ const PostCard = ({ post, currentUserId, currentUserAvatar, currentUserName, onU
                   </svg>
                 </div>
                 <div className="flex-1">
-                  <div className="font-medium text-foreground text-base">Copier le texte</div>
+                  <div className="font-medium text-foreground">Copier le texte</div>
                   <div className="text-sm text-muted-foreground">Texte du post</div>
                 </div>
               </button>
@@ -1109,7 +1106,7 @@ const PostCard = ({ post, currentUserId, currentUserAvatar, currentUserName, onU
               {/* WhatsApp */}
               <button
                 onClick={shareToWhatsApp}
-                className="w-full flex items-center gap-4 px-4 py-4 rounded-xl hover:bg-muted transition-smooth text-left min-h-[60px]"
+                className="w-full flex items-center gap-4 px-4 py-4 rounded-xl hover:bg-muted transition-smooth text-left"
               >
                 <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
                   <svg className="w-6 h-6 text-green-600" fill="currentColor" viewBox="0 0 24 24">
@@ -1117,7 +1114,7 @@ const PostCard = ({ post, currentUserId, currentUserAvatar, currentUserName, onU
                   </svg>
                 </div>
                 <div className="flex-1">
-                  <div className="font-medium text-foreground text-base">WhatsApp</div>
+                  <div className="font-medium text-foreground">WhatsApp</div>
                   <div className="text-sm text-muted-foreground">Partager sur WhatsApp</div>
                 </div>
               </button>
@@ -1125,7 +1122,7 @@ const PostCard = ({ post, currentUserId, currentUserAvatar, currentUserName, onU
               {/* Facebook */}
               <button
                 onClick={shareToFacebook}
-                className="w-full flex items-center gap-4 px-4 py-4 rounded-xl hover:bg-muted transition-smooth text-left min-h-[60px]"
+                className="w-full flex items-center gap-4 px-4 py-4 rounded-xl hover:bg-muted transition-smooth text-left"
               >
                 <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
                   <svg className="w-6 h-6 text-blue-600" fill="currentColor" viewBox="0 0 24 24">
@@ -1133,7 +1130,7 @@ const PostCard = ({ post, currentUserId, currentUserAvatar, currentUserName, onU
                   </svg>
                 </div>
                 <div className="flex-1">
-                  <div className="font-medium text-foreground text-base">Facebook</div>
+                  <div className="font-medium text-foreground">Facebook</div>
                   <div className="text-sm text-muted-foreground">Partager sur Facebook</div>
                 </div>
               </button>
@@ -1142,7 +1139,7 @@ const PostCard = ({ post, currentUserId, currentUserAvatar, currentUserName, onU
               {postImages.length > 0 && (
                 <button
                   onClick={downloadImage}
-                  className="w-full flex items-center gap-4 px-4 py-4 rounded-xl hover:bg-muted transition-smooth text-left min-h-[60px]"
+                  className="w-full flex items-center gap-4 px-4 py-4 rounded-xl hover:bg-muted transition-smooth text-left"
                 >
                   <div className="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center flex-shrink-0">
                     <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1150,8 +1147,8 @@ const PostCard = ({ post, currentUserId, currentUserAvatar, currentUserName, onU
                     </svg>
                   </div>
                   <div className="flex-1">
-                    <div className="font-medium text-foreground text-base">Télécharger l'image</div>
-                    <div className="text-sm text-muted-foreground">Enregistrer sur votre appareil</div>
+                    <div className="font-medium text-foreground">Télécharger l'image</div>
+                    <div className="text-sm text-muted-foreground">Enregistrer</div>
                   </div>
                 </button>
               )}
@@ -1159,7 +1156,7 @@ const PostCard = ({ post, currentUserId, currentUserAvatar, currentUserName, onU
               {/* Copier le lien */}
               <button
                 onClick={copyLink}
-                className="w-full flex items-center gap-4 px-4 py-4 rounded-xl hover:bg-muted transition-smooth text-left min-h-[60px]"
+                className="w-full flex items-center gap-4 px-4 py-4 rounded-xl hover:bg-muted transition-smooth text-left"
               >
                 <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
                   <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1167,7 +1164,7 @@ const PostCard = ({ post, currentUserId, currentUserAvatar, currentUserName, onU
                   </svg>
                 </div>
                 <div className="flex-1">
-                  <div className="font-medium text-foreground text-base">Copier le lien</div>
+                  <div className="font-medium text-foreground">Copier le lien</div>
                   <div className="text-sm text-muted-foreground">URL du post</div>
                 </div>
               </button>
