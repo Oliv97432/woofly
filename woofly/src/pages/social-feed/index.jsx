@@ -318,9 +318,9 @@ const SocialFeed = () => {
   return (
     <div className="min-h-screen bg-background">
       <div className="sticky top-0 z-50 bg-card border-b border-border shadow-soft">
-        <div className="max-w-screen-xl mx-auto px-4 py-3">
+        <div className="max-w-screen-xl mx-auto px-3 sm:px-4 py-2.5 sm:py-3">
           <div className="flex items-center justify-between">
-            <h1 className="text-xl font-heading font-semibold text-foreground">
+            <h1 className="text-lg sm:text-xl font-heading font-semibold text-foreground">
               Communauté
             </h1>
             <UserMenu
@@ -334,7 +334,7 @@ const SocialFeed = () => {
       
       <TabNavigation />
       
-      <div className="flex justify-center gap-6 px-4">
+      <div className="flex justify-center gap-4 lg:gap-6 px-2 sm:px-4">
         {/* Sidebar gauche */}
         <aside className="hidden lg:block w-64 sticky top-24 h-fit">
           <div className="bg-card border border-border rounded-2xl p-4 space-y-2">
@@ -373,38 +373,38 @@ const SocialFeed = () => {
         </aside>
         
         {/* Feed central */}
-        <main className="flex-1 max-w-2xl py-4 space-y-3">
-          <div className="bg-card border border-border rounded-2xl p-3">
+        <main className="flex-1 max-w-2xl py-3 sm:py-4 space-y-2.5 sm:space-y-3">
+          <div className="bg-card border border-border rounded-xl sm:rounded-2xl p-2.5 sm:p-3">
             <button
               onClick={() => setShowCreatePost(true)}
-              className="w-full flex items-center gap-3 px-3 py-2 bg-muted hover:bg-muted/80 rounded-xl transition-smooth text-left"
+              className="w-full flex items-center gap-2 sm:gap-3 px-2.5 sm:px-3 py-2 bg-muted hover:bg-muted/80 rounded-lg sm:rounded-xl transition-smooth text-left"
             >
               {userAvatar ? (
                 <img
                   src={userAvatar}
                   alt="Avatar"
-                  className="w-8 h-8 rounded-full object-cover"
+                  className="w-8 h-8 rounded-full object-cover flex-shrink-0"
                 />
               ) : (
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-sm">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
                   {userName?.charAt(0).toUpperCase() || 'U'}
                 </div>
               )}
-              <span className="text-muted-foreground text-sm">Quoi de neuf avec ton chien ?</span>
-              <Plus size={18} className="ml-auto text-primary" />
+              <span className="text-muted-foreground text-xs sm:text-sm">Quoi de neuf avec ton chien ?</span>
+              <Plus size={16} className="sm:w-[18px] sm:h-[18px] ml-auto text-primary flex-shrink-0" />
             </button>
           </div>
           
           {topPosts.length > 0 && (
-            <div className="space-y-3">
+            <div className="space-y-2.5 sm:space-y-3">
               <div className="flex items-center gap-2">
-                <TrendingUp className="text-orange-500" size={20} />
-                <h2 className="text-lg font-heading font-bold text-foreground">
+                <TrendingUp className="text-orange-500" size={18} />
+                <h2 className="text-base sm:text-lg font-heading font-bold text-foreground">
                   🔥 Les posts les plus utiles
                 </h2>
               </div>
               
-              <div className="grid grid-cols-1 gap-3">
+              <div className="grid grid-cols-1 gap-2.5 sm:gap-3">
                 {topPosts.map((post) => (
                   <PostCard 
                     key={post.id} 
@@ -418,20 +418,20 @@ const SocialFeed = () => {
                 ))}
               </div>
               
-              <div className="border-t border-border pt-3">
-                <h3 className="text-base font-heading font-semibold text-foreground mb-3">
+              <div className="border-t border-border pt-2.5 sm:pt-3">
+                <h3 className="text-sm sm:text-base font-heading font-semibold text-foreground mb-2.5 sm:mb-3">
                   Tous les posts
                 </h3>
               </div>
             </div>
           )}
           
-          <div className="flex gap-2 overflow-x-auto pb-2">
+          <div className="flex gap-1.5 sm:gap-2 overflow-x-auto pb-2 scrollbar-hide">
             {TAGS.map((tag) => (
               <button
                 key={tag}
                 onClick={() => setSelectedTag(tag)}
-                className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-smooth ${
+                className={`px-2.5 sm:px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-smooth flex-shrink-0 ${
                   selectedTag === tag
                     ? 'bg-primary text-primary-foreground'
                     : 'bg-card border border-border hover:bg-muted'
@@ -447,7 +447,7 @@ const SocialFeed = () => {
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
             </div>
           ) : posts.length > 0 ? (
-            <div className="space-y-3">
+            <div className="space-y-2.5 sm:space-y-3">
               {posts.map((post) => (
                 <PostCard 
                   key={post.id} 
@@ -878,12 +878,12 @@ const PostCard = ({ post, currentUserId, currentUserAvatar, currentUserName, onU
   };
   
   const cardClasses = isTopPost 
-    ? "bg-gradient-to-br from-orange-50 to-yellow-50 border-2 border-orange-200 rounded-2xl p-4 transition-smooth"
-    : "bg-card border border-border rounded-2xl p-4 transition-smooth";
+    ? "bg-gradient-to-br from-orange-50 to-yellow-50 border-2 border-orange-200 rounded-xl sm:rounded-2xl p-3 sm:p-4 transition-smooth"
+    : "bg-card border border-border rounded-xl sm:rounded-2xl p-3 sm:p-4 transition-smooth";
   
   return (
     <div className={cardClasses}>
-      <div className="flex items-start gap-3 mb-3">
+      <div className="flex items-start gap-2 sm:gap-3 mb-2.5 sm:mb-3">
         <button 
           onClick={() => navigate(`/profile/${post.user_id}`)}
           className="flex-shrink-0"
@@ -897,43 +897,43 @@ const PostCard = ({ post, currentUserId, currentUserAvatar, currentUserName, onU
         </button>
         
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
             <button 
               onClick={() => navigate(`/profile/${post.user_id}`)}
-              className="font-semibold text-foreground text-sm hover:underline"
+              className="font-semibold text-foreground text-xs sm:text-sm hover:underline"
             >
               {authorName}
             </button>
-            {isTopPost && <TrendingUp size={14} className="text-orange-500" />}
-            {post.is_short && <Play size={14} className="text-primary" />}
-            <span className="text-muted-foreground text-xs">
+            {isTopPost && <TrendingUp size={12} className="sm:w-[14px] sm:h-[14px] text-orange-500 flex-shrink-0" />}
+            {post.is_short && <Play size={12} className="sm:w-[14px] sm:h-[14px] text-primary flex-shrink-0" />}
+            <span className="text-muted-foreground text-[10px] sm:text-xs">
               {formatDate(post.created_at)}
             </span>
           </div>
         </div>
       </div>
       
-      <div className="flex gap-4">
+      <div className="flex gap-3 sm:gap-4">
         <div className="flex-1 min-w-0">
           {post.title && (
-            <h3 className="text-base font-bold text-foreground mb-2">{post.title}</h3>
+            <h3 className="text-sm sm:text-base font-bold text-foreground mb-1.5 sm:mb-2">{post.title}</h3>
           )}
           
-          <p className="text-sm text-foreground whitespace-pre-wrap mb-3">{post.content}</p>
+          <p className="text-xs sm:text-sm text-foreground whitespace-pre-wrap mb-2 sm:mb-3 leading-relaxed">{post.content}</p>
           
           {post.is_short && post.video_url && (
-            <div className="mb-3 flex justify-center relative">
+            <div className="mb-2 sm:mb-3 flex justify-center relative">
               <video
                 src={post.video_url}
                 controls
-                className="rounded-xl"
-                style={{ maxWidth: '100%', maxHeight: '400px', width: 'auto' }}
+                className="rounded-lg sm:rounded-xl"
+                style={{ maxWidth: '100%', maxHeight: '350px', width: 'auto' }}
                 preload="metadata"
               >
                 Votre navigateur ne supporte pas la lecture de vidéos.
               </video>
               {post.video_duration && (
-                <div className="absolute bottom-2 right-2 bg-black/70 text-white px-2 py-1 rounded-lg text-xs">
+                <div className="absolute bottom-2 right-2 bg-black/70 text-white px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-md sm:rounded-lg text-[10px] sm:text-xs">
                   {post.video_duration}s
                 </div>
               )}
@@ -941,14 +941,14 @@ const PostCard = ({ post, currentUserId, currentUserAvatar, currentUserName, onU
           )}
           
           {!post.is_short && !loadingImages && postImages.length > 0 && (
-            <div className="mb-3 space-y-2">
+            <div className="mb-2 sm:mb-3 space-y-1.5 sm:space-y-2">
               {postImages.map((img) => (
                 <div key={img.id} className="w-full">
                   <img
                     src={img.image_url}
                     alt={img.caption || 'Image du post'}
-                    className="w-full rounded-xl"
-                    style={{ maxHeight: '400px', objectFit: 'contain', backgroundColor: '#f3f4f6' }}
+                    className="w-full rounded-lg sm:rounded-xl"
+                    style={{ maxHeight: '350px', objectFit: 'contain', backgroundColor: '#f3f4f6' }}
                   />
                 </div>
               ))}
@@ -956,11 +956,11 @@ const PostCard = ({ post, currentUserId, currentUserAvatar, currentUserName, onU
           )}
           
           {post.tags && post.tags.length > 0 && (
-            <div className="flex gap-2 flex-wrap">
+            <div className="flex gap-1.5 sm:gap-2 flex-wrap">
               {post.tags.map((tag, idx) => (
                 <span 
                   key={idx} 
-                  className={`px-2 py-1 text-xs font-medium rounded-full ${
+                  className={`px-2 py-0.5 sm:px-2 sm:py-1 text-[10px] sm:text-xs font-medium rounded-full ${
                     isTopPost
                       ? 'bg-orange-100 text-orange-700'
                       : 'bg-primary/10 text-primary'
