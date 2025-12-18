@@ -14,7 +14,8 @@ import ForumDetail from './pages/forum-detail';
 import PostDetail from './pages/post-detail';
 import MultiProfileManagement from './pages/multi-profile-management';
 import Register from './pages/register';
-import UserProfile from './pages/profile/UserProfile';  // ← CHEMIN CORRIGÉ
+import UserProfile from './pages/profile/UserProfile';
+import Notifications from './pages/Notifications';  // ← AJOUTER
 import Settings from './pages/settings';
 import CGU from './pages/CGU';
 import MentionsLegales from './pages/MentionsLegales';
@@ -43,7 +44,10 @@ const Routes = () => {
         <Route path="/register" element={<Register />} />
         
         {/* Profils publics */}
-        <Route path="/profile/:userId" element={<UserProfile />} />  {/* ← AJOUTER CETTE LIGNE */}
+        <Route path="/profile/:userId" element={<UserProfile />} />
+        
+        {/* Notifications */}
+        <Route path="/notifications" element={<Notifications />} />  {/* ← AJOUTER CETTE LIGNE */}
         
         <Route path="/settings" element={<Settings />} />
         
