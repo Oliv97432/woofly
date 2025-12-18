@@ -520,21 +520,29 @@ const SocialFeed = () => {
                   
                   return (
                     <div key={suggestedUser.id} className="flex items-center gap-3">
-                      {avatarUrl ? (
-                        <img
-                          src={avatarUrl}
-                          alt={displayName}
-                          className="w-10 h-10 rounded-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold">
-                          {displayName.charAt(0).toUpperCase()}
-                        </div>
-                      )}
-                      <div className="flex-1 min-w-0">
-                        <div className="font-medium text-sm text-foreground truncate">{displayName}</div>
+                      <button 
+                        onClick={() => navigate(`/profile/${suggestedUser.id}`)}
+                        className="flex-shrink-0"
+                      >
+                        {avatarUrl ? (
+                          <img
+                            src={avatarUrl}
+                            alt={displayName}
+                            className="w-10 h-10 rounded-full object-cover cursor-pointer hover:opacity-80 transition-smooth"
+                          />
+                        ) : (
+                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold cursor-pointer hover:opacity-80 transition-smooth">
+                            {displayName.charAt(0).toUpperCase()}
+                          </div>
+                        )}
+                      </button>
+                      <button 
+                        onClick={() => navigate(`/profile/${suggestedUser.id}`)}
+                        className="flex-1 min-w-0 text-left"
+                      >
+                        <div className="font-medium text-sm text-foreground truncate hover:underline">{displayName}</div>
                         <div className="text-xs text-muted-foreground truncate">{suggestedUser.dogBreed}</div>
-                      </div>
+                      </button>
                       <button 
                         onClick={() => handleFollow(suggestedUser.id)}
                         className={`px-3 py-1 rounded-lg text-xs font-medium transition-smooth ${
@@ -617,6 +625,7 @@ const Avatar = ({ src, name, size = 'md', className = '' }) => {
 };
 
 const PostCard = ({ post, currentUserId, currentUserAvatar, currentUserName, onUpdate, isTopPost }) => {
+  const navigate = useNavigate();
   const [hasLiked, setHasLiked] = useState(false);
   const [localLikeCount, setLocalLikeCount] = useState(post.like_count || 0);
   const [showComments, setShowComments] = useState(false);
@@ -627,6 +636,7 @@ const PostCard = ({ post, currentUserId, currentUserAvatar, currentUserName, onU
   const [postImages, setPostImages] = useState([]);
   const [loadingImages, setLoadingImages] = useState(true);
   const [showShareToast, setShowShareToast] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
   
   const authorName = post.author?.full_name || 
                      post.author?.email?.split('@')[0] || 
@@ -784,34 +794,71 @@ const PostCard = ({ post, currentUserId, currentUserAvatar, currentUserName, onU
     setShowComments(!showComments);
   };
   
-  const handleShare = async () => {
-    const postUrl = `${window.location.origin}/post/${post.id}`;
+  const handleShare = () => {
+    setShowShareModal(true);
+  };
+  
+  const copyText = async () => {
+    const textToCopy = `${post.title ? post.title + '\n\n' : ''}${post.content}\n\nPublié par ${authorName}`;
     
-    // Essayer l'API Web Share (mobile)
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: post.title || 'Post sur Doogybook',
-          text: post.content,
-          url: postUrl
-        });
-        return;
-      } catch (err) {
-        // Ignoré si l'utilisateur annule
-        if (err.name !== 'AbortError') {
-          console.log('Erreur partage:', err);
-        }
-      }
+    try {
+      await navigator.clipboard.writeText(textToCopy);
+      setShowShareToast(true);
+      setTimeout(() => setShowShareToast(false), 3000);
+      setShowShareModal(false);
+    } catch (err) {
+      alert('Texte copié :\n\n' + textToCopy);
     }
+  };
+  
+  const copyLink = async () => {
+    const postUrl = `${window.location.origin}/social-feed?post=${post.id}`;
     
-    // Fallback: copier dans le presse-papier
     try {
       await navigator.clipboard.writeText(postUrl);
       setShowShareToast(true);
       setTimeout(() => setShowShareToast(false), 3000);
+      setShowShareModal(false);
     } catch (err) {
-      console.error('Erreur copie:', err);
-      alert('Lien copié : ' + postUrl);
+      alert('Lien : ' + postUrl);
+    }
+  };
+  
+  const shareToWhatsApp = () => {
+    const text = `${post.title ? post.title + '\n\n' : ''}${post.content}\n\n👉 ${window.location.origin}/social-feed?post=${post.id}`;
+    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(text)}`;
+    window.open(whatsappUrl, '_blank');
+    setShowShareModal(false);
+  };
+  
+  const shareToFacebook = () => {
+    const postUrl = `${window.location.origin}/social-feed?post=${post.id}`;
+    const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(postUrl)}&quote=${encodeURIComponent(post.content)}`;
+    window.open(facebookUrl, '_blank', 'width=600,height=400');
+    setShowShareModal(false);
+  };
+  
+  const downloadImage = async () => {
+    if (postImages.length === 0) return;
+    
+    try {
+      const imageUrl = postImages[0].image_url;
+      const response = await fetch(imageUrl);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `doogybook-post-${post.id}.jpg`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      setShowShareToast(true);
+      setTimeout(() => setShowShareToast(false), 3000);
+      setShowShareModal(false);
+    } catch (err) {
+      console.error('Erreur téléchargement:', err);
+      alert('Erreur lors du téléchargement de l\'image');
     }
   };
   
@@ -837,16 +884,26 @@ const PostCard = ({ post, currentUserId, currentUserAvatar, currentUserName, onU
   return (
     <div className={cardClasses}>
       <div className="flex items-start gap-3 mb-3">
-        <Avatar 
-          src={authorAvatar} 
-          name={authorName} 
-          size="md" 
-          className={isTopPost ? 'bg-gradient-to-br from-orange-500 to-yellow-600' : ''}
-        />
+        <button 
+          onClick={() => navigate(`/profile/${post.user_id}`)}
+          className="flex-shrink-0"
+        >
+          <Avatar 
+            src={authorAvatar} 
+            name={authorName} 
+            size="md" 
+            className={`cursor-pointer hover:opacity-80 transition-smooth ${isTopPost ? 'bg-gradient-to-br from-orange-500 to-yellow-600' : ''}`}
+          />
+        </button>
         
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <span className="font-semibold text-foreground text-sm">{authorName}</span>
+            <button 
+              onClick={() => navigate(`/profile/${post.user_id}`)}
+              className="font-semibold text-foreground text-sm hover:underline"
+            >
+              {authorName}
+            </button>
             {isTopPost && <TrendingUp size={14} className="text-orange-500" />}
             {post.is_short && <Play size={14} className="text-primary" />}
             <span className="text-muted-foreground text-xs">
@@ -956,13 +1013,122 @@ const PostCard = ({ post, currentUserId, currentUserAvatar, currentUserName, onU
         </div>
       </div>
       
+      {/* Modal de partage */}
+      {showShareModal && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          onClick={() => setShowShareModal(false)}
+        >
+          <div 
+            className="bg-card rounded-2xl p-6 max-w-sm w-full space-y-4 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-foreground">Partager ce post</h3>
+              <button 
+                onClick={() => setShowShareModal(false)}
+                className="p-2 hover:bg-muted rounded-full transition-smooth"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            
+            <div className="space-y-2">
+              {/* Copier le texte */}
+              <button
+                onClick={copyText}
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-muted transition-smooth text-left"
+              >
+                <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                  <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                </div>
+                <div className="flex-1">
+                  <div className="font-medium text-foreground">Copier le texte</div>
+                  <div className="text-xs text-muted-foreground">Texte du post dans le presse-papier</div>
+                </div>
+              </button>
+              
+              {/* WhatsApp */}
+              <button
+                onClick={shareToWhatsApp}
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-muted transition-smooth text-left"
+              >
+                <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
+                  <svg className="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+                  </svg>
+                </div>
+                <div className="flex-1">
+                  <div className="font-medium text-foreground">WhatsApp</div>
+                  <div className="text-xs text-muted-foreground">Partager sur WhatsApp</div>
+                </div>
+              </button>
+              
+              {/* Facebook */}
+              <button
+                onClick={shareToFacebook}
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-muted transition-smooth text-left"
+              >
+                <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                  <svg className="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                  </svg>
+                </div>
+                <div className="flex-1">
+                  <div className="font-medium text-foreground">Facebook</div>
+                  <div className="text-xs text-muted-foreground">Partager sur Facebook</div>
+                </div>
+              </button>
+              
+              {/* Télécharger image (si présente) */}
+              {postImages.length > 0 && (
+                <button
+                  onClick={downloadImage}
+                  className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-muted transition-smooth text-left"
+                >
+                  <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center">
+                    <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                  <div className="flex-1">
+                    <div className="font-medium text-foreground">Télécharger l'image</div>
+                    <div className="text-xs text-muted-foreground">Enregistrer sur votre appareil</div>
+                  </div>
+                </button>
+              )}
+              
+              {/* Copier le lien */}
+              <button
+                onClick={copyLink}
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-muted transition-smooth text-left"
+              >
+                <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
+                  <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                  </svg>
+                </div>
+                <div className="flex-1">
+                  <div className="font-medium text-foreground">Copier le lien</div>
+                  <div className="text-xs text-muted-foreground">URL du post</div>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      
       {/* Toast confirmation partage */}
       {showShareToast && (
         <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50 bg-green-600 text-white px-4 py-2 rounded-lg shadow-lg flex items-center gap-2 animate-in fade-in slide-in-from-bottom-2">
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
           </svg>
-          Lien copié dans le presse-papier !
+          Copié avec succès !
         </div>
       )}
       
@@ -1004,10 +1170,20 @@ const PostCard = ({ post, currentUserId, currentUserAvatar, currentUserName, onU
                 
                 return (
                   <div key={comment.id} className="flex gap-2">
-                    <Avatar src={commentAuthorAvatar} name={commentAuthorName} size="sm" />
+                    <button 
+                      onClick={() => navigate(`/profile/${comment.user_id}`)}
+                      className="flex-shrink-0"
+                    >
+                      <Avatar src={commentAuthorAvatar} name={commentAuthorName} size="sm" className="cursor-pointer hover:opacity-80 transition-smooth" />
+                    </button>
                     <div className="flex-1">
                       <div className="bg-muted rounded-xl px-3 py-2">
-                        <div className="font-semibold text-xs mb-1">{commentAuthorName}</div>
+                        <button 
+                          onClick={() => navigate(`/profile/${comment.user_id}`)}
+                          className="font-semibold text-xs mb-1 hover:underline"
+                        >
+                          {commentAuthorName}
+                        </button>
                         <p className="text-xs text-foreground">{comment.content}</p>
                       </div>
                       <div className="text-xs text-muted-foreground mt-1 ml-2">
