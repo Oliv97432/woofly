@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Users, Bell, BookOpen } from 'lucide-react';
+import { Dog, Users, BookOpen } from 'lucide-react';
 
 const TabNavigation = () => {
   const navigate = useNavigate();
@@ -8,17 +8,17 @@ const TabNavigation = () => {
 
   const tabs = [
     { 
-      path: '/social-feed',  // ✅ CORRIGÉ : Communauté → social-feed
+      path: '/dog-profile',    // ✅ Mon Chien
+      label: 'Mon Chien', 
+      icon: Dog 
+    },
+    { 
+      path: '/social-feed',    // ✅ Communauté
       label: 'Communauté', 
       icon: Users 
     },
     { 
-      path: '/notifications', 
-      label: 'Notifications', 
-      icon: Bell 
-    },
-    { 
-      path: '/daily-tip',  // ✅ Conseils → daily-tip
+      path: '/daily-tip',      // ✅ Conseils
       label: 'Conseils', 
       icon: BookOpen 
     }
