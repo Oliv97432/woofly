@@ -1,97 +1,66 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useNotifications } from '../hooks/useNotifications';
-import Icon from './AppIcon';
+import { Users, Bell, BookOpen } from 'lucide-react';
 
 const TabNavigation = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const [activeTab, setActiveTab] = useState('profile');
-  const { unreadCount } = useNotifications();
 
   const tabs = [
-    {
-      id: 'profile',
-      label: 'Mon Chien',
-      icon: 'Dog',
-      path: '/dog-profile',
-      tooltip: 'Gérer le profil de votre chien'
+    { 
+      path: '/social-feed',  // ✅ CORRIGÉ : Communauté → social-feed
+      label: 'Communauté', 
+      icon: Users 
     },
-    {
-      id: 'community',
-      label: 'Communauté',
-      icon: 'Users',
-      path: '/social-feed',
-      tooltip: 'Rejoindre la communauté'
+    { 
+      path: '/notifications', 
+      label: 'Notifications', 
+      icon: Bell 
     },
-    {
-      id: 'notifications',
-      label: 'Notifications',
-      icon: 'Bell',
-      path: '/notifications',
-      tooltip: 'Vos notifications',
-      badge: unreadCount
-    },
-    {
-      id: 'resources',
-      label: 'Conseils & Contacts',
-      icon: 'BookOpen',
-      path: '/daily-tip',
-      tooltip: 'Accéder aux ressources'
+    { 
+      path: '/daily-tip',  // ✅ Conseils → daily-tip
+      label: 'Conseils', 
+      icon: BookOpen 
     }
   ];
 
-  useEffect(() => {
-    const currentPath = location?.pathname;
-    
-    if (currentPath?.includes('/dog-profile') || currentPath?.includes('/multi-profile-management')) {
-      setActiveTab('profile');
-    } else if (currentPath?.includes('/social-feed') || currentPath?.includes('/forum-hub') || currentPath?.includes('/forum-discussion')) {
-      setActiveTab('community');
-    } else if (currentPath?.includes('/notifications')) {
-      setActiveTab('notifications');
-    } else if (currentPath?.includes('/daily-tip') || currentPath?.includes('/important-contacts')) {
-      setActiveTab('resources');
-    }
-  }, [location?.pathname]);
-
-  const handleTabClick = (tab) => {
-    setActiveTab(tab?.id);
-    navigate(tab?.path);
+  const isActive = (path) => {
+    return location.pathname === path;
   };
 
   return (
-    <nav className="tab-navigation tab-navigation-desktop" role="navigation" aria-label="Navigation principale">
-      <div className="flex items-center justify-around h-full max-w-screen-xl mx-auto">
-        {tabs?.map((tab) => (
-          <button
-            key={tab?.id}
-            onClick={() => handleTabClick(tab)}
-            className={`tab-item tab-item-desktop ${activeTab === tab?.id ? 'active' : ''} relative`}
-            aria-label={tab?.tooltip}
-            aria-current={activeTab === tab?.id ? 'page' : undefined}
-            title={tab?.tooltip}
-          >
-            <div className="relative">
-              <Icon 
-                name={tab?.icon} 
-                size={24} 
-                strokeWidth={activeTab === tab?.id ? 2.5 : 2}
-              />
-              {/* Badge notifications */}
-              {tab?.badge > 0 && (
-                <div className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full min-w-[20px] h-5 flex items-center justify-center px-1">
-                  {tab.badge > 9 ? '9+' : tab.badge}
-                </div>
-              )}
-            </div>
-            <span className="text-sm font-medium lg:text-base">
-              {tab?.label}
-            </span>
-          </button>
-        ))}
+    <div className="sticky top-[73px] z-40 bg-white border-b border-gray-200">
+      <div className="max-w-screen-xl mx-auto">
+        <div className="flex">
+          {tabs.map((tab) => {
+            const Icon = tab.icon;
+            const active = isActive(tab.path);
+            
+            return (
+              <button
+                key={tab.path}
+                onClick={() => navigate(tab.path)}
+                className={`
+                  flex-1 flex items-center justify-center gap-2 py-4 px-4
+                  font-medium text-sm transition-all relative
+                  ${active 
+                    ? 'text-blue-600' 
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                  }
+                `}
+              >
+                <Icon size={20} />
+                <span>{tab.label}</span>
+                
+                {active && (
+                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600" />
+                )}
+              </button>
+            );
+          })}
+        </div>
       </div>
-    </nav>
+    </div>
   );
 };
 
