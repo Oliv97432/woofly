@@ -703,7 +703,6 @@ const DailyTip = () => {
               </div>
             ) : userVet ? (
               <div className="bg-white rounded-3xl shadow-sm border border-gray-200 p-6">
-                {/* Affichage des infos du vétérinaire */}
                 <div className="space-y-3 mb-4">
                   <div className="flex items-center gap-3">
                     <Stethoscope size={20} className="text-blue-500" />
@@ -729,7 +728,6 @@ const DailyTip = () => {
                   )}
                 </div>
                 
-                {/* Bouton appeler */}
                 
                   href={`tel:${userVet.phone}`}
                   className="w-full bg-blue-500 text-white py-3 rounded-xl font-medium text-center hover:bg-blue-600 transition-smooth flex items-center justify-center gap-2"
