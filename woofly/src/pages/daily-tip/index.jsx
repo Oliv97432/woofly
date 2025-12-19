@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   Heart, Phone, MapPin, Clock, AlertCircle, Sparkles, 
   Stethoscope, PhoneCall, Plus, Edit, ChefHat, GraduationCap, 
-  Activity, Scissors, Timer, TrendingUp, Share2
+  Activity, Scissors, Timer, TrendingUp, Share2, Bell
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
+import { useNotifications } from '../../hooks/useNotifications';
 import TabNavigation from '../../components/TabNavigation';
 import UserMenu from '../../components/UserMenu';
 import Footer from '../../components/Footer';
@@ -16,6 +18,8 @@ import Footer from '../../components/Footer';
  */
 const DailyTip = () => {
   const { user } = useAuth();
+  const { unreadCount } = useNotifications();
+  const navigate = useNavigate();
   
   // États pour le conseil du jour
   const [todayTip, setTodayTip] = useState(null);
@@ -427,16 +431,29 @@ const DailyTip = () => {
       <div className="sticky top-0 z-50 bg-card border-b border-border shadow-soft">
         <div className="max-w-screen-xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
+            <h1 className="text-2xl font-heading font-semibold text-foreground">
+              Conseils & Contacts
+            </h1>
+            
             <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-heading font-semibold text-foreground">
-                Conseils & Contacts
-              </h1>
+              <button 
+                onClick={() => navigate('/notifications')}
+                className="relative p-2 hover:bg-muted rounded-full transition-smooth"
+              >
+                <Bell size={24} className="text-foreground" />
+                {unreadCount > 0 && (
+                  <div className="absolute top-0 right-0 bg-red-500 text-white text-xs font-bold rounded-full min-w-[20px] h-5 flex items-center justify-center px-1">
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </div>
+                )}
+              </button>
+              
+              <UserMenu
+                dogProfiles={dogProfiles}
+                currentDog={currentProfile}
+                onDogChange={handleProfileChange}
+              />
             </div>
-            <UserMenu
-              dogProfiles={dogProfiles}
-              currentDog={currentProfile}
-              onDogChange={handleProfileChange}
-            />
           </div>
         </div>
       </div>
@@ -713,7 +730,7 @@ const DailyTip = () => {
                 </div>
                 
                 {/* Bouton appeler */}
-                <a
+                
                   href={`tel:${userVet.phone}`}
                   className="w-full bg-blue-500 text-white py-3 rounded-xl font-medium text-center block hover:bg-blue-600 transition-smooth flex items-center justify-center gap-2"
                 >
@@ -844,7 +861,7 @@ const DailyTip = () => {
                         </a>
                       </div>
                     </div>
-                    <a
+                    
                       href={`tel:${contact.phone.replace(/\s/g, '')}`}
                       className="w-full bg-red-500 text-white py-3 rounded-xl font-medium text-center block hover:bg-red-600 transition-smooth flex items-center justify-center gap-2"
                     >
