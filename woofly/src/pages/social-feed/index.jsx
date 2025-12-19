@@ -691,7 +691,7 @@ const DailyTip = () => {
                   )}
                 </div>
                 
-                
+                <a
                   href={`tel:${userVet.phone}`}
                   className="w-full bg-blue-500 text-white py-3 rounded-xl font-medium text-center hover:bg-blue-600 transition-smooth flex items-center justify-center gap-2"
                 >
@@ -819,8 +819,8 @@ const DailyTip = () => {
                         </a>
                       </div>
                     </div>
-
                     
+                    <a
                       href={`tel:${contact.phone.replace(/\s/g, '')}`}
                       className="w-full bg-red-500 text-white py-3 rounded-xl font-medium text-center hover:bg-red-600 transition-smooth flex items-center justify-center gap-2"
                     >
