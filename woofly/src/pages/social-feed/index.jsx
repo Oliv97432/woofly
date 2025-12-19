@@ -819,6 +819,7 @@ const DailyTip = () => {
                         </a>
                       </div>
                     </div>
+
                     
                       href={`tel:${contact.phone.replace(/\s/g, '')}`}
                       className="w-full bg-red-500 text-white py-3 rounded-xl font-medium text-center hover:bg-red-600 transition-smooth flex items-center justify-center gap-2"
