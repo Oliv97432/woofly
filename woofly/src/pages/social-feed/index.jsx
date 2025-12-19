@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
-import { Heart, MessageCircle, TrendingUp, Plus, Share2, Send, User, Play, Home, BookOpen, Settings, Dog } from 'lucide-react';
+import { Heart, MessageCircle, TrendingUp, Plus, Share2, Send, User, Play, Home, BookOpen, Settings, Dog, Bell, Sparkles, Users as UsersIcon } from 'lucide-react';
+import { useNotifications } from '../../hooks/useNotifications';
 import TabNavigation from '../../components/TabNavigation';
 import UserMenu from '../../components/UserMenu';
 import Footer from '../../components/Footer';
@@ -11,12 +12,14 @@ import CreatePostModal from '../../components/CreatePostModal';
 const SocialFeed = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { unreadCount } = useNotifications();
   
   const [posts, setPosts] = useState([]);
   const [topPosts, setTopPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreatePost, setShowCreatePost] = useState(false);
   const [selectedTag, setSelectedTag] = useState('all');
+  const [feedType, setFeedType] = useState('explore'); // 'following' ou 'explore'
   const [currentProfile, setCurrentProfile] = useState(null);
   const [dogProfiles, setDogProfiles] = useState([]);
   const [userAvatar, setUserAvatar] = useState(null);
@@ -109,7 +112,7 @@ const SocialFeed = () => {
   
   useEffect(() => {
     fetchPosts();
-  }, [selectedTag]);
+  }, [selectedTag, feedType, followedUsers]);
   
   const fetchFollowedUsers = async () => {
     if (!user?.id) return;
@@ -190,6 +193,13 @@ const SocialFeed = () => {
             follower_id: user.id,
             following_id: userId
           });
+        
+        // Créer notification
+        await supabase.rpc('create_notification', {
+          p_user_id: userId,
+          p_actor_id: user.id,
+          p_type: 'follow'
+        });
         
         setFollowedUsers(prev => new Set(prev).add(userId));
       }
@@ -275,6 +285,12 @@ const SocialFeed = () => {
         .order('created_at', { ascending: false })
         .limit(50);
       
+      // Filtre par feed type
+      if (feedType === 'following' && followedUsers.size > 0) {
+        query = query.in('user_id', Array.from(followedUsers));
+      }
+      
+      // Filtre par tag
       if (selectedTag !== 'all') {
         query = query.contains('tags', [selectedTag]);
       }
@@ -317,25 +333,40 @@ const SocialFeed = () => {
   
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      {/* Header sticky - EXACT comme DailyTip */}
+      {/* Header sticky */}
       <div className="sticky top-0 z-50 bg-card border-b border-border shadow-soft">
         <div className="max-w-screen-xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <h1 className="text-2xl font-heading font-semibold text-foreground">
               Communauté
             </h1>
-            <UserMenu
-              dogProfiles={dogProfiles}
-              currentDog={currentProfile}
-              onDogChange={handleProfileChange}
-            />
+            
+            <div className="flex items-center gap-3">
+              <button 
+                onClick={() => navigate('/notifications')}
+                className="relative p-2 hover:bg-muted rounded-full transition-smooth"
+              >
+                <Bell size={24} className="text-foreground" />
+                {unreadCount > 0 && (
+                  <div className="absolute top-0 right-0 bg-red-500 text-white text-xs font-bold rounded-full min-w-[20px] h-5 flex items-center justify-center px-1">
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </div>
+                )}
+              </button>
+              
+              <UserMenu
+                dogProfiles={dogProfiles}
+                currentDog={currentProfile}
+                onDogChange={handleProfileChange}
+              />
+            </div>
           </div>
         </div>
       </div>
       
       <TabNavigation />
       
-      {/* Main content - EXACT comme DailyTip */}
+      {/* Main content */}
       <main className="main-content flex-1">
         <div className="max-w-3xl mx-auto px-4 py-6 space-y-8">
           
@@ -363,8 +394,40 @@ const SocialFeed = () => {
             </div>
           </section>
           
-          {/* Top posts */}
-          {topPosts.length > 0 && (
+          {/* Onglets Feed Type */}
+          <div className="flex gap-2 bg-white rounded-3xl shadow-sm border border-gray-200 p-2">
+            <button
+              onClick={() => setFeedType('following')}
+              className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-medium transition-smooth ${
+                feedType === 'following'
+                  ? 'bg-blue-500 text-white'
+                  : 'bg-white text-gray-700 hover:bg-gray-100'
+              }`}
+            >
+              <Sparkles size={20} />
+              <span>Pour toi</span>
+              {feedType === 'following' && followedUsers.size > 0 && (
+                <span className="text-xs bg-white/20 px-2 py-0.5 rounded-full">
+                  {followedUsers.size}
+                </span>
+              )}
+            </button>
+            
+            <button
+              onClick={() => setFeedType('explore')}
+              className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-medium transition-smooth ${
+                feedType === 'explore'
+                  ? 'bg-blue-500 text-white'
+                  : 'bg-white text-gray-700 hover:bg-gray-100'
+              }`}
+            >
+              <UsersIcon size={20} />
+              <span>Explorer</span>
+            </button>
+          </div>
+          
+          {/* Top posts - Uniquement en mode Explorer */}
+          {feedType === 'explore' && topPosts.length > 0 && (
             <section className="space-y-4">
               <div className="flex items-center gap-2">
                 <TrendingUp className="text-orange-500" size={24} />
@@ -393,6 +456,27 @@ const SocialFeed = () => {
                 </h3>
               </div>
             </section>
+          )}
+          
+          {/* Message si "Pour toi" vide */}
+          {feedType === 'following' && followedUsers.size === 0 && !loading && (
+            <div className="bg-white rounded-3xl p-8 text-center border border-gray-200">
+              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <UsersIcon className="text-blue-500" size={32} />
+              </div>
+              <h3 className="text-xl font-heading font-semibold text-gray-900 mb-2">
+                Suivez des personnes
+              </h3>
+              <p className="text-gray-600 mb-4">
+                Commencez à suivre des propriétaires de chiens pour voir leurs posts ici
+              </p>
+              <button
+                onClick={() => setFeedType('explore')}
+                className="px-6 py-3 bg-blue-500 text-white rounded-xl font-medium hover:bg-blue-600 transition-smooth"
+              >
+                Découvrir la communauté
+              </button>
+            </div>
           )}
           
           {/* Tags */}
@@ -434,15 +518,20 @@ const SocialFeed = () => {
           ) : (
             <div className="bg-white rounded-3xl p-12 text-center border border-gray-200">
               <p className="text-gray-600 mb-4">
-                Aucun post pour le moment
+                {feedType === 'following' 
+                  ? 'Aucun post de vos suivis pour le moment'
+                  : 'Aucun post pour le moment'
+                }
               </p>
-              <button
-                onClick={() => setShowCreatePost(true)}
-                className="px-6 py-3 bg-blue-500 text-white rounded-xl font-medium hover:bg-blue-600 transition-smooth inline-flex items-center gap-2"
-              >
-                <Plus size={20} />
-                Créer le premier post
-              </button>
+              {feedType === 'explore' && (
+                <button
+                  onClick={() => setShowCreatePost(true)}
+                  className="px-6 py-3 bg-blue-500 text-white rounded-xl font-medium hover:bg-blue-600 transition-smooth inline-flex items-center gap-2"
+                >
+                  <Plus size={20} />
+                  Créer le premier post
+                </button>
+              )}
             </div>
           )}
         </div>
@@ -465,7 +554,7 @@ const SocialFeed = () => {
   );
 };
 
-// Composant PostCard - Style DailyTip
+// Composant PostCard (reste identique - copie du code précédent)
 const PostCard = ({ post, currentUserId, currentUserAvatar, currentUserName, onUpdate, isTopPost }) => {
   const navigate = useNavigate();
   const [hasLiked, setHasLiked] = useState(false);
@@ -593,6 +682,14 @@ const PostCard = ({ post, currentUserId, currentUserAvatar, currentUserName, onU
             user_id: currentUserId
           });
         
+        // Créer notification
+        await supabase.rpc('create_notification', {
+          p_user_id: post.user_id,
+          p_actor_id: currentUserId,
+          p_type: 'like',
+          p_post_id: post.id
+        });
+        
         setHasLiked(true);
         setLocalLikeCount(prev => prev + 1);
       }
@@ -607,15 +704,26 @@ const PostCard = ({ post, currentUserId, currentUserAvatar, currentUserName, onU
     
     setSubmittingComment(true);
     try {
-      const { error } = await supabase
+      const { data: newCommentData, error } = await supabase
         .from('forum_comments')
         .insert({
           post_id: post.id,
           user_id: currentUserId,
           content: newComment.trim()
-        });
+        })
+        .select()
+        .single();
       
       if (error) throw error;
+      
+      // Créer notification
+      await supabase.rpc('create_notification', {
+        p_user_id: post.user_id,
+        p_actor_id: currentUserId,
+        p_type: 'comment',
+        p_post_id: post.id,
+        p_comment_id: newCommentData.id
+      });
       
       setNewComment('');
       fetchComments();
@@ -690,21 +798,31 @@ const PostCard = ({ post, currentUserId, currentUserAvatar, currentUserName, onU
     <div className={cardClasses}>
       {/* En-tête */}
       <div className="flex items-start gap-3 mb-4">
-        {authorAvatar ? (
-          <img
-            src={authorAvatar}
-            alt={authorName}
-            className="w-12 h-12 rounded-full object-cover flex-shrink-0"
-          />
-        ) : (
-          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold flex-shrink-0">
-            {authorName.charAt(0).toUpperCase()}
-          </div>
-        )}
+        <button
+          onClick={() => navigate(`/profile/${post.user_id}`)}
+          className="flex-shrink-0"
+        >
+          {authorAvatar ? (
+            <img
+              src={authorAvatar}
+              alt={authorName}
+              className="w-12 h-12 rounded-full object-cover cursor-pointer hover:opacity-80 transition-smooth"
+            />
+          ) : (
+            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold cursor-pointer hover:opacity-80 transition-smooth">
+              {authorName.charAt(0).toUpperCase()}
+            </div>
+          )}
+        </button>
         
         <div className="flex-1">
           <div className="flex items-center gap-2">
-            <span className="font-semibold text-gray-900">{authorName}</span>
+            <button
+              onClick={() => navigate(`/profile/${post.user_id}`)}
+              className="font-semibold text-gray-900 hover:underline"
+            >
+              {authorName}
+            </button>
             {isTopPost && <TrendingUp size={16} className="text-orange-500" />}
           </div>
           <span className="text-sm text-gray-600">{formatDate(post.created_at)}</span>
@@ -770,7 +888,7 @@ const PostCard = ({ post, currentUserId, currentUserAvatar, currentUserName, onU
         </button>
       </div>
       
-      {/* Commentaires */}
+      {/* Commentaires (reste du code identique) */}
       {showComments && (
         <div className="mt-6 pt-6 border-t border-gray-200 space-y-4">
           <form onSubmit={handleCommentSubmit} className="flex gap-3">
@@ -816,16 +934,26 @@ const PostCard = ({ post, currentUserId, currentUserAvatar, currentUserName, onU
                 
                 return (
                   <div key={comment.id} className="flex gap-3">
-                    {commentAuthorAvatar ? (
-                      <img src={commentAuthorAvatar} alt={commentAuthorName} className="w-10 h-10 rounded-full object-cover" />
-                    ) : (
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold">
-                        {commentAuthorName.charAt(0).toUpperCase()}
-                      </div>
-                    )}
+                    <button
+                      onClick={() => navigate(`/profile/${comment.user_id}`)}
+                      className="flex-shrink-0"
+                    >
+                      {commentAuthorAvatar ? (
+                        <img src={commentAuthorAvatar} alt={commentAuthorName} className="w-10 h-10 rounded-full object-cover cursor-pointer hover:opacity-80 transition-smooth" />
+                      ) : (
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold cursor-pointer hover:opacity-80 transition-smooth">
+                          {commentAuthorName.charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                    </button>
                     <div className="flex-1">
                       <div className="bg-gray-100 rounded-xl px-4 py-3">
-                        <p className="font-semibold text-sm text-gray-900 mb-1">{commentAuthorName}</p>
+                        <button
+                          onClick={() => navigate(`/profile/${comment.user_id}`)}
+                          className="font-semibold text-sm text-gray-900 mb-1 hover:underline block"
+                        >
+                          {commentAuthorName}
+                        </button>
                         <p className="text-base text-gray-900">{comment.content}</p>
                       </div>
                       <p className="text-sm text-gray-600 mt-1 ml-3">{formatDate(comment.created_at)}</p>
