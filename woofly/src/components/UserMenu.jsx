@@ -37,8 +37,8 @@ const UserMenu = ({ dogProfiles = [], currentDog, onDogChange }) => {
   };
 
   const handleProfile = () => {
-    navigate('/user-profile');
-    setIsOpen(false);
+  navigate(`/profile/${user.id}`);
+  setIsOpen(false);
   };
 
   const handleSettings = () => {
