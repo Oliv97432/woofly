@@ -15,13 +15,17 @@ import PostDetail from './pages/post-detail';
 import MultiProfileManagement from './pages/multi-profile-management';
 import Register from './pages/register';
 import UserProfile from './pages/profile/UserProfile';
-import Notifications from './pages/Notifications';  // ← AJOUTER
+import Notifications from './pages/Notifications';
 import Settings from './pages/settings';
 import CGU from './pages/CGU';
 import MentionsLegales from './pages/MentionsLegales';
 import PolitiqueConfidentialite from './pages/PolitiqueConfidentialite';
 import About from './pages/About';
 import Contact from './pages/Contact';
+
+// Pages Adoption - NOUVEAU ⬇️
+import AdoptionPage from './pages/adoption';
+import AdoptionDetail from './pages/adoption/AdoptionDetail';
 
 const Routes = () => {
   return (
@@ -47,7 +51,11 @@ const Routes = () => {
         <Route path="/profile/:userId" element={<UserProfile />} />
         
         {/* Notifications */}
-        <Route path="/notifications" element={<Notifications />} />  {/* ← AJOUTER CETTE LIGNE */}
+        <Route path="/notifications" element={<Notifications />} />
+        
+        {/* Pages Adoption - NOUVEAU ⬇️ */}
+        <Route path="/adoption" element={<AdoptionPage />} />
+        <Route path="/adoption/:dogId" element={<AdoptionDetail />} />
         
         <Route path="/settings" element={<Settings />} />
         
@@ -64,5 +72,4 @@ const Routes = () => {
     </BrowserRouter>
   );
 };
-
 export default Routes;
