@@ -1,35 +1,33 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { 
-  Heart, MapPin, Search, AlertCircle, Check
+  Heart, MapPin, Phone, Mail, 
+  AlertCircle, Check, ArrowLeft, Share2, Info,
+  User, CheckCircle, X
 } from 'lucide-react';
 import TabNavigation from '../../components/TabNavigation';
 import UserMenu from '../../components/UserMenu';
 import Footer from '../../components/Footer';
 
-const AdoptionPage = () => {
+const AdoptionDetail = () => {
+  const { dogId } = useParams();
   const { user } = useAuth() || {};  // ← Permet undefined sans crash
   const navigate = useNavigate();
   
-  const [dogs, setDogs] = useState([]);
+  const [dog, setDog] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedBreed, setSelectedBreed] = useState('all');
-  const [selectedSize, setSelectedSize] = useState('all');
-  const [selectedAge, setSelectedAge] = useState('all');
-  const [selectedCity, setSelectedCity] = useState('all');
-  const [showUrgentOnly, setShowUrgentOnly] = useState(false);
+  const [showApplicationModal, setShowApplicationModal] = useState(false);
   const [currentProfile, setCurrentProfile] = useState(null);
   const [dogProfiles, setDogProfiles] = useState([]);
 
   useEffect(() => {
-    fetchDogs();
+    fetchDog();
     if (user?.id) {
       fetchDogProfiles();
     }
-  }, [user?.id]);
+  }, [dogId, user?.id]);
 
   const fetchDogProfiles = async () => {
     if (!user?.id) {
@@ -61,7 +59,7 @@ const AdoptionPage = () => {
     }
   };
 
-  const fetchDogs = async () => {
+  const fetchDog = async () => {
     setLoading(true);
     try {
       const { data, error } = await supabase
@@ -73,21 +71,24 @@ const AdoptionPage = () => {
             organization_name,
             organization_type,
             city,
+            postal_code,
             phone,
             email,
+            website,
+            description,
             is_verified,
-            logo_url
+            logo_url,
+            cover_photo_url
           )
         `)
-        .eq('is_for_adoption', true)
-        .eq('adoption_status', 'available')
-        .order('is_urgent', { ascending: false })
-        .order('created_at', { ascending: false });
+        .eq('id', dogId)
+        .single();
 
       if (error) throw error;
-      setDogs(data || []);
+      setDog(data);
     } catch (error) {
-      console.error('Erreur chargement chiens:', error);
+      console.error('Erreur chargement chien:', error);
+      navigate('/adoption');
     } finally {
       setLoading(false);
     }
@@ -98,32 +99,32 @@ const AdoptionPage = () => {
     localStorage.setItem('currentDogProfile', JSON.stringify(profile));
   };
 
-  // Filtrer les chiens
-  const filteredDogs = dogs.filter(dog => {
-    const matchSearch = dog.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                       dog.breed.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchBreed = selectedBreed === 'all' || dog.breed === selectedBreed;
-    const matchSize = selectedSize === 'all' || dog.size === selectedSize;
-    
-    let matchAge = true;
-    if (selectedAge !== 'all') {
-      const age = dog.birth_date ? 
-        Math.floor((new Date() - new Date(dog.birth_date)) / (365.25 * 24 * 60 * 60 * 1000)) : 0;
-      
-      if (selectedAge === 'young') matchAge = age < 2;
-      if (selectedAge === 'adult') matchAge = age >= 2 && age < 8;
-      if (selectedAge === 'senior') matchAge = age >= 8;
+  const handleAdoptClick = () => {
+    if (user) {
+      setShowApplicationModal(true);
+    } else {
+      navigate('/login');
     }
-    
-    const matchCity = selectedCity === 'all' || 
-                     dog.professional_accounts?.city === selectedCity;
-    const matchUrgent = !showUrgentOnly || dog.is_urgent;
-    
-    return matchSearch && matchBreed && matchSize && matchAge && matchCity && matchUrgent;
-  });
+  };
 
-  const breeds = [...new Set(dogs.map(d => d.breed))].sort();
-  const cities = [...new Set(dogs.map(d => d.professional_accounts?.city).filter(Boolean))].sort();
+  const calculateAge = (birthDate) => {
+    if (!birthDate) return 'Âge inconnu';
+    const age = Math.floor((new Date() - new Date(birthDate)) / (365.25 * 24 * 60 * 60 * 1000));
+    if (age < 1) return 'Moins d\'1 an';
+    return `${age} an${age > 1 ? 's' : ''}`;
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-spin h-12 w-12 border-4 border-blue-500 border-t-transparent rounded-full"></div>
+      </div>
+    );
+  }
+
+  if (!dog) return null;
+
+  const org = dog.professional_accounts;
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -131,14 +132,13 @@ const AdoptionPage = () => {
       <div className="sticky top-0 z-50 bg-card border-b border-border shadow-soft">
         <div className="max-w-screen-xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-heading font-semibold text-foreground">
-                🏠 Adoption
-              </h1>
-              <p className="text-sm text-muted-foreground">
-                {filteredDogs.length} chien{filteredDogs.length > 1 ? 's' : ''} disponible{filteredDogs.length > 1 ? 's' : ''}
-              </p>
-            </div>
+            <button
+              onClick={() => navigate('/adoption')}
+              className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
+            >
+              <ArrowLeft size={20} />
+              <span className="font-medium">Retour</span>
+            </button>
             
             {/* Afficher UserMenu si connecté, sinon bouton connexion */}
             {user ? (
@@ -163,220 +163,381 @@ const AdoptionPage = () => {
 
       {/* Main content */}
       <main className="main-content flex-1">
-        <div className="max-w-7xl mx-auto px-4 py-6">
+        <div className="max-w-5xl mx-auto px-4 py-6">
           
-          {/* Bannière info */}
-          <div className="bg-gradient-to-r from-blue-500 to-purple-600 rounded-3xl p-6 mb-6 text-white">
-            <div className="flex items-start gap-4">
-              <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0">
-                <Heart size={24} className="text-white" />
-              </div>
-              <div className="flex-1">
-                <h2 className="text-xl font-heading font-semibold mb-2">
-                  Adoptez un compagnon
-                </h2>
-                <p className="text-white/90 text-sm">
-                  Tous ces chiens sont pris en charge par des refuges et associations partenaires. 
-                  En adoptant, vous sauvez une vie et gagnez un ami fidèle ! 💙
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Barre de recherche et filtres */}
-          <div className="bg-white rounded-3xl shadow-sm border border-gray-200 p-6 mb-6">
-            <div className="relative mb-4">
-              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-              <input
-                type="text"
-                placeholder="Rechercher par nom ou race..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          {/* Image principale */}
+          <div className="relative aspect-[16/9] rounded-3xl overflow-hidden mb-6">
+            {dog.photo_url ? (
+              <img
+                src={dog.photo_url}
+                alt={dog.name}
+                className="w-full h-full object-cover"
               />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-              <select
-                value={selectedBreed}
-                onChange={(e) => setSelectedBreed(e.target.value)}
-                className="px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="all">Toutes les races</option>
-                {breeds.map(breed => (
-                  <option key={breed} value={breed}>{breed}</option>
-                ))}
-              </select>
-
-              <select
-                value={selectedSize}
-                onChange={(e) => setSelectedSize(e.target.value)}
-                className="px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="all">Toutes les tailles</option>
-                <option value="petit">Petit (&lt; 10kg)</option>
-                <option value="moyen">Moyen (10-25kg)</option>
-                <option value="grand">Grand (&gt; 25kg)</option>
-              </select>
-
-              <select
-                value={selectedAge}
-                onChange={(e) => setSelectedAge(e.target.value)}
-                className="px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="all">Tous les âges</option>
-                <option value="young">Jeune (&lt; 2 ans)</option>
-                <option value="adult">Adulte (2-8 ans)</option>
-                <option value="senior">Senior (&gt; 8 ans)</option>
-              </select>
-
-              <select
-                value={selectedCity}
-                onChange={(e) => setSelectedCity(e.target.value)}
-                className="px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="all">Toutes les villes</option>
-                {cities.map(city => (
-                  <option key={city} value={city}>{city}</option>
-                ))}
-              </select>
-            </div>
-
-            <div className="mt-4">
-              <label className="flex items-center gap-2 cursor-pointer w-fit">
-                <input
-                  type="checkbox"
-                  checked={showUrgentOnly}
-                  onChange={(e) => setShowUrgentOnly(e.target.checked)}
-                  className="w-5 h-5 rounded text-red-500 focus:ring-red-500"
-                />
-                <span className="text-sm font-medium text-gray-700">
-                  🚨 Adoptions urgentes uniquement
+            ) : (
+              <div className="w-full h-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center">
+                <span className="text-9xl text-white font-bold">
+                  {dog.name?.charAt(0).toUpperCase()}
                 </span>
-              </label>
-            </div>
+              </div>
+            )}
+            
+            {dog.is_urgent && (
+              <div className="absolute top-6 left-6 bg-red-500 text-white px-4 py-2 rounded-full font-bold flex items-center gap-2">
+                <AlertCircle size={20} />
+                ADOPTION URGENTE
+              </div>
+            )}
+
+            {org?.is_verified && (
+              <div className="absolute top-6 right-6 bg-blue-500 text-white px-4 py-2 rounded-full font-bold flex items-center gap-2">
+                <Check size={20} />
+                Refuge Vérifié
+              </div>
+            )}
           </div>
 
-          {/* Liste des chiens */}
-          {loading ? (
-            <div className="flex justify-center py-20">
-              <div className="animate-spin h-12 w-12 border-4 border-blue-500 border-t-transparent rounded-full"></div>
-            </div>
-          ) : filteredDogs.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {filteredDogs.map((dog) => (
-                <DogCard key={dog.id} dog={dog} />
-              ))}
-            </div>
-          ) : (
-            <div className="bg-white rounded-3xl p-12 text-center border border-gray-200">
-              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Search size={32} className="text-gray-400" />
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            {/* Colonne principale */}
+            <div className="lg:col-span-2 space-y-6">
+              
+              {/* Infos principales */}
+              <div className="bg-white rounded-3xl shadow-sm border border-gray-200 p-6">
+                <h1 className="text-3xl font-heading font-bold text-gray-900 mb-2">
+                  {dog.name}
+                </h1>
+                <div className="flex flex-wrap gap-3 text-gray-600 mb-6">
+                  <span className="px-3 py-1 bg-gray-100 rounded-full text-sm font-medium">
+                    {dog.breed}
+                  </span>
+                  <span className="px-3 py-1 bg-gray-100 rounded-full text-sm font-medium">
+                    {dog.gender === 'male' ? 'Mâle' : 'Femelle'}
+                  </span>
+                  <span className="px-3 py-1 bg-gray-100 rounded-full text-sm font-medium">
+                    {calculateAge(dog.birth_date)}
+                  </span>
+                  {dog.size && (
+                    <span className="px-3 py-1 bg-gray-100 rounded-full text-sm font-medium">
+                      Taille : {dog.size}
+                    </span>
+                  )}
+                </div>
+
+                {dog.adoption_story && (
+                  <div className="mb-6">
+                    <h2 className="text-xl font-heading font-semibold text-gray-900 mb-3">
+                      📖 Son histoire
+                    </h2>
+                    <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
+                      {dog.adoption_story}
+                    </p>
+                  </div>
+                )}
+
+                {dog.adoption_requirements && (
+                  <div>
+                    <h2 className="text-xl font-heading font-semibold text-gray-900 mb-3">
+                      ✅ Conditions d'adoption
+                    </h2>
+                    <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
+                      {dog.adoption_requirements}
+                    </p>
+                  </div>
+                )}
               </div>
-              <h3 className="text-xl font-heading font-semibold text-gray-900 mb-2">
-                Aucun chien trouvé
-              </h3>
-              <p className="text-gray-600">
-                Essayez de modifier vos filtres pour voir plus de résultats
-              </p>
+
+              {/* Informations complémentaires */}
+              <div className="bg-white rounded-3xl shadow-sm border border-gray-200 p-6">
+                <h2 className="text-xl font-heading font-semibold text-gray-900 mb-4">
+                  ℹ️ Informations complémentaires
+                </h2>
+                <div className="space-y-3">
+                  {dog.sterilized !== null && (
+                    <div className="flex items-center gap-2">
+                      <CheckCircle size={20} className={dog.sterilized ? 'text-green-600' : 'text-gray-400'} />
+                      <span className="text-gray-700">
+                        {dog.sterilized ? 'Stérilisé' : 'Non stérilisé'}
+                      </span>
+                    </div>
+                  )}
+                  {dog.weight && (
+                    <div className="flex items-center gap-2">
+                      <Info size={20} className="text-blue-600" />
+                      <span className="text-gray-700">
+                        Poids : {dog.weight} kg
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
-          )}
+
+            {/* Colonne sidebar */}
+            <div className="space-y-6">
+              
+              {/* Bouton adopter */}
+              <div className="bg-white rounded-3xl shadow-sm border border-gray-200 p-6">
+                <button
+                  onClick={handleAdoptClick}
+                  className="w-full py-4 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl font-bold text-lg hover:from-blue-600 hover:to-purple-700 transition-smooth flex items-center justify-center gap-2"
+                >
+                  <Heart size={24} />
+                  {user ? 'Je veux l\'adopter' : 'Se connecter pour adopter'}
+                </button>
+                
+                {!user && (
+                  <p className="text-xs text-center text-gray-600 mt-3">
+                    Vous devez être connecté pour postuler à une adoption
+                  </p>
+                )}
+              </div>
+
+              {/* Informations du refuge */}
+              {org && (
+                <div className="bg-white rounded-3xl shadow-sm border border-gray-200 p-6">
+                  <div className="flex items-center gap-3 mb-4">
+                    {org.logo_url ? (
+                      <img src={org.logo_url} alt={org.organization_name} className="w-16 h-16 rounded-full object-cover" />
+                    ) : (
+                      <div className="w-16 h-16 rounded-full bg-blue-500 flex items-center justify-center text-white text-2xl font-bold">
+                        {org.organization_name?.charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                    <div>
+                      <h3 className="font-heading font-semibold text-gray-900">
+                        {org.organization_name}
+                      </h3>
+                      {org.is_verified && (
+                        <span className="text-xs text-blue-600 flex items-center gap-1">
+                          <Check size={12} />
+                          Refuge Vérifié
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {org.description && (
+                    <p className="text-sm text-gray-700 mb-4">
+                      {org.description}
+                    </p>
+                  )}
+
+                  <div className="space-y-2">
+                    {org.city && (
+                      <div className="flex items-center gap-2 text-sm text-gray-700">
+                        <MapPin size={16} className="text-gray-400" />
+                        <span>{org.city} {org.postal_code}</span>
+                      </div>
+                    )}
+                    {org.phone && (
+                      <a href={`tel:${org.phone}`} className="flex items-center gap-2 text-sm text-blue-600 hover:underline">
+                        <Phone size={16} />
+                        <span>{org.phone}</span>
+                      </a>
+                    )}
+                    {org.email && (
+                      <a href={`mailto:${org.email}`} className="flex items-center gap-2 text-sm text-blue-600 hover:underline">
+                        <Mail size={16} />
+                        <span>{org.email}</span>
+                      </a>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Partager */}
+              <div className="bg-white rounded-3xl shadow-sm border border-gray-200 p-6">
+                <button className="w-full py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-medium transition-smooth flex items-center justify-center gap-2">
+                  <Share2 size={18} />
+                  Partager ce chien
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       </main>
 
       <Footer />
+
+      {/* Modal candidature - Seulement si connecté */}
+      {showApplicationModal && user && (
+        <ApplicationModal
+          dog={dog}
+          onClose={() => setShowApplicationModal(false)}
+        />
+      )}
     </div>
   );
 };
 
-const DogCard = ({ dog }) => {
-  const navigate = useNavigate();
-  
-  const calculateAge = (birthDate) => {
-    if (!birthDate) return 'Âge inconnu';
-    const age = Math.floor((new Date() - new Date(birthDate)) / (365.25 * 24 * 60 * 60 * 1000));
-    if (age < 1) return 'Moins d\'1 an';
-    return `${age} an${age > 1 ? 's' : ''}`;
+// Modal de candidature (inchangé)
+const ApplicationModal = ({ dog, onClose }) => {
+  const { user } = useAuth();
+  const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    full_name: '',
+    email: user?.email || '',
+    phone: '',
+    address: '',
+    city: '',
+    postal_code: '',
+    has_garden: false,
+    has_other_pets: false,
+    other_pets_details: '',
+    family_composition: '',
+    experience_with_dogs: '',
+    motivation: '',
+    availability: ''
+  });
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      const { error } = await supabase
+        .from('adoption_applications')
+        .insert({
+          dog_id: dog.id,
+          user_id: user.id,
+          professional_account_id: dog.professional_account_id,
+          ...formData
+        });
+
+      if (error) throw error;
+
+      alert('✅ Votre candidature a été envoyée avec succès ! Le refuge vous contactera bientôt.');
+      onClose();
+    } catch (error) {
+      console.error('Erreur envoi candidature:', error);
+      alert('Erreur lors de l\'envoi de votre candidature');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const org = dog.professional_accounts;
-
   return (
-    <div 
-      onClick={() => navigate(`/adoption/${dog.id}`)}
-      className="bg-white rounded-3xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-lg transition-all cursor-pointer group"
-    >
-      <div className="relative aspect-square">
-        {dog.photo_url ? (
-          <img
-            src={dog.photo_url}
-            alt={dog.name}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-          />
-        ) : (
-          <div className="w-full h-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center">
-            <span className="text-6xl text-white font-bold">
-              {dog.name?.charAt(0).toUpperCase()}
-            </span>
-          </div>
-        )}
-        
-        {dog.is_urgent && (
-          <div className="absolute top-3 left-3 bg-red-500 text-white px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1">
-            <AlertCircle size={14} />
-            URGENT
-          </div>
-        )}
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4 overflow-y-auto">
+      <div className="bg-white rounded-3xl max-w-2xl w-full my-8">
+        <div className="sticky top-0 bg-white border-b border-gray-200 p-6 flex items-center justify-between rounded-t-3xl">
+          <h2 className="text-2xl font-heading font-bold text-gray-900">
+            Candidature pour adopter {dog.name}
+          </h2>
+          <button
+            onClick={onClose}
+            className="p-2 hover:bg-gray-100 rounded-full transition-smooth"
+          >
+            <X size={24} />
+          </button>
+        </div>
 
-        {org?.is_verified && (
-          <div className="absolute top-3 right-3 bg-blue-500 text-white p-2 rounded-full">
-            <Check size={16} />
-          </div>
-        )}
-      </div>
-
-      <div className="p-4">
-        <h3 className="text-xl font-heading font-semibold text-gray-900 mb-1">
-          {dog.name}
-        </h3>
-        <p className="text-sm text-gray-600 mb-3">
-          {dog.breed} • {dog.gender === 'male' ? 'Mâle' : 'Femelle'} • {calculateAge(dog.birth_date)}
-        </p>
-
-        {org && (
-          <div className="flex items-center gap-2 mb-3 p-2 bg-gray-50 rounded-xl">
-            {org.logo_url ? (
-              <img src={org.logo_url} alt={org.organization_name} className="w-8 h-8 rounded-full object-cover" />
-            ) : (
-              <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs font-bold">
-                {org.organization_name?.charAt(0).toUpperCase()}
-              </div>
-            )}
-            <div className="flex-1 min-w-0">
-              <p className="text-xs font-medium text-gray-900 truncate">
-                {org.organization_name}
-              </p>
-              <p className="text-xs text-gray-600 flex items-center gap-1">
-                <MapPin size={10} />
-                {org.city}
-              </p>
+        <form onSubmit={handleSubmit} className="p-6 space-y-6">
+          
+          <div>
+            <h3 className="text-lg font-heading font-semibold text-gray-900 mb-4">
+              📋 Vos coordonnées
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <input
+                type="text"
+                placeholder="Nom complet *"
+                required
+                value={formData.full_name}
+                onChange={(e) => setFormData({...formData, full_name: e.target.value})}
+                className="px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500"
+              />
+              <input
+                type="email"
+                placeholder="Email *"
+                required
+                value={formData.email}
+                onChange={(e) => setFormData({...formData, email: e.target.value})}
+                className="px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500"
+              />
+              <input
+                type="tel"
+                placeholder="Téléphone"
+                value={formData.phone}
+                onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                className="px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500"
+              />
+              <input
+                type="text"
+                placeholder="Ville"
+                value={formData.city}
+                onChange={(e) => setFormData({...formData, city: e.target.value})}
+                className="px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500"
+              />
             </div>
           </div>
-        )}
 
-        {dog.adoption_story && (
-          <p className="text-sm text-gray-700 mb-3 line-clamp-2">
-            {dog.adoption_story}
-          </p>
-        )}
+          <div>
+            <h3 className="text-lg font-heading font-semibold text-gray-900 mb-4">
+              🏡 Votre situation
+            </h3>
+            
+            <div className="space-y-4">
+              <label className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={formData.has_garden}
+                  onChange={(e) => setFormData({...formData, has_garden: e.target.checked})}
+                  className="w-5 h-5 rounded text-blue-500"
+                />
+                <span className="text-gray-700">J'ai un jardin</span>
+              </label>
 
-        <button className="w-full py-3 bg-blue-500 text-white rounded-xl font-medium hover:bg-blue-600 transition-smooth flex items-center justify-center gap-2">
-          <Heart size={18} />
-          Voir le profil
-        </button>
+              <label className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={formData.has_other_pets}
+                  onChange={(e) => setFormData({...formData, has_other_pets: e.target.checked})}
+                  className="w-5 h-5 rounded text-blue-500"
+                />
+                <span className="text-gray-700">J'ai d'autres animaux</span>
+              </label>
+
+              {formData.has_other_pets && (
+                <textarea
+                  placeholder="Précisez (type, nombre, âge...)"
+                  value={formData.other_pets_details}
+                  onChange={(e) => setFormData({...formData, other_pets_details: e.target.value})}
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500"
+                  rows={2}
+                />
+              )}
+
+              <textarea
+                placeholder="Pourquoi souhaitez-vous adopter ce chien ? *"
+                required
+                value={formData.motivation}
+                onChange={(e) => setFormData({...formData, motivation: e.target.value})}
+                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500"
+                rows={4}
+              />
+            </div>
+          </div>
+
+          <div className="flex gap-3">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 py-3 bg-gray-100 text-gray-700 rounded-xl font-medium hover:bg-gray-200 transition-smooth"
+            >
+              Annuler
+            </button>
+            <button
+              type="submit"
+              disabled={loading}
+              className="flex-1 py-3 bg-blue-500 text-white rounded-xl font-medium hover:bg-blue-600 transition-smooth disabled:bg-gray-300"
+            >
+              {loading ? 'Envoi...' : 'Envoyer ma candidature'}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );
 };
 
-export default AdoptionPage;
+export default AdoptionDetail;
