@@ -23,7 +23,7 @@ import PolitiqueConfidentialite from './pages/PolitiqueConfidentialite';
 import About from './pages/About';
 import Contact from './pages/Contact';
 
-// Landing Page - NOUVEAU ⬇️
+// Landing Page
 import LandingPage from './pages/LandingPage';
 
 // Pages Adoption
@@ -33,13 +33,19 @@ import AdoptionDetail from './pages/adoption/AdoptionDetail';
 // Route hybride /chien/:id
 import HybridDogProfile from './pages/chien/HybridDogProfile';
 
+// Pages Professionnelles - NOUVEAU ⬇️
+import ProRegistration from './pages/pro/ProRegistration';
+import ProDashboard from './pages/pro/ProDashboard';
+import ProDogManagement from './pages/pro/ProDogManagement';
+import ProApplications from './pages/pro/ProApplications';
+
 const Routes = () => {
   return (
     <BrowserRouter>
       <ErrorBoundary>
       <ScrollToTop />
       <RouterRoutes>
-        {/* Landing Page publique - NOUVEAU ⬇️ */}
+        {/* Landing Page publique */}
         <Route path="/" element={<LandingPage />} />
         
         <Route path="/important-contacts" element={<ImportantContacts />} />
@@ -70,6 +76,14 @@ const Routes = () => {
         {/* Pages Adoption */}
         <Route path="/adoption" element={<AdoptionPage />} />
         <Route path="/adoption/:dogId" element={<AdoptionDetail />} />
+        
+        {/* Routes Professionnelles - NOUVEAU ⬇️ */}
+        <Route path="/pro/register" element={<ProRegistration />} />
+        <Route path="/pro/dashboard" element={<ProDashboard />} />
+        <Route path="/pro/dogs" element={<ProDogManagement />} />
+        <Route path="/pro/dogs/new" element={<ProDogManagement />} />
+        <Route path="/pro/dogs/:dogId" element={<ProDogManagement />} />
+        <Route path="/pro/applications" element={<ProApplications />} />
         
         <Route path="/settings" element={<Settings />} />
         
