@@ -33,11 +33,12 @@ import AdoptionDetail from './pages/adoption/AdoptionDetail';
 // Route hybride /chien/:id
 import HybridDogProfile from './pages/chien/HybridDogProfile';
 
-// Pages Professionnelles - NOUVEAU ⬇️
+// Pages Professionnelles
 import ProRegistration from './pages/pro/ProRegistration';
 import ProDashboard from './pages/pro/ProDashboard';
 import ProDogManagement from './pages/pro/ProDogManagement';
 import ProApplications from './pages/pro/ProApplications';
+import InstagramGenerator from './pages/pro/InstagramGenerator';
 
 const Routes = () => {
   return (
@@ -77,13 +78,14 @@ const Routes = () => {
         <Route path="/adoption" element={<AdoptionPage />} />
         <Route path="/adoption/:dogId" element={<AdoptionDetail />} />
         
-        {/* Routes Professionnelles - NOUVEAU ⬇️ */}
+        {/* Routes Professionnelles */}
         <Route path="/pro/register" element={<ProRegistration />} />
         <Route path="/pro/dashboard" element={<ProDashboard />} />
         <Route path="/pro/dogs" element={<ProDogManagement />} />
         <Route path="/pro/dogs/new" element={<ProDogManagement />} />
         <Route path="/pro/dogs/:dogId" element={<ProDogManagement />} />
         <Route path="/pro/applications" element={<ProApplications />} />
+        <Route path="/pro/instagram" element={<InstagramGenerator />} />
         
         <Route path="/settings" element={<Settings />} />
         
