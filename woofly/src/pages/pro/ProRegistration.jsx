@@ -2,411 +2,389 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
-import { 
-  Building2, Mail, Phone, MapPin, Globe, Instagram, 
-  Facebook, Check, ArrowLeft, Upload, AlertCircle
-} from 'lucide-react';
-import Footer from '../../components/Footer';
+import { Shield, Building2, Mail, Lock, Phone, MapPin, ArrowRight } from 'lucide-react';
 
 const ProRegistration = () => {
-  const { user } = useAuth();
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState(false);
-
+  const { signUp } = useAuth();
+  
   const [formData, setFormData] = useState({
-    organization_name: '',
-    organization_type: 'association',
-    siret: '',
-    description: '',
-    address: '',
-    city: '',
-    postal_code: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+    organizationName: '',
+    organizationType: 'refuge',
     phone: '',
-    email: user?.email || '',
-    website: '',
-    instagram: '',
-    facebook: '',
-    logo_url: ''
+    city: ''
   });
+  
+  const [errors, setErrors] = useState({});
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    setFormData(prev => ({ ...prev, [name]: value }));
+    
+    // Clear error for this field
+    if (errors[name]) {
+      setErrors(prev => ({ ...prev, [name]: '' }));
+    }
+  };
+
+  const validate = () => {
+    const newErrors = {};
+    
+    // Email
+    if (!formData.email) {
+      newErrors.email = 'Email requis';
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      newErrors.email = 'Email invalide';
+    }
+    
+    // Password
+    if (!formData.password) {
+      newErrors.password = 'Mot de passe requis';
+    } else if (formData.password.length < 8) {
+      newErrors.password = 'Minimum 8 caractères';
+    }
+    
+    // Confirm password
+    if (formData.password !== formData.confirmPassword) {
+      newErrors.confirmPassword = 'Les mots de passe ne correspondent pas';
+    }
+    
+    // Organization name
+    if (!formData.organizationName) {
+      newErrors.organizationName = 'Nom de l\'organisation requis';
+    }
+    
+    // Phone
+    if (!formData.phone) {
+      newErrors.phone = 'Téléphone requis';
+    }
+    
+    // City
+    if (!formData.city) {
+      newErrors.city = 'Ville requise';
+    }
+    
+    return newErrors;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Validate
+    const newErrors = validate();
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+    
     setLoading(true);
-    setError('');
-
+    setErrors({});
+    
     try {
-      // Vérifier si l'utilisateur a déjà un compte pro
-      const { data: existing, error: checkError } = await supabase
-        .from('professional_accounts')
-        .select('id')
-        .eq('user_id', user.id)
-        .single();
-
-      if (existing) {
-        setError('Vous avez déjà un compte professionnel.');
-        setLoading(false);
-        return;
+      console.log('🔵 Step 1: Creating user account...');
+      
+      // 1. Créer le compte utilisateur
+      const { data: authData, error: authError } = await signUp(
+        formData.email,
+        formData.password,
+        {
+          full_name: formData.organizationName,
+          phone: formData.phone
+        }
+      );
+      
+      if (authError) {
+        console.error('🔴 Auth error:', authError);
+        throw authError;
       }
-
-      // Créer le compte professionnel
-      const { data, error: insertError } = await supabase
+      
+      if (!authData?.user) {
+        throw new Error('Erreur lors de la création du compte');
+      }
+      
+      console.log('🟢 Step 1 complete: User created:', authData.user.id);
+      console.log('🔵 Step 2: Creating professional account...');
+      
+      // 2. Créer le compte professionnel
+      const { data: proData, error: proError } = await supabase
         .from('professional_accounts')
-        .insert([{
-          user_id: user.id,
-          ...formData,
-          is_verified: false, // En attente de vérification
-          is_active: true
-        }])
+        .insert({
+          user_id: authData.user.id,
+          organization_name: formData.organizationName,
+          organization_type: formData.organizationType,
+          phone: formData.phone,
+          city: formData.city,
+          email: formData.email,
+          is_active: true,
+          is_verified: false
+        })
         .select()
         .single();
-
-      if (insertError) throw insertError;
-
-      setSuccess(true);
       
-      // Rediriger vers le dashboard pro après 2 secondes
-      setTimeout(() => {
-        navigate('/pro/dashboard');
-      }, 2000);
-
-    } catch (err) {
-      console.error('Erreur création compte pro:', err);
-      setError(err.message || 'Une erreur est survenue');
+      if (proError) {
+        console.error('🔴 Pro account error:', proError);
+        throw proError;
+      }
+      
+      console.log('🟢 Step 2 complete: Professional account created:', proData.id);
+      console.log('🎉 Registration complete! Redirecting to login...');
+      
+      // 3. Rediriger vers login avec message de succès
+      alert('✅ Compte professionnel créé avec succès !\n\nConnectez-vous pour accéder à votre dashboard.');
+      navigate('/login');
+      
+    } catch (error) {
+      console.error('🔴 Registration error:', error);
+      setErrors({
+        general: error.message || 'Erreur lors de la création du compte. Veuillez réessayer.'
+      });
     } finally {
       setLoading(false);
     }
   };
 
-  if (!user) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">
-            Connexion requise
-          </h2>
-          <p className="text-gray-600 mb-6">
-            Vous devez être connecté pour créer un compte professionnel
-          </p>
-          <button
-            onClick={() => navigate('/login')}
-            className="px-6 py-3 bg-blue-500 text-white rounded-xl font-medium hover:bg-blue-600"
-          >
-            Se connecter
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  if (success) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <div className="max-w-md w-full bg-white rounded-3xl p-8 text-center">
-          <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-            <Check size={40} className="text-green-600" />
-          </div>
-          <h2 className="text-2xl font-heading font-bold text-gray-900 mb-4">
-            Demande envoyée !
-          </h2>
-          <p className="text-gray-600 mb-6">
-            Votre compte professionnel a été créé et est en attente de vérification.
-            Vous serez notifié par email une fois votre compte validé.
-          </p>
-          <button
-            onClick={() => navigate('/pro/dashboard')}
-            className="w-full py-3 bg-blue-500 text-white rounded-xl font-medium hover:bg-blue-600"
-          >
-            Accéder au dashboard
-          </button>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gradient-to-br from-green-50 via-teal-50 to-blue-50">
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+      <header className="bg-white/80 backdrop-blur-md border-b border-gray-200 py-4">
+        <div className="max-w-7xl mx-auto px-4 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="text-3xl">🐕</span>
+            <h1 className="text-2xl font-heading font-bold text-gray-900">
+              Doogybook
+            </h1>
+          </div>
           <button
-            onClick={() => navigate(-1)}
-            className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
+            onClick={() => navigate('/')}
+            className="px-4 py-2 text-gray-600 hover:text-gray-900"
           >
-            <ArrowLeft size={20} />
-            <span className="font-medium">Retour</span>
+            ← Retour
           </button>
-          <h1 className="text-xl font-heading font-bold text-gray-900">
-            Compte Professionnel
-          </h1>
-          <div className="w-20"></div>
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto px-4 py-8">
+      {/* Main Content */}
+      <div className="max-w-2xl mx-auto px-4 py-12">
+        
         {/* Hero Section */}
-        <div className="bg-gradient-to-br from-blue-500 to-purple-600 rounded-3xl p-8 text-white mb-8">
-          <div className="flex items-center gap-3 mb-4">
-            <Building2 size={32} />
-            <h2 className="text-3xl font-heading font-bold">
-              Devenez partenaire Doogybook
-            </h2>
+        <div className="text-center mb-12">
+          <div className="w-20 h-20 bg-gradient-to-br from-green-500 to-teal-600 rounded-3xl flex items-center justify-center mx-auto mb-6">
+            <Shield size={40} className="text-white" />
           </div>
-          <p className="text-lg text-white/90 mb-6">
-            Créez votre compte professionnel pour gérer vos chiens à l'adoption,
-            recevoir des candidatures et toucher des milliers d'adoptants potentiels.
+          <h2 className="text-3xl md:text-4xl font-heading font-bold text-gray-900 mb-4">
+            Inscription Professionnelle
+          </h2>
+          <p className="text-lg text-gray-600">
+            Créez votre compte refuge/association et commencez à publier vos chiens à adopter
           </p>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4">
-              <Check size={24} className="mb-2" />
-              <p className="font-semibold">Visibilité maximale</p>
-            </div>
-            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4">
-              <Check size={24} className="mb-2" />
-              <p className="font-semibold">Gestion simplifiée</p>
-            </div>
-            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4">
-              <Check size={24} className="mb-2" />
-              <p className="font-semibold">100% gratuit</p>
-            </div>
-          </div>
         </div>
 
-        {/* Formulaire */}
-        <form onSubmit={handleSubmit} className="bg-white rounded-3xl p-8 shadow-sm">
-          <h3 className="text-2xl font-heading font-bold text-gray-900 mb-6">
-            Informations de l'organisation
-          </h3>
-
-          {error && (
-            <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6 flex items-center gap-3">
-              <AlertCircle size={20} className="text-red-600" />
-              <p className="text-red-800">{error}</p>
+        {/* Form */}
+        <div className="bg-white rounded-3xl shadow-xl p-8 md:p-12">
+          
+          {/* Error message */}
+          {errors.general && (
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm">
+              {errors.general}
             </div>
           )}
 
-          <div className="space-y-6">
-            {/* Type d'organisation */}
+          <form onSubmit={handleSubmit} className="space-y-6">
+            
+            {/* Email */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Type d'organisation *
+                Email professionnel *
               </label>
-              <select
-                name="organization_type"
-                value={formData.organization_type}
-                onChange={handleChange}
-                required
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                <option value="association">Association loi 1901</option>
-                <option value="refuge">Refuge</option>
-                <option value="spa">SPA</option>
-                <option value="eleveur">Éleveur</option>
-              </select>
-            </div>
-
-            {/* Nom de l'organisation */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Nom de l'organisation *
-              </label>
-              <input
-                type="text"
-                name="organization_name"
-                value={formData.organization_name}
-                onChange={handleChange}
-                required
-                placeholder="Ex: Refuge de l'Espoir"
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-
-            {/* SIRET */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                SIRET (optionnel)
-              </label>
-              <input
-                type="text"
-                name="siret"
-                value={formData.siret}
-                onChange={handleChange}
-                placeholder="123 456 789 00010"
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-
-            {/* Description */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Description de votre organisation *
-              </label>
-              <textarea
-                name="description"
-                value={formData.description}
-                onChange={handleChange}
-                required
-                rows={4}
-                placeholder="Décrivez votre mission, vos valeurs..."
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-              />
-            </div>
-
-            {/* Adresse */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Adresse *
-                </label>
-                <input
-                  type="text"
-                  name="address"
-                  value={formData.address}
-                  onChange={handleChange}
-                  required
-                  placeholder="123 rue de la Paix"
-                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Code postal *
-                </label>
-                <input
-                  type="text"
-                  name="postal_code"
-                  value={formData.postal_code}
-                  onChange={handleChange}
-                  required
-                  placeholder="75001"
-                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Ville *
-                </label>
-                <input
-                  type="text"
-                  name="city"
-                  value={formData.city}
-                  onChange={handleChange}
-                  required
-                  placeholder="Paris"
-                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-            </div>
-
-            {/* Contact */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Email de contact *
-                </label>
+              <div className="relative">
+                <Mail className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
                 <input
                   type="email"
                   name="email"
                   value={formData.email}
                   onChange={handleChange}
-                  required
+                  className={`w-full pl-12 pr-4 py-3 border ${errors.email ? 'border-red-500' : 'border-gray-300'} rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent`}
                   placeholder="contact@refuge.fr"
-                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  disabled={loading}
                 />
               </div>
+              {errors.email && <p className="mt-1 text-sm text-red-500">{errors.email}</p>}
+            </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Téléphone
-                </label>
+            {/* Password */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Mot de passe *
+              </label>
+              <div className="relative">
+                <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+                <input
+                  type="password"
+                  name="password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  className={`w-full pl-12 pr-4 py-3 border ${errors.password ? 'border-red-500' : 'border-gray-300'} rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent`}
+                  placeholder="Minimum 8 caractères"
+                  disabled={loading}
+                />
+              </div>
+              {errors.password && <p className="mt-1 text-sm text-red-500">{errors.password}</p>}
+            </div>
+
+            {/* Confirm Password */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Confirmer le mot de passe *
+              </label>
+              <div className="relative">
+                <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+                <input
+                  type="password"
+                  name="confirmPassword"
+                  value={formData.confirmPassword}
+                  onChange={handleChange}
+                  className={`w-full pl-12 pr-4 py-3 border ${errors.confirmPassword ? 'border-red-500' : 'border-gray-300'} rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent`}
+                  placeholder="Confirmez votre mot de passe"
+                  disabled={loading}
+                />
+              </div>
+              {errors.confirmPassword && <p className="mt-1 text-sm text-red-500">{errors.confirmPassword}</p>}
+            </div>
+
+            <div className="border-t border-gray-200 my-8"></div>
+
+            {/* Organization Name */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Nom du refuge / association *
+              </label>
+              <div className="relative">
+                <Building2 className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+                <input
+                  type="text"
+                  name="organizationName"
+                  value={formData.organizationName}
+                  onChange={handleChange}
+                  className={`w-full pl-12 pr-4 py-3 border ${errors.organizationName ? 'border-red-500' : 'border-gray-300'} rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent`}
+                  placeholder="Refuge les Amis des Animaux"
+                  disabled={loading}
+                />
+              </div>
+              {errors.organizationName && <p className="mt-1 text-sm text-red-500">{errors.organizationName}</p>}
+            </div>
+
+            {/* Organization Type */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Type d'organisation *
+              </label>
+              <select
+                name="organizationType"
+                value={formData.organizationType}
+                onChange={handleChange}
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                disabled={loading}
+              >
+                <option value="refuge">Refuge</option>
+                <option value="spa">SPA</option>
+                <option value="association">Association</option>
+              </select>
+            </div>
+
+            {/* Phone */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Téléphone *
+              </label>
+              <div className="relative">
+                <Phone className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
                 <input
                   type="tel"
                   name="phone"
                   value={formData.phone}
                   onChange={handleChange}
-                  placeholder="06 12 34 56 78"
-                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className={`w-full pl-12 pr-4 py-3 border ${errors.phone ? 'border-red-500' : 'border-gray-300'} rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent`}
+                  placeholder="01 23 45 67 89"
+                  disabled={loading}
                 />
               </div>
+              {errors.phone && <p className="mt-1 text-sm text-red-500">{errors.phone}</p>}
             </div>
 
-            {/* Réseaux sociaux */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  <Globe size={16} className="inline mr-1" />
-                  Site web
-                </label>
-                <input
-                  type="url"
-                  name="website"
-                  value={formData.website}
-                  onChange={handleChange}
-                  placeholder="https://..."
-                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  <Instagram size={16} className="inline mr-1" />
-                  Instagram
-                </label>
+            {/* City */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Ville *
+              </label>
+              <div className="relative">
+                <MapPin className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
                 <input
                   type="text"
-                  name="instagram"
-                  value={formData.instagram}
+                  name="city"
+                  value={formData.city}
                   onChange={handleChange}
-                  placeholder="@votre_compte"
-                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className={`w-full pl-12 pr-4 py-3 border ${errors.city ? 'border-red-500' : 'border-gray-300'} rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent`}
+                  placeholder="Paris"
+                  disabled={loading}
                 />
               </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  <Facebook size={16} className="inline mr-1" />
-                  Facebook
-                </label>
-                <input
-                  type="text"
-                  name="facebook"
-                  value={formData.facebook}
-                  onChange={handleChange}
-                  placeholder="VotrePage"
-                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
+              {errors.city && <p className="mt-1 text-sm text-red-500">{errors.city}</p>}
             </div>
 
-            {/* Bouton submit */}
-            <div className="pt-6 border-t border-gray-200">
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full py-4 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl font-bold text-lg hover:from-blue-600 hover:to-purple-700 transition-smooth disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {loading ? 'Envoi en cours...' : 'Créer mon compte professionnel'}
-              </button>
-              <p className="text-sm text-gray-500 text-center mt-4">
-                Votre compte sera vérifié par notre équipe sous 48h
+            {/* Info box */}
+            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+              <p className="text-sm text-blue-800">
+                ℹ️ Votre compte sera en attente de vérification. Une fois vérifié par notre équipe, 
+                vous recevrez un badge "Vérifié" qui rassurera les adoptants.
               </p>
             </div>
-          </div>
-        </form>
-      </main>
 
-      <Footer />
+            {/* Submit Button */}
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full py-4 bg-gradient-to-r from-green-500 to-teal-600 text-white rounded-xl font-bold text-lg hover:from-green-600 hover:to-teal-700 transition-smooth flex items-center justify-center gap-2 disabled:opacity-50"
+            >
+              {loading ? (
+                <>
+                  <div className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full" />
+                  Création en cours...
+                </>
+              ) : (
+                <>
+                  <Shield size={24} />
+                  Créer mon compte professionnel
+                  <ArrowRight size={20} />
+                </>
+              )}
+            </button>
+
+            {/* Login link */}
+            <div className="text-center pt-4 border-t border-gray-200">
+              <p className="text-sm text-gray-600">
+                Vous avez déjà un compte ?{' '}
+                <button
+                  type="button"
+                  onClick={() => navigate('/login')}
+                  className="text-green-600 font-medium hover:text-green-700"
+                  disabled={loading}
+                >
+                  Se connecter
+                </button>
+              </p>
+            </div>
+          </form>
+        </div>
+
+        {/* Footer info */}
+        <div className="mt-8 text-center text-sm text-gray-600">
+          <p>En créant un compte, vous acceptez nos conditions d'utilisation</p>
+        </div>
+      </div>
     </div>
   );
 };
