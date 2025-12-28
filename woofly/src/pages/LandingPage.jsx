@@ -16,7 +16,7 @@ const LandingPage = () => {
   useEffect(() => {
     // Si l'utilisateur est déjà connecté, rediriger vers son dashboard
     if (user) {
-      navigate('/dog-profile');
+      navigate('/dashboard'); // ← MODIFIÉ ICI
     } else {
       fetchFeaturedDogs();
     }
