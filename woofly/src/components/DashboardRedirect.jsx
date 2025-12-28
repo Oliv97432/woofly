@@ -22,20 +22,21 @@ const DashboardRedirect = () => {
       }
 
       console.log('🟢 DashboardRedirect: User found:', user.id);
+      console.log('🟢 DashboardRedirect: User email:', user.email);
 
       try {
-        console.log('🔵 DashboardRedirect: Step 1 - Checking if admin...');
+        console.log('🔵 DashboardRedirect: Step 1 - Checking if admin BY EMAIL...');
         
-        // ÉTAPE 1 : Vérifier si l'utilisateur est admin
+        // ÉTAPE 1 : Vérifier si l'utilisateur est admin PAR EMAIL
         const { data: profile, error: profileError } = await supabase
           .from('user_profiles')
-          .select('is_admin')
-          .eq('user_id', user.id)
+          .select('is_admin, email, id')
+          .eq('email', user.email)  // ✅ CHERCHER PAR EMAIL !
           .single();
 
         console.log('🔵 DashboardRedirect: Admin check result:', { profile, profileError });
 
-        if (profile && profile.is_admin) {
+        if (profile && profile.is_admin === true) {
           // Est un admin → Dashboard Admin
           console.log('🟣 DashboardRedirect: User is ADMIN! Redirecting to /admin/dashboard');
           navigate('/admin/dashboard');
