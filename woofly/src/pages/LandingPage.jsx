@@ -16,7 +16,7 @@ const LandingPage = () => {
   useEffect(() => {
     // Si l'utilisateur est déjà connecté, rediriger vers son dashboard
     if (user) {
-      navigate('/dashboard'); // ← MODIFIÉ ICI
+      navigate('/dashboard');
     } else {
       fetchFeaturedDogs();
     }
@@ -121,6 +121,66 @@ const LandingPage = () => {
           <svg viewBox="0 0 1440 120" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M0 0L60 10C120 20 240 40 360 46.7C480 53 600 47 720 43.3C840 40 960 40 1080 46.7C1200 53 1320 67 1380 73.3L1440 80V120H1380C1320 120 1200 120 1080 120C960 120 840 120 720 120C600 120 480 120 360 120C240 120 120 120 60 120H0V0Z" fill="white"/>
           </svg>
+        </div>
+      </section>
+
+      {/* Section Professionnels */}
+      <section className="py-16 bg-gradient-to-r from-green-500 to-teal-600">
+        <div className="max-w-5xl mx-auto px-4">
+          <div className="bg-white rounded-3xl p-8 md:p-12 shadow-2xl">
+            <div className="flex flex-col md:flex-row items-center gap-8">
+              <div className="flex-shrink-0">
+                <div className="w-20 h-20 md:w-24 md:h-24 bg-gradient-to-br from-green-500 to-teal-600 rounded-2xl flex items-center justify-center">
+                  <Shield size={48} className="text-white" />
+                </div>
+              </div>
+              
+              <div className="flex-1 text-center md:text-left">
+                <h3 className="text-2xl md:text-3xl font-heading font-bold text-gray-900 mb-3">
+                  🏢 Vous êtes un refuge ou une association ?
+                </h3>
+                <p className="text-lg text-gray-700 mb-6">
+                  Rejoignez notre réseau de professionnels vérifiés ! Publiez vos chiens à adopter, 
+                  gérez les candidatures et touchez des milliers de familles prêtes à adopter.
+                </p>
+                <div className="flex flex-wrap gap-4 justify-center md:justify-start">
+                  <button
+                    onClick={() => navigate('/pro/register')}
+                    className="px-8 py-4 bg-gradient-to-r from-green-500 to-teal-600 text-white rounded-2xl font-bold text-lg hover:from-green-600 hover:to-teal-700 transition-smooth shadow-lg flex items-center gap-2"
+                  >
+                    <Shield size={24} />
+                    Inscription Professionnelle
+                    <ArrowRight size={20} />
+                  </button>
+                  <button
+                    onClick={() => navigate('/adoption')}
+                    className="px-8 py-4 bg-gray-100 text-gray-700 rounded-2xl font-bold text-lg hover:bg-gray-200 transition-smooth"
+                  >
+                    Voir les chiens à adopter
+                  </button>
+                </div>
+              </div>
+            </div>
+            
+            {/* Avantages */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8 pt-8 border-t border-gray-200">
+              <div className="text-center">
+                <div className="text-3xl mb-2">✅</div>
+                <h4 className="font-bold text-gray-900 mb-1">Badge Vérifié</h4>
+                <p className="text-sm text-gray-600">Gagnez la confiance des adoptants</p>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl mb-2">📊</div>
+                <h4 className="font-bold text-gray-900 mb-1">Gestion Simplifiée</h4>
+                <p className="text-sm text-gray-600">Tableau de bord complet</p>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl mb-2">🎯</div>
+                <h4 className="font-bold text-gray-900 mb-1">Visibilité Maximale</h4>
+                <p className="text-sm text-gray-600">Milliers de visiteurs par mois</p>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
