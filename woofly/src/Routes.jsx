@@ -40,6 +40,9 @@ import ProDogManagement from './pages/pro/ProDogManagement';
 import ProApplications from './pages/pro/ProApplications';
 import InstagramGenerator from './pages/pro/InstagramGenerator';
 
+// Redirection intelligente - NOUVEAU
+import DashboardRedirect from './components/DashboardRedirect';
+
 const Routes = () => {
   return (
     <BrowserRouter>
@@ -55,6 +58,9 @@ const Routes = () => {
         
         {/* Route hybride PUBLIC/PRIVÉ */}
         <Route path="/chien/:id" element={<HybridDogProfile />} />
+        
+        {/* Redirection intelligente - NOUVEAU */}
+        <Route path="/dashboard" element={<DashboardRedirect />} />
         
         {/* Route privée (dashboard santé) */}
         <Route path="/dog-profile" element={<DogProfile />} />
