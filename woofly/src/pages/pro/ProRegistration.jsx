@@ -150,17 +150,18 @@ const ProRegistration = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-teal-50 to-blue-50">
       {/* Header */}
-      <header className="bg-white/80 backdrop-blur-md border-b border-gray-200 py-4">
-        <div className="max-w-7xl mx-auto px-4 flex items-center justify-between">
+      <header className="bg-white/80 backdrop-blur-md border-b border-gray-200 py-3 sm:py-4">
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="text-3xl">🐕</span>
-            <h1 className="text-2xl font-heading font-bold text-gray-900">
+            <span className="text-2xl sm:text-3xl">🐕</span>
+            <h1 className="text-xl sm:text-2xl font-heading font-bold text-gray-900 truncate">
               Doogybook
             </h1>
           </div>
           <button
             onClick={() => navigate('/')}
-            className="px-4 py-2 text-gray-600 hover:text-gray-900"
+            className="px-3 sm:px-4 py-2 text-gray-600 hover:text-gray-900 text-sm sm:text-base min-h-[44px]"
+            aria-label="Retour à l'accueil"
           >
             ← Retour
           </button>
@@ -168,32 +169,32 @@ const ProRegistration = () => {
       </header>
 
       {/* Main Content */}
-      <div className="max-w-2xl mx-auto px-4 py-12">
+      <div className="max-w-2xl mx-auto px-3 sm:px-4 py-6 sm:py-8 md:py-12">
         
         {/* Hero Section */}
-        <div className="text-center mb-12">
-          <div className="w-20 h-20 bg-gradient-to-br from-green-500 to-teal-600 rounded-3xl flex items-center justify-center mx-auto mb-6">
-            <Shield size={40} className="text-white" />
+        <div className="text-center mb-8 sm:mb-12">
+          <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-green-500 to-teal-600 rounded-2xl sm:rounded-3xl flex items-center justify-center mx-auto mb-4 sm:mb-6">
+            <Shield size={28} className="sm:size-10 text-white" />
           </div>
-          <h2 className="text-3xl md:text-4xl font-heading font-bold text-gray-900 mb-4">
+          <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-heading font-bold text-gray-900 mb-3 sm:mb-4 leading-tight">
             Inscription Professionnelle
           </h2>
-          <p className="text-lg text-gray-600">
+          <p className="text-sm sm:text-base md:text-lg text-gray-600 px-2">
             Créez votre compte refuge/association et commencez à publier vos chiens à adopter
           </p>
         </div>
 
         {/* Form */}
-        <div className="bg-white rounded-3xl shadow-xl p-8 md:p-12">
+        <div className="bg-white rounded-2xl sm:rounded-3xl shadow-xl p-4 sm:p-6 md:p-8 lg:p-12">
           
           {/* Error message */}
           {errors.general && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm">
+            <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-xs sm:text-sm">
               {errors.general}
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
             
             {/* Email */}
             <div>
@@ -201,18 +202,18 @@ const ProRegistration = () => {
                 Email professionnel *
               </label>
               <div className="relative">
-                <Mail className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} className="sm:size-5" />
                 <input
                   type="email"
                   name="email"
                   value={formData.email}
                   onChange={handleChange}
-                  className={`w-full pl-12 pr-4 py-3 border ${errors.email ? 'border-red-500' : 'border-gray-300'} rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent`}
+                  className={`w-full pl-10 sm:pl-12 pr-4 py-3 border ${errors.email ? 'border-red-500' : 'border-gray-300'} rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm sm:text-base`}
                   placeholder="contact@refuge.fr"
                   disabled={loading}
                 />
               </div>
-              {errors.email && <p className="mt-1 text-sm text-red-500">{errors.email}</p>}
+              {errors.email && <p className="mt-1 text-xs sm:text-sm text-red-500">{errors.email}</p>}
             </div>
 
             {/* Password */}
@@ -221,18 +222,18 @@ const ProRegistration = () => {
                 Mot de passe *
               </label>
               <div className="relative">
-                <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} className="sm:size-5" />
                 <input
                   type="password"
                   name="password"
                   value={formData.password}
                   onChange={handleChange}
-                  className={`w-full pl-12 pr-4 py-3 border ${errors.password ? 'border-red-500' : 'border-gray-300'} rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent`}
+                  className={`w-full pl-10 sm:pl-12 pr-4 py-3 border ${errors.password ? 'border-red-500' : 'border-gray-300'} rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm sm:text-base`}
                   placeholder="Minimum 8 caractères"
                   disabled={loading}
                 />
               </div>
-              {errors.password && <p className="mt-1 text-sm text-red-500">{errors.password}</p>}
+              {errors.password && <p className="mt-1 text-xs sm:text-sm text-red-500">{errors.password}</p>}
             </div>
 
             {/* Confirm Password */}
@@ -241,21 +242,21 @@ const ProRegistration = () => {
                 Confirmer le mot de passe *
               </label>
               <div className="relative">
-                <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} className="sm:size-5" />
                 <input
                   type="password"
                   name="confirmPassword"
                   value={formData.confirmPassword}
                   onChange={handleChange}
-                  className={`w-full pl-12 pr-4 py-3 border ${errors.confirmPassword ? 'border-red-500' : 'border-gray-300'} rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent`}
+                  className={`w-full pl-10 sm:pl-12 pr-4 py-3 border ${errors.confirmPassword ? 'border-red-500' : 'border-gray-300'} rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm sm:text-base`}
                   placeholder="Confirmez votre mot de passe"
                   disabled={loading}
                 />
               </div>
-              {errors.confirmPassword && <p className="mt-1 text-sm text-red-500">{errors.confirmPassword}</p>}
+              {errors.confirmPassword && <p className="mt-1 text-xs sm:text-sm text-red-500">{errors.confirmPassword}</p>}
             </div>
 
-            <div className="border-t border-gray-200 my-8"></div>
+            <div className="border-t border-gray-200 my-4 sm:my-8"></div>
 
             {/* Organization Name */}
             <div>
@@ -263,18 +264,18 @@ const ProRegistration = () => {
                 Nom du refuge / association *
               </label>
               <div className="relative">
-                <Building2 className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+                <Building2 className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} className="sm:size-5" />
                 <input
                   type="text"
                   name="organizationName"
                   value={formData.organizationName}
                   onChange={handleChange}
-                  className={`w-full pl-12 pr-4 py-3 border ${errors.organizationName ? 'border-red-500' : 'border-gray-300'} rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent`}
+                  className={`w-full pl-10 sm:pl-12 pr-4 py-3 border ${errors.organizationName ? 'border-red-500' : 'border-gray-300'} rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm sm:text-base`}
                   placeholder="Refuge les Amis des Animaux"
                   disabled={loading}
                 />
               </div>
-              {errors.organizationName && <p className="mt-1 text-sm text-red-500">{errors.organizationName}</p>}
+              {errors.organizationName && <p className="mt-1 text-xs sm:text-sm text-red-500">{errors.organizationName}</p>}
             </div>
 
             {/* Organization Type */}
@@ -286,7 +287,7 @@ const ProRegistration = () => {
                 name="organizationType"
                 value={formData.organizationType}
                 onChange={handleChange}
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm sm:text-base"
                 disabled={loading}
               >
                 <option value="refuge">Refuge</option>
@@ -301,18 +302,18 @@ const ProRegistration = () => {
                 Téléphone *
               </label>
               <div className="relative">
-                <Phone className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+                <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} className="sm:size-5" />
                 <input
                   type="tel"
                   name="phone"
                   value={formData.phone}
                   onChange={handleChange}
-                  className={`w-full pl-12 pr-4 py-3 border ${errors.phone ? 'border-red-500' : 'border-gray-300'} rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent`}
+                  className={`w-full pl-10 sm:pl-12 pr-4 py-3 border ${errors.phone ? 'border-red-500' : 'border-gray-300'} rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm sm:text-base`}
                   placeholder="01 23 45 67 89"
                   disabled={loading}
                 />
               </div>
-              {errors.phone && <p className="mt-1 text-sm text-red-500">{errors.phone}</p>}
+              {errors.phone && <p className="mt-1 text-xs sm:text-sm text-red-500">{errors.phone}</p>}
             </div>
 
             {/* City */}
@@ -321,23 +322,23 @@ const ProRegistration = () => {
                 Ville *
               </label>
               <div className="relative">
-                <MapPin className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+                <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} className="sm:size-5" />
                 <input
                   type="text"
                   name="city"
                   value={formData.city}
                   onChange={handleChange}
-                  className={`w-full pl-12 pr-4 py-3 border ${errors.city ? 'border-red-500' : 'border-gray-300'} rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent`}
+                  className={`w-full pl-10 sm:pl-12 pr-4 py-3 border ${errors.city ? 'border-red-500' : 'border-gray-300'} rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm sm:text-base`}
                   placeholder="Paris"
                   disabled={loading}
                 />
               </div>
-              {errors.city && <p className="mt-1 text-sm text-red-500">{errors.city}</p>}
+              {errors.city && <p className="mt-1 text-xs sm:text-sm text-red-500">{errors.city}</p>}
             </div>
 
             {/* Info box */}
-            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-              <p className="text-sm text-blue-800">
+            <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 sm:p-4">
+              <p className="text-xs sm:text-sm text-blue-800 leading-relaxed">
                 ℹ️ Votre compte sera en attente de vérification. Une fois vérifié par notre équipe, 
                 vous recevrez un badge "Vérifié" qui rassurera les adoptants.
               </p>
@@ -347,25 +348,25 @@ const ProRegistration = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-4 bg-gradient-to-r from-green-500 to-teal-600 text-white rounded-xl font-bold text-lg hover:from-green-600 hover:to-teal-700 transition-smooth flex items-center justify-center gap-2 disabled:opacity-50"
+              className="w-full py-3 sm:py-4 bg-gradient-to-r from-green-500 to-teal-600 text-white rounded-xl font-bold text-base sm:text-lg hover:from-green-600 hover:to-teal-700 transition-smooth flex items-center justify-center gap-2 disabled:opacity-50 min-h-[52px]"
             >
               {loading ? (
                 <>
                   <div className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full" />
-                  Création en cours...
+                  <span className="text-sm sm:text-base">Création en cours...</span>
                 </>
               ) : (
                 <>
-                  <Shield size={24} />
-                  Créer mon compte professionnel
-                  <ArrowRight size={20} />
+                  <Shield size={20} className="sm:size-6" />
+                  <span className="text-sm sm:text-base">Créer mon compte professionnel</span>
+                  <ArrowRight size={18} className="sm:size-5" />
                 </>
               )}
             </button>
 
             {/* Login link */}
-            <div className="text-center pt-4 border-t border-gray-200">
-              <p className="text-sm text-gray-600">
+            <div className="text-center pt-3 sm:pt-4 border-t border-gray-200">
+              <p className="text-xs sm:text-sm text-gray-600">
                 Vous avez déjà un compte ?{' '}
                 <button
                   type="button"
@@ -381,7 +382,7 @@ const ProRegistration = () => {
         </div>
 
         {/* Footer info */}
-        <div className="mt-8 text-center text-sm text-gray-600">
+        <div className="mt-6 sm:mt-8 text-center text-xs sm:text-sm text-gray-600">
           <p>En créant un compte, vous acceptez nos conditions d'utilisation</p>
         </div>
       </div>
