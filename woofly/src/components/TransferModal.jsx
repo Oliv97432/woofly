@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState } from 'react';
 import { X, Send, CheckCircle, AlertCircle, Loader } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
@@ -8,21 +8,6 @@ const TransferModal = ({ dog, professionalAccountId, onClose, onSuccess }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [transferMode, setTransferMode] = useState(null); // 'immediate' ou 'pending'
-  const modalRef = useRef(null);
-
-  // Fermer le modal quand on clique en dehors
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (modalRef.current && !modalRef.current.contains(event.target)) {
-        onClose();
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [onClose]);
 
   const handleEmailSubmit = async (e) => {
     e.preventDefault();
@@ -180,43 +165,126 @@ const TransferModal = ({ dog, professionalAccountId, onClose, onSuccess }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+    <>
+      {/* Overlay noir */}
       <div 
-        ref={modalRef}
-        className="bg-white rounded-3xl max-w-md w-full p-8 relative"
-      >
-        
-        {/* Bouton fermer */}
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+        className="fixed inset-0 bg-black bg-opacity-50 z-40"
+        onClick={onClose}
+      />
+      
+      {/* Modal */}
+      <div className="fixed inset-0 flex items-center justify-center p-4 z-50">
+        <div 
+          className="bg-white rounded-3xl max-w-md w-full p-8 relative"
+          onClick={(e) => e.stopPropagation()}
         >
-          <X size={24} />
-        </button>
+          
+          {/* Bouton fermer */}
+          <button
+            onClick={onClose}
+            className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+          >
+            <X size={24} />
+          </button>
 
-        {/* Étape 1 : Saisie email */}
-        {step === 1 && (
-          <>
-            <h2 className="text-2xl font-heading font-bold text-gray-900 mb-2">
-              Transférer {dog.name}
-            </h2>
-            <p className="text-gray-600 mb-6">
-              Entrez l'adresse email de la personne qui adopte {dog.name}
-            </p>
+          {/* Étape 1 : Saisie email */}
+          {step === 1 && (
+            <>
+              <h2 className="text-2xl font-heading font-bold text-gray-900 mb-2">
+                Transférer {dog.name}
+              </h2>
+              <p className="text-gray-600 mb-6">
+                Entrez l'adresse email de la personne qui adopte {dog.name}
+              </p>
 
-            <form onSubmit={handleEmailSubmit}>
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Email de l'adoptant
-                </label>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  placeholder="exemple@email.com"
-                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
+              <form onSubmit={handleEmailSubmit}>
+                <div className="mb-6">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Email de l'adoptant
+                  </label>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    placeholder="exemple@email.com"
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+
+                {error && (
+                  <div className="mb-4 p-3 bg-red-50 border-l-4 border-red-500 rounded-r text-sm text-red-700">
+                    {error}
+                  </div>
+                )}
+
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    className="flex-1 px-4 py-3 border-2 border-gray-200 rounded-xl font-medium hover:bg-gray-50"
+                  >
+                    Annuler
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={loading || !email}
+                    className="flex-1 px-4 py-3 bg-blue-500 text-white rounded-xl font-medium hover:bg-blue-600 disabled:opacity-50 flex items-center justify-center gap-2"
+                  >
+                    {loading ? (
+                      <>
+                        <Loader className="animate-spin" size={20} />
+                        Vérification...
+                      </>
+                    ) : (
+                      <>
+                        Continuer
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
+            </>
+          )}
+
+          {/* Étape 2 : Confirmation */}
+          {step === 2 && (
+            <>
+              <div className="text-center mb-6">
+                <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Send className="text-blue-600" size={32} />
+                </div>
+                <h2 className="text-2xl font-heading font-bold text-gray-900 mb-2">
+                  Confirmer le transfert
+                </h2>
+              </div>
+
+              {transferMode === 'immediate' ? (
+                <div className="bg-green-50 border-l-4 border-green-500 p-4 rounded-r mb-6">
+                  <p className="text-sm text-green-900">
+                    <strong>✓ Transfert immédiat</strong><br />
+                    L'utilisateur <strong>{email}</strong> possède déjà un compte. {dog.name} sera transféré immédiatement sur son compte.
+                  </p>
+                </div>
+              ) : (
+                <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r mb-6">
+                  <p className="text-sm text-blue-900">
+                    <strong>📧 Invitation par email</strong><br />
+                    Un email sera envoyé à <strong>{email}</strong> avec un lien pour récupérer {dog.name}. Le lien sera valide pendant 7 jours.
+                  </p>
+                </div>
+              )}
+
+              <div className="bg-gray-50 p-4 rounded-xl mb-6">
+                <p className="text-sm text-gray-700">
+                  <strong>Ce qui sera transféré :</strong>
+                </p>
+                <ul className="text-sm text-gray-600 mt-2 space-y-1">
+                  <li>• Toutes les informations de {dog.name}</li>
+                  <li>• Historique des vaccinations</li>
+                  <li>• Dossier médical complet</li>
+                  <li>• Photos et documents</li>
+                </ul>
               </div>
 
               {error && (
@@ -227,139 +295,65 @@ const TransferModal = ({ dog, professionalAccountId, onClose, onSuccess }) => {
 
               <div className="flex gap-3">
                 <button
-                  type="button"
-                  onClick={onClose}
+                  onClick={() => setStep(1)}
+                  disabled={loading}
                   className="flex-1 px-4 py-3 border-2 border-gray-200 rounded-xl font-medium hover:bg-gray-50"
                 >
-                  Annuler
+                  Retour
                 </button>
                 <button
-                  type="submit"
-                  disabled={loading || !email}
+                  onClick={handleConfirm}
+                  disabled={loading}
                   className="flex-1 px-4 py-3 bg-blue-500 text-white rounded-xl font-medium hover:bg-blue-600 disabled:opacity-50 flex items-center justify-center gap-2"
                 >
                   {loading ? (
                     <>
                       <Loader className="animate-spin" size={20} />
-                      Vérification...
+                      Transfert...
                     </>
                   ) : (
                     <>
-                      Continuer
+                      <Send size={20} />
+                      Confirmer
                     </>
                   )}
                 </button>
               </div>
-            </form>
-          </>
-        )}
+            </>
+          )}
 
-        {/* Étape 2 : Confirmation */}
-        {step === 2 && (
-          <>
-            <div className="text-center mb-6">
-              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Send className="text-blue-600" size={32} />
+          {/* Étape 3 : Succès */}
+          {step === 3 && (
+            <div className="text-center">
+              <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <CheckCircle className="text-green-600" size={40} />
               </div>
               <h2 className="text-2xl font-heading font-bold text-gray-900 mb-2">
-                Confirmer le transfert
+                Transfert réussi !
               </h2>
-            </div>
-
-            {transferMode === 'immediate' ? (
-              <div className="bg-green-50 border-l-4 border-green-500 p-4 rounded-r mb-6">
-                <p className="text-sm text-green-900">
-                  <strong>✓ Transfert immédiat</strong><br />
-                  L'utilisateur <strong>{email}</strong> possède déjà un compte. {dog.name} sera transféré immédiatement sur son compte.
+              
+              {transferMode === 'immediate' ? (
+                <p className="text-gray-600 mb-6">
+                  {dog.name} a été transféré avec succès sur le compte de <strong>{email}</strong>.
                 </p>
-              </div>
-            ) : (
-              <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r mb-6">
-                <p className="text-sm text-blue-900">
-                  <strong>📧 Invitation par email</strong><br />
-                  Un email sera envoyé à <strong>{email}</strong> avec un lien pour récupérer {dog.name}. Le lien sera valide pendant 7 jours.
+              ) : (
+                <p className="text-gray-600 mb-6">
+                  Un email a été envoyé à <strong>{email}</strong> avec les instructions pour récupérer {dog.name}.
                 </p>
-              </div>
-            )}
+              )}
 
-            <div className="bg-gray-50 p-4 rounded-xl mb-6">
-              <p className="text-sm text-gray-700">
-                <strong>Ce qui sera transféré :</strong>
-              </p>
-              <ul className="text-sm text-gray-600 mt-2 space-y-1">
-                <li>• Toutes les informations de {dog.name}</li>
-                <li>• Historique des vaccinations</li>
-                <li>• Dossier médical complet</li>
-                <li>• Photos et documents</li>
-              </ul>
-            </div>
-
-            {error && (
-              <div className="mb-4 p-3 bg-red-50 border-l-4 border-red-500 rounded-r text-sm text-red-700">
-                {error}
-              </div>
-            )}
-
-            <div className="flex gap-3">
               <button
-                onClick={() => setStep(1)}
-                disabled={loading}
-                className="flex-1 px-4 py-3 border-2 border-gray-200 rounded-xl font-medium hover:bg-gray-50"
+                onClick={onClose}
+                className="px-6 py-3 bg-blue-500 text-white rounded-xl font-medium hover:bg-blue-600"
               >
-                Retour
-              </button>
-              <button
-                onClick={handleConfirm}
-                disabled={loading}
-                className="flex-1 px-4 py-3 bg-blue-500 text-white rounded-xl font-medium hover:bg-blue-600 disabled:opacity-50 flex items-center justify-center gap-2"
-              >
-                {loading ? (
-                  <>
-                    <Loader className="animate-spin" size={20} />
-                    Transfert...
-                  </>
-                ) : (
-                  <>
-                    <Send size={20} />
-                    Confirmer
-                  </>
-                )}
+                Fermer
               </button>
             </div>
-          </>
-        )}
+          )}
 
-        {/* Étape 3 : Succès */}
-        {step === 3 && (
-          <div className="text-center">
-            <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <CheckCircle className="text-green-600" size={40} />
-            </div>
-            <h2 className="text-2xl font-heading font-bold text-gray-900 mb-2">
-              Transfert réussi !
-            </h2>
-            
-            {transferMode === 'immediate' ? (
-              <p className="text-gray-600 mb-6">
-                {dog.name} a été transféré avec succès sur le compte de <strong>{email}</strong>.
-              </p>
-            ) : (
-              <p className="text-gray-600 mb-6">
-                Un email a été envoyé à <strong>{email}</strong> avec les instructions pour récupérer {dog.name}.
-              </p>
-            )}
-
-            <button
-              onClick={onClose}
-              className="px-6 py-3 bg-blue-500 text-white rounded-xl font-medium hover:bg-blue-600"
-            >
-              Fermer
-            </button>
-          </div>
-        )}
-
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 
