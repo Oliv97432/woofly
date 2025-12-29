@@ -213,7 +213,7 @@ const ClaimDogPage = () => {
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
         <div className="text-center">
           <Loader className="animate-spin h-12 w-12 text-blue-500 mx-auto mb-4" />
-          <p className="text-gray-600">Chargement...</p>
+          <p className="text-gray-600 text-sm sm:text-base">Chargement...</p>
         </div>
       </div>
     );
@@ -222,17 +222,17 @@ const ClaimDogPage = () => {
   if (error) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <div className="max-w-md w-full bg-white rounded-3xl shadow-lg p-8 text-center">
-          <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <AlertCircle className="text-red-600" size={40} />
+        <div className="max-w-md w-full bg-white rounded-2xl sm:rounded-3xl shadow-lg p-6 sm:p-8 text-center">
+          <div className="w-16 h-16 sm:w-20 sm:h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <AlertCircle className="text-red-600" size={32} className="sm:size-10" />
           </div>
-          <h2 className="text-2xl font-heading font-bold text-gray-900 mb-2">
+          <h2 className="text-xl sm:text-2xl font-heading font-bold text-gray-900 mb-2 leading-tight">
             Oups !
           </h2>
-          <p className="text-gray-600 mb-6">{error}</p>
+          <p className="text-gray-600 mb-6 text-sm sm:text-base break-words">{error}</p>
           <button
             onClick={() => navigate('/')}
-            className="px-6 py-3 bg-blue-500 text-white rounded-xl font-medium hover:bg-blue-600 transition-smooth"
+            className="px-4 sm:px-6 py-3 bg-blue-500 text-white rounded-xl font-medium hover:bg-blue-600 transition-smooth min-h-[44px] text-sm sm:text-base"
           >
             Retour à l'accueil
           </button>
@@ -244,18 +244,22 @@ const ClaimDogPage = () => {
   if (success) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <div className="max-w-md w-full bg-white rounded-3xl shadow-lg p-8 text-center">
-          <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <CheckCircle className="text-green-600" size={40} />
+        <div className="max-w-md w-full bg-white rounded-2xl sm:rounded-3xl shadow-lg p-6 sm:p-8 text-center">
+          <div className="w-16 h-16 sm:w-20 sm:h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <CheckCircle className="text-green-600" size={32} className="sm:size-10" />
           </div>
-          <h2 className="text-2xl font-heading font-bold text-gray-900 mb-2">
+          <h2 className="text-xl sm:text-2xl font-heading font-bold text-gray-900 mb-2 leading-tight">
             🎉 Félicitations !
           </h2>
-          <p className="text-gray-600 mb-6">
+          <p className="text-gray-600 mb-6 text-sm sm:text-base">
             {transfer.dog_data?.name} a été transféré avec succès sur votre compte !
           </p>
-          <div className="bg-blue-50 p-4 rounded-xl text-sm text-blue-900 mb-6">
+          <div className="bg-blue-50 p-3 sm:p-4 rounded-xl text-xs sm:text-sm text-blue-900 mb-6">
             <p>Redirection vers le profil de {transfer.dog_data?.name}...</p>
+          </div>
+          <div className="animate-pulse text-blue-500 text-sm">
+            <Loader className="inline animate-spin h-4 w-4 mr-2" />
+            Patientez un instant...
           </div>
         </div>
       </div>
@@ -266,7 +270,7 @@ const ClaimDogPage = () => {
     // Utilisateur pas connecté
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <div className="max-w-md w-full bg-white rounded-3xl shadow-lg p-8">
+        <div className="max-w-md w-full bg-white rounded-2xl sm:rounded-3xl shadow-lg p-4 sm:p-6 md:p-8">
           
           {/* Photo du chien */}
           {transfer.dog_data && (
@@ -275,30 +279,30 @@ const ClaimDogPage = () => {
                 <img
                   src={transfer.dog_data.photo_url}
                   alt={transfer.dog_data.name}
-                  className="w-32 h-32 rounded-3xl object-cover mx-auto mb-4 shadow-lg"
+                  className="w-24 h-24 sm:w-32 sm:h-32 rounded-2xl sm:rounded-3xl object-cover mx-auto mb-4 shadow-lg"
                 />
               ) : (
-                <div className="w-32 h-32 rounded-3xl bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center mx-auto mb-4 text-white text-4xl font-bold">
+                <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-2xl sm:rounded-3xl bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center mx-auto mb-4 text-white text-3xl sm:text-4xl font-bold">
                   {transfer.dog_data.name?.charAt(0).toUpperCase()}
                 </div>
               )}
-              <h2 className="text-2xl font-heading font-bold text-gray-900 mb-2">
+              <h2 className="text-lg sm:text-xl md:text-2xl font-heading font-bold text-gray-900 mb-2 leading-tight">
                 {transfer.dog_data.name} vous attend ! 🐕
               </h2>
-              <p className="text-gray-600">
+              <p className="text-gray-600 text-sm sm:text-base truncate">
                 {transfer.dog_data.breed} • {transfer.dog_data.age}
               </p>
             </div>
           )}
 
           {/* Message */}
-          <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-xl mb-6">
+          <div className="bg-blue-50 border-l-4 border-blue-500 p-3 sm:p-4 rounded-r-xl mb-4 sm:mb-6">
             <div className="flex gap-3">
-              <Heart className="text-blue-600 flex-shrink-0" size={24} />
-              <div className="text-sm text-blue-900">
+              <Heart className="text-blue-600 flex-shrink-0" size={20} className="sm:size-6" />
+              <div className="text-xs sm:text-sm text-blue-900">
                 <p className="font-semibold mb-1">Un chien a été transféré pour vous !</p>
-                <p>
-                  Connectez-vous ou créez un compte avec l'adresse <strong>{transfer.to_email}</strong> pour récupérer {transfer.dog_data?.name}.
+                <p className="break-words">
+                  Connectez-vous ou créez un compte avec l'adresse <strong className="break-all">{transfer.to_email}</strong> pour récupérer {transfer.dog_data?.name}.
                 </p>
               </div>
             </div>
@@ -308,20 +312,20 @@ const ClaimDogPage = () => {
           <div className="space-y-3">
             <button
               onClick={() => navigate(`/login?redirect=/claim-dog?token=${token}`)}
-              className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white px-6 py-3 rounded-xl font-semibold hover:from-blue-600 hover:to-blue-700 transition-all"
+              className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white px-4 sm:px-6 py-3 rounded-xl font-semibold hover:from-blue-600 hover:to-blue-700 transition-all min-h-[52px] text-sm sm:text-base"
             >
               Se connecter
             </button>
             <button
               onClick={() => navigate(`/register?redirect=/claim-dog?token=${token}`)}
-              className="w-full border-2 border-blue-500 text-blue-600 px-6 py-3 rounded-xl font-semibold hover:bg-blue-50 transition-smooth"
+              className="w-full border-2 border-blue-500 text-blue-600 px-4 sm:px-6 py-3 rounded-xl font-semibold hover:bg-blue-50 transition-smooth min-h-[52px] text-sm sm:text-base"
             >
               Créer un compte
             </button>
           </div>
 
           {/* Info expiration */}
-          <p className="text-xs text-gray-500 text-center mt-4">
+          <p className="text-xs text-gray-500 text-center mt-4 sm:mt-6">
             ⏰ Ce lien expire le {new Date(transfer.expires_at).toLocaleDateString('fr-FR', { 
               day: 'numeric', 
               month: 'long', 
@@ -339,7 +343,8 @@ const ClaimDogPage = () => {
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
         <div className="text-center">
           <Loader className="animate-spin h-12 w-12 text-blue-500 mx-auto mb-4" />
-          <p className="text-gray-600">Transfert en cours...</p>
+          <p className="text-gray-600 text-sm sm:text-base">Transfert en cours...</p>
+          <p className="text-gray-500 text-xs mt-2">Patientez, {transfer?.dog_data?.name} arrive bientôt !</p>
         </div>
       </div>
     );
