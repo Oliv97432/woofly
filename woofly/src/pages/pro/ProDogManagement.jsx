@@ -4,7 +4,7 @@ import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { 
   Plus, Search, Filter, Heart, Edit, Trash2, Eye, 
-  ArrowLeft, Upload, Save, X
+  ArrowLeft, Upload, Save, X, Camera, Loader
 } from 'lucide-react';
 
 import TransferDogButton from '../../components/TransferDogButton';
@@ -36,6 +36,11 @@ const ProDogManagement = () => {
     is_urgent: false
   });
 
+  // États pour l'upload de photo
+  const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [photoPreview, setPhotoPreview] = useState(null);
+
   useEffect(() => {
     if (user) {
       fetchProAccount();
@@ -48,6 +53,7 @@ const ProDogManagement = () => {
       if (dog) {
         setEditingDog(dog);
         setFormData(dog);
+        setPhotoPreview(dog.photo_url);
         setShowForm(true);
       }
     }
@@ -94,6 +100,70 @@ const ProDogManagement = () => {
       ...prev,
       [name]: type === 'checkbox' ? checked : value
     }));
+  };
+
+  const handlePhotoUpload = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Vérifier le type de fichier
+    if (!file.type.startsWith('image/')) {
+      alert('Veuillez sélectionner une image');
+      return;
+    }
+
+    // Vérifier la taille (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      alert('La photo ne doit pas dépasser 5 MB');
+      return;
+    }
+
+    setUploading(true);
+    setUploadProgress(0);
+
+    try {
+      // Créer un nom de fichier unique
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}-${Date.now()}.${fileExt}`;
+      const filePath = `dog-photos/${fileName}`;
+
+      // Simuler la progression
+      const progressInterval = setInterval(() => {
+        setUploadProgress(prev => Math.min(prev + 10, 90));
+      }, 100);
+
+      // Upload vers Supabase Storage
+      const { data, error } = await supabase.storage
+        .from('dog-photos')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
+
+      clearInterval(progressInterval);
+
+      if (error) throw error;
+
+      // Récupérer l'URL publique
+      const { data: { publicUrl } } = supabase.storage
+        .from('dog-photos')
+        .getPublicUrl(filePath);
+
+      setUploadProgress(100);
+      setPhotoPreview(publicUrl);
+      setFormData(prev => ({ ...prev, photo_url: publicUrl }));
+
+      setTimeout(() => {
+        setUploadProgress(0);
+        setUploading(false);
+      }, 500);
+
+    } catch (error) {
+      console.error('Erreur upload:', error);
+      alert('Erreur lors de l\'upload de la photo');
+      setUploading(false);
+      setUploadProgress(0);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -173,6 +243,7 @@ const ProDogManagement = () => {
       adoption_fee: '',
       is_urgent: false
     });
+    setPhotoPreview(null);
   };
 
   const filteredDogs = dogs.filter(dog => {
@@ -219,6 +290,70 @@ const ProDogManagement = () => {
         <main className="max-w-4xl mx-auto px-3 sm:px-4 py-6 sm:py-8">
           <form onSubmit={handleSubmit} className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8 shadow-sm">
             <div className="space-y-4 sm:space-y-6">
+              
+              {/* Photo Upload - NOUVEAU */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-3">
+                  Photo du chien
+                </label>
+                
+                <div className="flex flex-col items-center gap-4">
+                  {/* Prévisualisation */}
+                  <div className="relative w-40 h-40 sm:w-48 sm:h-48">
+                    {photoPreview ? (
+                      <img
+                        src={photoPreview}
+                        alt="Aperçu"
+                        className="w-full h-full object-cover rounded-2xl shadow-lg"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-br from-blue-400 to-purple-500 rounded-2xl flex items-center justify-center">
+                        <Camera size={48} className="text-white opacity-50" />
+                      </div>
+                    )}
+                    
+                    {uploading && (
+                      <div className="absolute inset-0 bg-black bg-opacity-50 rounded-2xl flex items-center justify-center">
+                        <div className="text-center">
+                          <Loader className="animate-spin h-8 w-8 text-white mx-auto mb-2" />
+                          <p className="text-white text-sm font-medium">{uploadProgress}%</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Bouton Upload */}
+                  <label className="cursor-pointer">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handlePhotoUpload}
+                      disabled={uploading}
+                      className="hidden"
+                    />
+                    <div className="px-6 py-3 bg-blue-500 text-white rounded-xl font-medium hover:bg-blue-600 disabled:opacity-50 flex items-center gap-2 min-h-[44px]">
+                      <Upload size={20} />
+                      {photoPreview ? 'Changer la photo' : 'Choisir une photo'}
+                    </div>
+                  </label>
+
+                  {uploading && (
+                    <div className="w-full max-w-xs">
+                      <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-blue-500 transition-all duration-300"
+                          style={{ width: `${uploadProgress}%` }}
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  <p className="text-xs text-gray-500 text-center">
+                    JPG, PNG ou GIF • Max 5 MB
+                  </p>
+                </div>
+              </div>
+
               {/* Nom */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -291,7 +426,7 @@ const ProDogManagement = () => {
                     name="size"
                     value={formData.size}
                     onChange={handleChange}
-                    placeholder="Ex: Moyen"
+                    placeholder="Ex: moyen"
                     className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
                   />
                 </div>
@@ -308,21 +443,6 @@ const ProDogManagement = () => {
                     className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
                   />
                 </div>
-              </div>
-
-              {/* Photo URL */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  URL de la photo
-                </label>
-                <input
-                  type="url"
-                  name="photo_url"
-                  value={formData.photo_url}
-                  onChange={handleChange}
-                  placeholder="https://..."
-                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
-                />
               </div>
 
               {/* Histoire */}
@@ -420,16 +540,14 @@ const ProDogManagement = () => {
                 </button>
               </div>
 
-              {/* Bouton de transfert - NOUVEAU */}
+              {/* Bouton de transfert */}
               {editingDog && editingDog.adoption_status !== 'adopted' && (
                 <div className="pt-4 sm:pt-6 border-t border-gray-200 mt-4 sm:mt-6">
                   <TransferDogButton
                     dog={editingDog}
                     professionalAccountId={proAccount?.id}
                     onTransferComplete={() => {
-                      // Recharger les chiens après transfert
                       fetchDogs(proAccount.id);
-                      // Fermer le formulaire
                       setShowForm(false);
                       setEditingDog(null);
                       resetForm();
@@ -475,7 +593,7 @@ const ProDogManagement = () => {
           {/* Recherche & Filtres */}
           <div className="flex flex-col xs:flex-row gap-3 sm:gap-4">
             <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} className="sm:size-5" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
               <input
                 type="text"
                 value={searchTerm}
@@ -501,7 +619,7 @@ const ProDogManagement = () => {
       <main className="max-w-7xl mx-auto px-3 sm:px-4 py-6">
         {filteredDogs.length === 0 ? (
           <div className="bg-white rounded-2xl sm:rounded-3xl p-8 sm:p-12 text-center">
-            <Heart size={40} className="sm:size-12 text-gray-300 mx-auto mb-3 sm:mb-4" />
+            <Heart size={40} className="text-gray-300 mx-auto mb-3 sm:mb-4" />
             <p className="text-gray-600 mb-4 text-sm sm:text-base">Aucun chien trouvé</p>
             <button
               onClick={() => setShowForm(true)}
@@ -559,6 +677,7 @@ const ProDogManagement = () => {
                       onClick={() => {
                         setEditingDog(dog);
                         setFormData(dog);
+                        setPhotoPreview(dog.photo_url);
                         setShowForm(true);
                         navigate(`/pro/dogs/${dog.id}`);
                       }}
