@@ -7,6 +7,8 @@ import {
   ArrowLeft, Upload, Save, X
 } from 'lucide-react';
 
+import TransferDogButton from '../../components/TransferDogButton';
+
 const ProDogManagement = () => {
   const { dogId } = useParams();
   const { user } = useAuth();
@@ -416,6 +418,25 @@ const ProDogManagement = () => {
                   {loading ? 'Enregistrement...' : 'Enregistrer'}
                 </button>
               </div>
+
+              {/* Bouton de transfert - NOUVEAU */}
+              {editingDog && editingDog.adoption_status !== 'adopted' && (
+                <div className="pt-6 border-t border-gray-200 mt-6">
+                  <TransferDogButton
+                    dog={editingDog}
+                    professionalAccountId={proAccount?.id}
+                    onTransferComplete={() => {
+                      // Recharger les chiens après transfert
+                      fetchDogs(proAccount.id);
+                      // Fermer le formulaire
+                      setShowForm(false);
+                      setEditingDog(null);
+                      resetForm();
+                      navigate('/pro/dogs');
+                    }}
+                  />
+                </div>
+              )}
             </div>
           </form>
         </main>
