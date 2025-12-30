@@ -16,6 +16,7 @@ const AdminDashboard = () => {
   
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [error, setError] = useState(null);
   
   // Stats globales
   const [stats, setStats] = useState({
@@ -24,15 +25,13 @@ const AdminDashboard = () => {
     totalDogs: 0,
     totalAdoptions: 0,
     pendingPros: 0,
-    // Nouveaux
     newUsersToday: 0,
     newUsersWeek: 0,
     newUsersMonth: 0,
     newProsWeek: 0,
     newDogsWeek: 0,
-    // Métriques
-    conversionRate: 0, // % de users qui deviennent pro
-    adoptionRate: 0,   // % de chiens adoptés
+    conversionRate: 0,
+    adoptionRate: 0,
     avgDogsPerPro: 0
   });
   
@@ -41,11 +40,7 @@ const AdminDashboard = () => {
   const [recentPros, setRecentPros] = useState([]);
   const [recentDogs, setRecentDogs] = useState([]);
   const [recentAdoptions, setRecentAdoptions] = useState([]);
-  
-  // Top refuges
   const [topRefuges, setTopRefuges] = useState([]);
-  
-  // Modal
   const [selectedPro, setSelectedPro] = useState(null);
 
   useEffect(() => {
@@ -54,49 +49,88 @@ const AdminDashboard = () => {
 
   const checkAdminAndLoadData = async () => {
     if (!user) {
+      console.log('❌ Admin Check: Pas d\'utilisateur connecté');
       navigate('/login');
       return;
     }
 
+    console.log('🔵 Admin Check: Utilisateur connecté:', user.id);
     setLoading(true);
+    setError(null);
+
     try {
       // Vérifier si admin
+      console.log('🔵 Vérification admin pour user:', user.id);
+      
       const { data: profile, error: profileError } = await supabase
         .from('user_profiles')
-        .select('is_admin')
+        .select('is_admin, email')
         .eq('id', user.id)
         .single();
 
-      if (profileError || !profile?.is_admin) {
+      console.log('🔵 Résultat query admin:', { profile, profileError });
+
+      if (profileError) {
+        console.error('❌ Erreur query admin:', profileError);
+        setError('Erreur de connexion à la base de données');
+        setLoading(false);
+        return;
+      }
+
+      if (!profile) {
+        console.error('❌ Profil non trouvé pour user:', user.id);
+        alert('⛔ Profil utilisateur non trouvé');
+        navigate('/dashboard');
+        return;
+      }
+
+      // Vérifier si is_admin existe et est true
+      if (!profile.hasOwnProperty('is_admin')) {
+        console.error('❌ Colonne is_admin n\'existe pas dans user_profiles !');
+        setError('Configuration base de données incorrecte - Colonne is_admin manquante');
+        setLoading(false);
+        return;
+      }
+
+      if (!profile.is_admin) {
+        console.error('❌ User n\'est pas admin:', profile.email);
         alert('⛔ Accès refusé - Vous n\'êtes pas administrateur');
         navigate('/dashboard');
         return;
       }
 
+      console.log('✅ User est admin !');
       setIsAdmin(true);
       await loadAllStats();
     } catch (error) {
-      console.error('Erreur vérification admin:', error);
-      navigate('/dashboard');
+      console.error('❌ Erreur vérification admin:', error);
+      setError('Erreur inattendue: ' + error.message);
     } finally {
       setLoading(false);
     }
   };
 
   const loadAllStats = async () => {
+    console.log('🔵 Chargement des stats...');
+    
     try {
       const now = new Date();
       const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
       const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
       const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 
-      // ═══════════════════════════════════════════════════════════
       // USERS
-      // ═══════════════════════════════════════════════════════════
-      const { data: users } = await supabase
+      console.log('🔵 Chargement users...');
+      const { data: users, error: usersError } = await supabase
         .from('user_profiles')
         .select('*')
         .order('created_at', { ascending: false });
+
+      if (usersError) {
+        console.error('❌ Erreur chargement users:', usersError);
+      } else {
+        console.log('✅ Users chargés:', users?.length || 0);
+      }
 
       const totalUsers = users?.length || 0;
       const newUsersToday = users?.filter(u => 
@@ -111,13 +145,18 @@ const AdminDashboard = () => {
 
       setRecentUsers(users?.slice(0, 10) || []);
 
-      // ═══════════════════════════════════════════════════════════
       // PROS
-      // ═══════════════════════════════════════════════════════════
-      const { data: pros } = await supabase
+      console.log('🔵 Chargement pros...');
+      const { data: pros, error: prosError } = await supabase
         .from('professional_accounts')
         .select('*')
         .order('created_at', { ascending: false });
+
+      if (prosError) {
+        console.error('❌ Erreur chargement pros:', prosError);
+      } else {
+        console.log('✅ Pros chargés:', pros?.length || 0);
+      }
 
       const totalPros = pros?.length || 0;
       const pendingPros = pros?.filter(p => !p.is_verified).length || 0;
@@ -127,7 +166,8 @@ const AdminDashboard = () => {
 
       setRecentPros(pros?.slice(0, 5) || []);
 
-      // Calculer les tops refuges (par nombre de chiens)
+      // Top refuges
+      console.log('🔵 Calcul top refuges...');
       const prosWithDogs = await Promise.all(
         (pros || []).map(async (pro) => {
           const { data: dogs } = await supabase
@@ -143,20 +183,26 @@ const AdminDashboard = () => {
         .slice(0, 5);
       
       setTopRefuges(topRefuges);
+      console.log('✅ Top refuges calculés:', topRefuges.length);
 
-      // ═══════════════════════════════════════════════════════════
-      // DOGS
-      // ═══════════════════════════════════════════════════════════
-      // ✅ MODIFIÉ : Récupérer TOUS les chiens, pas seulement ceux "à l'adoption"
-      const { data: allDogs } = await supabase
+      // DOGS - RÉCUPÉRER TOUS LES CHIENS
+      console.log('🔵 Chargement dogs...');
+      const { data: allDogs, error: dogsError } = await supabase
         .from('dogs')
         .select('*')
         .order('created_at', { ascending: false });
 
+      if (dogsError) {
+        console.error('❌ Erreur chargement dogs:', dogsError);
+      } else {
+        console.log('✅ Dogs chargés:', allDogs?.length || 0);
+        console.log('🔵 Dogs adoptés:', allDogs?.filter(d => d.adoption_status === 'adopted').length || 0);
+      }
+
       // Chiens à l'adoption (pour affichage récent)
       const dogs = allDogs?.filter(d => d.is_for_adoption === true) || [];
 
-      // ✅ STATS : Compter sur TOUS les chiens
+      // STATS sur TOUS les chiens
       const totalDogs = allDogs?.length || 0;
       const adoptedDogs = allDogs?.filter(d => d.adoption_status === 'adopted').length || 0;
       const newDogsWeek = allDogs?.filter(d => 
@@ -165,15 +211,13 @@ const AdminDashboard = () => {
 
       setRecentDogs(dogs?.slice(0, 10) || []);
 
-      // Chiens récemment adoptés (depuis TOUS les chiens)
+      // Chiens récemment adoptés
       const adoptedRecently = allDogs?.filter(d => 
         d.adoption_status === 'adopted'
       ).slice(0, 5) || [];
       setRecentAdoptions(adoptedRecently);
 
-      // ═══════════════════════════════════════════════════════════
       // CALCULS MÉTRIQUES
-      // ═══════════════════════════════════════════════════════════
       const conversionRate = totalUsers > 0 
         ? Math.round((totalPros / totalUsers) * 100) 
         : 0;
@@ -186,10 +230,8 @@ const AdminDashboard = () => {
         ? Math.round(totalDogs / totalPros * 10) / 10 
         : 0;
 
-      // ═══════════════════════════════════════════════════════════
       // UPDATE STATE
-      // ═══════════════════════════════════════════════════════════
-      setStats({
+      const newStats = {
         totalUsers,
         totalPros,
         totalDogs,
@@ -203,29 +245,50 @@ const AdminDashboard = () => {
         conversionRate,
         adoptionRate,
         avgDogsPerPro
-      });
+      };
+
+      console.log('✅ Stats calculées:', newStats);
+      setStats(newStats);
 
     } catch (error) {
-      console.error('Erreur chargement stats:', error);
+      console.error('❌ Erreur chargement stats:', error);
+      setError('Erreur lors du chargement des statistiques: ' + error.message);
     }
   };
 
   const handleVerifyPro = async (proId) => {
-    if (!window.confirm('Vérifier et activer ce compte professionnel ?')) return;
+    console.log('🔵 Vérification compte pro:', proId);
+    
+    if (!window.confirm('Vérifier et activer ce compte professionnel ?')) {
+      console.log('❌ Vérification annulée par l\'utilisateur');
+      return;
+    }
 
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('professional_accounts')
-        .update({ is_verified: true, is_active: true })
-        .eq('id', proId);
+        .update({ 
+          is_verified: true, 
+          is_active: true 
+        })
+        .eq('id', proId)
+        .select();
 
-      if (error) throw error;
+      console.log('🔵 Résultat update pro:', { data, error });
+
+      if (error) {
+        console.error('❌ Erreur update pro:', error);
+        alert('❌ Erreur lors de la vérification: ' + error.message);
+        return;
+      }
+
+      console.log('✅ Compte vérifié avec succès !');
       alert('✅ Compte vérifié !');
       await loadAllStats();
       setSelectedPro(null);
     } catch (error) {
-      console.error('Erreur vérification:', error);
-      alert('❌ Erreur lors de la vérification');
+      console.error('❌ Erreur vérification:', error);
+      alert('❌ Erreur lors de la vérification: ' + error.message);
     }
   };
 
@@ -235,6 +298,23 @@ const AdminDashboard = () => {
         <div className="text-center">
           <div className="animate-spin h-12 w-12 border-4 border-red-500 border-t-transparent rounded-full mx-auto mb-4"></div>
           <p className="text-gray-600">Chargement du dashboard admin...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <div className="bg-red-50 border-2 border-red-200 rounded-xl p-6 max-w-md">
+          <h3 className="text-xl font-bold text-red-900 mb-2">Erreur</h3>
+          <p className="text-red-700 mb-4">{error}</p>
+          <button
+            onClick={() => navigate('/dashboard')}
+            className="w-full px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+          >
+            Retour au dashboard
+          </button>
         </div>
       </div>
     );
@@ -401,8 +481,8 @@ const AdminDashboard = () => {
                     {index + 1}
                   </div>
                   <div className="flex-1">
-                    <h4 className="font-semibold text-gray-900">{refuge.organization_name}</h4>
-                    <p className="text-sm text-gray-600">{refuge.city}</p>
+                    <h4 className="font-semibold text-gray-900">{refuge.organization_name || 'N/A'}</h4>
+                    <p className="text-sm text-gray-600">{refuge.city || 'N/A'}</p>
                   </div>
                   <div className="text-right">
                     <div className="text-2xl font-bold text-gray-900">{refuge.dogCount}</div>
@@ -582,8 +662,8 @@ const ProPendingCard = ({ pro, onVerify, onViewDetails }) => {
     <div className="bg-orange-50 border border-orange-200 rounded-xl p-4">
       <div className="flex items-start justify-between mb-3">
         <div>
-          <h4 className="font-semibold text-gray-900">{pro.organization_name}</h4>
-          <p className="text-sm text-gray-600">{pro.organization_type}</p>
+          <h4 className="font-semibold text-gray-900">{pro.organization_name || 'N/A'}</h4>
+          <p className="text-sm text-gray-600">{pro.organization_type || 'N/A'}</p>
         </div>
         <span className="px-2 py-1 bg-orange-100 text-orange-700 text-xs font-medium rounded-full">
           En attente
@@ -592,11 +672,11 @@ const ProPendingCard = ({ pro, onVerify, onViewDetails }) => {
       <div className="space-y-1 mb-3 text-sm text-gray-600">
         <div className="flex items-center gap-2">
           <Mail size={14} />
-          {pro.email}
+          {pro.email || 'N/A'}
         </div>
         <div className="flex items-center gap-2">
           <MapPin size={14} />
-          {pro.city}
+          {pro.city || 'N/A'}
         </div>
       </div>
       <div className="flex gap-2">
@@ -634,28 +714,28 @@ const ProDetailsModal = ({ pro, onClose, onVerify }) => {
         <div className="space-y-4 mb-6">
           <div>
             <label className="text-sm font-medium text-gray-500">Organisation</label>
-            <p className="text-lg font-semibold text-gray-900">{pro.organization_name}</p>
+            <p className="text-lg font-semibold text-gray-900">{pro.organization_name || 'N/A'}</p>
           </div>
           
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="text-sm font-medium text-gray-500">Type</label>
-              <p className="text-gray-900">{pro.organization_type}</p>
+              <p className="text-gray-900">{pro.organization_type || 'N/A'}</p>
             </div>
             <div>
               <label className="text-sm font-medium text-gray-500">Ville</label>
-              <p className="text-gray-900">{pro.city}</p>
+              <p className="text-gray-900">{pro.city || 'N/A'}</p>
             </div>
           </div>
 
           <div>
             <label className="text-sm font-medium text-gray-500">Email</label>
-            <p className="text-gray-900">{pro.email}</p>
+            <p className="text-gray-900">{pro.email || 'N/A'}</p>
           </div>
 
           <div>
             <label className="text-sm font-medium text-gray-500">Téléphone</label>
-            <p className="text-gray-900">{pro.phone}</p>
+            <p className="text-gray-900">{pro.phone || 'N/A'}</p>
           </div>
 
           <div>
