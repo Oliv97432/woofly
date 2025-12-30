@@ -15,9 +15,8 @@ import AddTreatmentModal from '../dog-profile/components/AddTreatmentModal';
 import AddWeightModal from '../dog-profile/components/AddWeightModal';
 import EditProfileModal from '../dog-profile/components/EditProfileModal';
 import PhotoGalleryModal from '../dog-profile/components/PhotoGalleryModal';
-import TransferDogModal from '../../components/TransferDogModal';
 import Footer from '../../components/Footer';
-import { ArrowLeft, Share2 } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 
 const ProDogDetail = () => {
   const { dogId } = useParams();
@@ -48,8 +47,7 @@ const ProDogDetail = () => {
     flea: false,
     weight: false,
     editProfile: false,
-    gallery: false,
-    transfer: false
+    gallery: false
   });
 
   const [editingItem, setEditingItem] = useState(null);
@@ -577,11 +575,6 @@ const ProDogDetail = () => {
     alert(`📄 Export PDF en développement\n\nLe fichier "${dog?.name}_fiche_sante.pdf" sera généré`);
   };
 
-  const handleTransferSuccess = () => {
-    alert('✅ Transfert réussi ! Le chien a été transféré.');
-    navigate('/pro/dashboard');
-  };
-
   const tabs = [
     { id: 'vaccinations', label: 'Vaccinations', icon: 'Syringe' },
     { id: 'vermifuge', label: 'Vermifuge', icon: 'Pill' },
@@ -642,14 +635,6 @@ const ProDogDetail = () => {
                 size="sm"
               >
                 Exporter fiche
-              </Button>
-              <Button
-                variant="outline"
-                iconName="Share2"
-                onClick={() => openModal('transfer')}
-                size="sm"
-              >
-                Transférer
               </Button>
               <UserMenu />
             </div>
@@ -979,14 +964,6 @@ const ProDogDetail = () => {
         onAddPhoto={handleAddPhoto}
         currentProfilePhotoUrl={dog?.image}
         onSetProfilePhoto={handleSetProfilePhoto}
-      />
-
-      <TransferDogModal
-        isOpen={modals.transfer}
-        onClose={() => closeModal('transfer')}
-        dogId={dogId}
-        dogName={dog?.name}
-        onTransferSuccess={handleTransferSuccess}
       />
 
       <Footer />
