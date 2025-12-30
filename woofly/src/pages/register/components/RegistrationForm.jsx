@@ -30,6 +30,7 @@ const RegistrationForm = () => {
   });
 
   const [acceptTerms, setAcceptTerms] = useState(false);
+  const [skipDog, setSkipDog] = useState(false); // ✅ NOUVEAU : Permet de skip le chien
 
   const [errors, setErrors] = useState({});
 
@@ -88,9 +89,20 @@ const RegistrationForm = () => {
     return Object.keys(newErrors)?.length === 0;
   };
 
+  // ✅ MODIFIÉ : Validation optionnelle si skipDog est true
   const validateStep2 = () => {
     const newErrors = {};
 
+    // Si on skip le chien, on vérifie juste les conditions
+    if (skipDog) {
+      if (!acceptTerms) {
+        newErrors.terms = 'Vous devez accepter les conditions d\'utilisation';
+      }
+      setErrors(newErrors);
+      return Object.keys(newErrors)?.length === 0;
+    }
+
+    // Sinon, validation complète
     if (!dogData?.dogName?.trim()) {
       newErrors.dogName = 'Le nom du chien est requis';
     }
@@ -140,6 +152,20 @@ const RegistrationForm = () => {
   const handlePreviousStep = () => {
     setCurrentStep(1);
     setErrors({});
+    setSkipDog(false); // Reset skip
+  };
+
+  // ✅ NOUVEAU : Fonction pour skip le chien
+  const handleSkipDog = () => {
+    setSkipDog(true);
+    // Effacer les erreurs sur les champs du chien
+    setErrors(prev => {
+      const newErrors = { ...prev };
+      delete newErrors.dogName;
+      delete newErrors.breed;
+      delete newErrors.age;
+      return newErrors;
+    });
   };
 
   // Calcul de la date de naissance basée sur l'âge
@@ -205,24 +231,24 @@ const RegistrationForm = () => {
         // On continue quand même car le user auth est créé
       }
 
-      // Étape 3 : Créer le profil du chien dans la table dogs
-      const birthDate = calculateBirthDate(dogData?.age, dogData?.ageUnit);
-      
-      const { error: dogError } = await supabase
-        .from('dogs')
-        .insert([{
-          user_id: userId,
-          name: dogData?.dogName,
-          breed: dogData?.breed,
-          birth_date: birthDate,
-          is_active: true
-        }]);
+      // ✅ MODIFIÉ : Créer le chien SEULEMENT si skipDog est false
+      if (!skipDog && dogData?.dogName?.trim()) {
+        const birthDate = calculateBirthDate(dogData?.age, dogData?.ageUnit);
+        
+        const { error: dogError } = await supabase
+          .from('dogs')
+          .insert([{
+            user_id: userId,
+            name: dogData?.dogName,
+            breed: dogData?.breed,
+            birth_date: birthDate,
+            is_active: true
+          }]);
 
-      if (dogError) {
-        console.error('Erreur création profil chien:', dogError);
-        setErrors({
-          general: 'Compte créé mais erreur lors de l\'ajout du chien. Vous pouvez l\'ajouter plus tard.'
-        });
+        if (dogError) {
+          console.error('Erreur création profil chien:', dogError);
+          // On continue quand même, le user peut ajouter le chien plus tard
+        }
       }
 
       // Étape 4 : Rediriger vers le dashboard
@@ -359,61 +385,72 @@ const RegistrationForm = () => {
         <div className="space-y-6">
           <div className="text-center mb-6">
             <h3 className="text-xl font-heading font-semibold text-foreground mb-2">
-              Informations sur votre chien
+              {skipDog ? 'Finaliser votre inscription' : 'Informations sur votre chien'}
             </h3>
             <p className="text-sm text-muted-foreground font-caption">
-              Parlez-nous de votre compagnon
+              {skipDog ? 'Vous pourrez ajouter votre chien plus tard' : 'Parlez-nous de votre compagnon (optionnel)'}
             </p>
           </div>
 
-          <Input
-            label="Nom du chien"
-            type="text"
-            placeholder="Ex: Max, Bella, Rex..."
-            value={dogData?.dogName}
-            onChange={(e) => handleDogChange('dogName', e?.target?.value)}
-            error={errors?.dogName}
-            required
-          />
-
-          <Select
-            label="Race"
-            placeholder="Sélectionnez la race"
-            options={breedOptions}
-            value={dogData?.breed}
-            onChange={(value) => handleDogChange('breed', value)}
-            error={errors?.breed}
-            searchable
-            required
-          />
-
-          {/* Âge avec sélecteur mois/ans */}
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-foreground">
-              Âge <span className="text-destructive">*</span>
-            </label>
-            <div className="grid grid-cols-2 gap-3">
-              <Input
-                type="number"
-                placeholder="Ex: 2"
-                value={dogData?.age}
-                onChange={(e) => handleDogChange('age', e?.target?.value)}
-                error={errors?.age}
-                min="0"
-                max={dogData?.ageUnit === 'years' ? "30" : "360"}
-                required
-              />
-              <Select
-                options={ageUnitOptions}
-                value={dogData?.ageUnit}
-                onChange={(value) => handleDogChange('ageUnit', value)}
-                required
-              />
+          {/* ✅ NOUVEAU : Message si on skip */}
+          {skipDog && (
+            <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r">
+              <p className="text-sm text-blue-900">
+                <strong>✓ Aucun problème !</strong><br />
+                Vous pourrez ajouter votre chien depuis votre profil après l'inscription.
+              </p>
             </div>
-            {errors?.age && (
-              <p className="text-xs text-destructive mt-1">{errors.age}</p>
-            )}
-          </div>
+          )}
+
+          {/* ✅ MODIFIÉ : Afficher les champs SEULEMENT si on ne skip pas */}
+          {!skipDog && (
+            <>
+              <Input
+                label="Nom du chien"
+                type="text"
+                placeholder="Ex: Max, Bella, Rex..."
+                value={dogData?.dogName}
+                onChange={(e) => handleDogChange('dogName', e?.target?.value)}
+                error={errors?.dogName}
+              />
+
+              <Select
+                label="Race"
+                placeholder="Sélectionnez la race"
+                options={breedOptions}
+                value={dogData?.breed}
+                onChange={(value) => handleDogChange('breed', value)}
+                error={errors?.breed}
+                searchable
+              />
+
+              {/* Âge avec sélecteur mois/ans */}
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-foreground">
+                  Âge
+                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  <Input
+                    type="number"
+                    placeholder="Ex: 2"
+                    value={dogData?.age}
+                    onChange={(e) => handleDogChange('age', e?.target?.value)}
+                    error={errors?.age}
+                    min="0"
+                    max={dogData?.ageUnit === 'years' ? "30" : "360"}
+                  />
+                  <Select
+                    options={ageUnitOptions}
+                    value={dogData?.ageUnit}
+                    onChange={(value) => handleDogChange('ageUnit', value)}
+                  />
+                </div>
+                {errors?.age && (
+                  <p className="text-xs text-destructive mt-1">{errors.age}</p>
+                )}
+              </div>
+            </>
+          )}
 
           <div className="bg-muted/50 rounded-lg p-4 border border-border">
             <Checkbox
@@ -430,29 +467,70 @@ const RegistrationForm = () => {
             />
           </div>
 
-          <div className="flex gap-3">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handlePreviousStep}
-              iconName="ArrowLeft"
-              iconPosition="left"
-              className="flex-1"
-            >
-              Retour
-            </Button>
+          {/* ✅ MODIFIÉ : Afficher différents boutons selon skipDog */}
+          {!skipDog ? (
+            <>
+              <div className="flex gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handlePreviousStep}
+                  iconName="ArrowLeft"
+                  iconPosition="left"
+                  className="flex-1"
+                >
+                  Retour
+                </Button>
 
-            <Button
-              type="submit"
-              variant="default"
-              loading={loading}
-              iconName="Check"
-              iconPosition="right"
-              className="flex-1"
-            >
-              Créer mon compte
-            </Button>
-          </div>
+                <Button
+                  type="submit"
+                  variant="default"
+                  loading={loading}
+                  iconName="Check"
+                  iconPosition="right"
+                  className="flex-1"
+                >
+                  Créer mon compte
+                </Button>
+              </div>
+
+              {/* ✅ NOUVEAU : Bouton pour skip */}
+              <div className="text-center">
+                <button
+                  type="button"
+                  onClick={handleSkipDog}
+                  className="text-sm text-muted-foreground hover:text-foreground underline font-medium"
+                >
+                  Je n'ai pas encore de chien
+                </button>
+              </div>
+            </>
+          ) : (
+            <div className="flex gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setSkipDog(false);
+                  setErrors({});
+                }}
+                className="flex-1"
+              >
+                Ajouter mon chien maintenant
+              </Button>
+
+              <Button
+                type="submit"
+                variant="default"
+                loading={loading}
+                iconName="Check"
+                iconPosition="right"
+                className="flex-1"
+              >
+                Terminer l'inscription
+              </Button>
+            </div>
+          )}
         </div>
       )}
     </form>
