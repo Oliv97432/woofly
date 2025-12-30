@@ -37,6 +37,7 @@ import HybridDogProfile from './pages/chien/HybridDogProfile';
 import ProRegistration from './pages/pro/ProRegistration';
 import ProDashboard from './pages/pro/ProDashboard';
 import ProDogManagement from './pages/pro/ProDogManagement';
+import ProDogDetail from './pages/pro/ProDogDetail';  // ✅ NOUVEAU
 import ProApplications from './pages/pro/ProApplications';
 import InstagramGenerator from './pages/pro/InstagramGenerator';
 
@@ -101,7 +102,7 @@ const Routes = () => {
         <Route path="/pro/dashboard" element={<ProDashboard />} />
         <Route path="/pro/dogs" element={<ProDogManagement />} />
         <Route path="/pro/dogs/new" element={<ProDogManagement />} />
-        <Route path="/pro/dogs/:dogId" element={<ProDogManagement />} />
+        <Route path="/pro/dogs/:dogId" element={<ProDogDetail />} />  {/* ✅ MODIFIÉ */}
         <Route path="/pro/applications" element={<ProApplications />} />
         <Route path="/pro/instagram" element={<InstagramGenerator />} />
         
