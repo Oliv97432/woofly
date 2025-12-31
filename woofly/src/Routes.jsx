@@ -37,17 +37,18 @@ import HybridDogProfile from './pages/chien/HybridDogProfile';
 import ProRegistration from './pages/pro/ProRegistration';
 import ProDashboard from './pages/pro/ProDashboard';
 import ProDogManagement from './pages/pro/ProDogManagement';
-import ProDogDetail from './pages/pro/ProDogDetail';  // ✅ NOUVEAU
+import ProDogDetail from './pages/pro/ProDogDetail';
+import ProFosterFamilies from './pages/pro/ProFosterFamilies';
 import ProApplications from './pages/pro/ProApplications';
 import InstagramGenerator from './pages/pro/InstagramGenerator';
 
-// Redirection intelligente - NOUVEAU
+// Redirection intelligente
 import DashboardRedirect from './components/DashboardRedirect';
 
-// Dashboard Admin - NOUVEAU
+// Dashboard Admin
 import AdminDashboard from './pages/admin/AdminDashboard';
 
-// Page de récupération de chien - NOUVEAU
+// Page de récupération de chien
 import ClaimDogPage from './pages/ClaimDogPage';
 
 const Routes = () => {
@@ -56,26 +57,20 @@ const Routes = () => {
       <ErrorBoundary>
       <ScrollToTop />
       <RouterRoutes>
-        {/* Landing Page publique */}
         <Route path="/" element={<LandingPage />} />
         
         <Route path="/important-contacts" element={<ImportantContacts />} />
         <Route path="/forum-discussion" element={<ForumDiscussion />} />
         <Route path="/login" element={<Login />} />
         
-        {/* Route hybride PUBLIC/PRIVÉ */}
         <Route path="/chien/:id" element={<HybridDogProfile />} />
         
-        {/* Redirection intelligente - NOUVEAU */}
         <Route path="/dashboard" element={<DashboardRedirect />} />
         
-        {/* Dashboard Admin - NOUVEAU */}
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
         
-        {/* Page de récupération de chien - NOUVEAU */}
         <Route path="/claim-dog" element={<ClaimDogPage />} />
         
-        {/* Route privée (dashboard santé) */}
         <Route path="/dog-profile" element={<DogProfile />} />
         <Route path="/dog-profile/:id" element={<DogProfile />} />
         
@@ -87,13 +82,10 @@ const Routes = () => {
         <Route path="/multi-profile-management" element={<MultiProfileManagement />} />
         <Route path="/register" element={<Register />} />
         
-        {/* Profils publics */}
         <Route path="/profile/:userId" element={<UserProfile />} />
         
-        {/* Notifications */}
         <Route path="/notifications" element={<Notifications />} />
         
-        {/* Pages Adoption */}
         <Route path="/adoption" element={<AdoptionPage />} />
         <Route path="/adoption/:dogId" element={<AdoptionDetail />} />
         
@@ -102,13 +94,13 @@ const Routes = () => {
         <Route path="/pro/dashboard" element={<ProDashboard />} />
         <Route path="/pro/dogs" element={<ProDogManagement />} />
         <Route path="/pro/dogs/new" element={<ProDogManagement />} />
-        <Route path="/pro/dogs/:dogId" element={<ProDogDetail />} />  {/* ✅ MODIFIÉ */}
+        <Route path="/pro/dogs/:dogId" element={<ProDogDetail />} />
+        <Route path="/pro/foster-families" element={<ProFosterFamilies />} />
         <Route path="/pro/applications" element={<ProApplications />} />
         <Route path="/pro/instagram" element={<InstagramGenerator />} />
         
         <Route path="/settings" element={<Settings />} />
         
-        {/* Pages légales */}
         <Route path="/cgu" element={<CGU />} />
         <Route path="/mentions-legales" element={<MentionsLegales />} />
         <Route path="/politique-confidentialite" element={<PolitiqueConfidentialite />} />
