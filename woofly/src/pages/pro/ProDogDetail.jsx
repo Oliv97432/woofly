@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import TabNavigationPro from '../../components/TabNavigationPro';
-import UserMenu from '../../components/UserMenu';
+import UserMenuPro from '../../components/UserMenuPro';
 import Icon from '../../components/AppIcon';
 import Button from '../../components/ui/Button';
 import VaccinationCard from '../dog-profile/components/VaccinationCard';
@@ -15,7 +15,6 @@ import AddTreatmentModal from '../dog-profile/components/AddTreatmentModal';
 import AddWeightModal from '../dog-profile/components/AddWeightModal';
 import EditProfileModal from '../dog-profile/components/EditProfileModal';
 import PhotoGalleryModal from '../dog-profile/components/PhotoGalleryModal';
-import Footer from '../../components/Footer';
 import { ArrowLeft } from 'lucide-react';
 
 const ProDogDetail = () => {
@@ -636,7 +635,7 @@ const ProDogDetail = () => {
               >
                 Exporter fiche
               </Button>
-              <UserMenu />
+              <UserMenuPro />
             </div>
           </div>
         </div>
@@ -965,8 +964,6 @@ const ProDogDetail = () => {
         currentProfilePhotoUrl={dog?.image}
         onSetProfilePhoto={handleSetProfilePhoto}
       />
-
-      <Footer />
     </div>
   );
 };
