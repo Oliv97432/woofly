@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Dog, FileText, Instagram, Settings } from 'lucide-react';
+import { LayoutDashboard, Dog, FileText, Instagram, Settings, Users } from 'lucide-react';
 
 const TabNavigationPro = () => {
   const navigate = useNavigate();
@@ -29,6 +29,13 @@ const TabNavigationPro = () => {
       color: 'green'
     },
     {
+      id: 'crm',
+      label: 'Contacts',
+      icon: Users,
+      path: '/pro/crm/contacts',
+      color: 'orange'
+    },
+    {
       id: 'instagram',
       label: 'Instagram',
       icon: Instagram,
@@ -45,6 +52,10 @@ const TabNavigationPro = () => {
   ];
 
   const isActive = (path) => {
+    // Pour CRM, activer l'onglet si on est sur n'importe quelle page CRM
+    if (path === '/pro/crm/contacts') {
+      return location.pathname.startsWith('/pro/crm');
+    }
     return location.pathname === path;
   };
 
@@ -53,6 +64,7 @@ const TabNavigationPro = () => {
       blue: active ? 'text-blue-600 bg-blue-50' : 'text-gray-600 hover:text-blue-600 hover:bg-blue-50',
       purple: active ? 'text-purple-600 bg-purple-50' : 'text-gray-600 hover:text-purple-600 hover:bg-purple-50',
       green: active ? 'text-green-600 bg-green-50' : 'text-gray-600 hover:text-green-600 hover:bg-green-50',
+      orange: active ? 'text-orange-600 bg-orange-50' : 'text-gray-600 hover:text-orange-600 hover:bg-orange-50',
       pink: active ? 'text-pink-600 bg-pink-50' : 'text-gray-600 hover:text-pink-600 hover:bg-pink-50',
       gray: active ? 'text-gray-900 bg-gray-100' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
     };
