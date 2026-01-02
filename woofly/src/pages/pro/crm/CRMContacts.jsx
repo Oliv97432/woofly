@@ -1,15 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { supabase } from '../../lib/supabase';
-import { useAuth } from '../../contexts/AuthContext';
-import TabNavigationPro from '../../components/TabNavigationPro';
-import UserMenuPro from '../../components/UserMenuPro';
-import Icon from '../../components/AppIcon';
-import Button from '../../components/ui/Button';
+import { useNavigate } from 'react-router-dom';
+import { supabase } from '../../../lib/supabase';
+import { useAuth } from '../../../contexts/AuthContext';
+import TabNavigationPro from '../../../components/TabNavigationPro';
+import UserMenuPro from '../../../components/UserMenuPro';
+import Icon from '../../../components/AppIcon';
 import { 
-  ArrowLeft, Edit, Trash2, Plus, Phone, Mail, MapPin,
-  Home, Star, Calendar, FileText, Dog, AlertCircle,
-  CheckCircle, Clock, User
+  Plus, Search, Filter, Users, Home, Heart,
+  Star, Phone, Mail, MapPin, TrendingUp,
+  Calendar, AlertCircle, CheckCircle
 } from 'lucide-react';
 
 const CRMContactDetail = () => {
