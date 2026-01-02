@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { supabase } from '../../lib/supabase';
-import { useAuth } from '../../contexts/AuthContext';
-import Icon from '../../components/AppIcon';
+import { supabase } from '../../../lib/supabase';
+import { useAuth } from '../../../contexts/AuthContext';
+import Icon from '../../../components/AppIcon';
 import { ArrowLeft, Save, X } from 'lucide-react';
 
 const CRMContactForm = () => {
