@@ -42,6 +42,11 @@ import ProFosterFamilies from './pages/pro/ProFosterFamilies';
 import ProApplications from './pages/pro/ProApplications';
 import InstagramGenerator from './pages/pro/InstagramGenerator';
 
+// Pages CRM
+import CRMContacts from './pages/pro/crm/CRMContacts';
+import CRMContactDetail from './pages/pro/crm/CRMContactDetail';
+import CRMContactForm from './pages/pro/crm/CRMContactForm';
+
 // Redirection intelligente
 import DashboardRedirect from './components/DashboardRedirect';
 
@@ -98,6 +103,12 @@ const Routes = () => {
         <Route path="/pro/foster-families" element={<ProFosterFamilies />} />
         <Route path="/pro/applications" element={<ProApplications />} />
         <Route path="/pro/instagram" element={<InstagramGenerator />} />
+        
+        {/* Routes CRM */}
+        <Route path="/pro/crm/contacts" element={<CRMContacts />} />
+        <Route path="/pro/crm/contacts/new" element={<CRMContactForm />} />
+        <Route path="/pro/crm/contacts/:contactId" element={<CRMContactDetail />} />
+        <Route path="/pro/crm/contacts/:contactId/edit" element={<CRMContactForm />} />
         
         <Route path="/settings" element={<Settings />} />
         
