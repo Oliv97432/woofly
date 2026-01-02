@@ -11,25 +11,25 @@ import {
   Calendar, AlertCircle, CheckCircle
 } from 'lucide-react';
 
-const CRMContactDetail = () => {
-  const { contactId } = useParams();
-  const navigate = useNavigate();
+const CRMContacts = () => {
   const { user } = useAuth();
-
+  const navigate = useNavigate();
+  
   const [loading, setLoading] = useState(true);
   const [proAccount, setProAccount] = useState(null);
-  const [contact, setContact] = useState(null);
-  const [placementHistory, setPlacementHistory] = useState([]);
-  const [notes, setNotes] = useState([]);
-  const [activeTab, setActiveTab] = useState('info');
-
-  const [showAddNoteModal, setShowAddNoteModal] = useState(false);
-  const [noteForm, setNoteForm] = useState({
-    note_type: 'general',
-    title: '',
-    description: '',
-    is_important: false
+  const [contacts, setContacts] = useState([]);
+  const [stats, setStats] = useState({
+    totalContacts: 0,
+    activeFosterFamilies: 0,
+    totalAdopters: 0,
+    dogsInFoster: 0,
+    availableCapacity: 0
   });
+
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterType, setFilterType] = useState('all');
+  const [filterStatus, setFilterStatus] = useState('all');
+  const [filterAvailability, setFilterAvailability] = useState('all');
 
   useEffect(() => {
     if (user) {
@@ -37,153 +37,145 @@ const CRMContactDetail = () => {
     }
   }, [user]);
 
-  useEffect(() => {
-    if (proAccount && contactId) {
-      fetchContact();
-      fetchPlacementHistory();
-      fetchNotes();
-    }
-  }, [proAccount, contactId]);
-
   const fetchProAccount = async () => {
     try {
-      const { data, error } = await supabase
+      const { data: account, error } = await supabase
         .from('professional_accounts')
         .select('*')
         .eq('user_id', user.id)
         .single();
 
       if (error) throw error;
-      setProAccount(data);
-    } catch (err) {
-      console.error('Erreur:', err);
+      setProAccount(account);
+      await fetchContacts(account.id);
+    } catch (error) {
+      console.error('Erreur:', error);
       navigate('/pro/register');
     }
   };
 
-  const fetchContact = async () => {
+  const fetchContacts = async (proAccountId) => {
     try {
       setLoading(true);
+
       const { data, error } = await supabase
         .from('contacts')
-        .select('*')
-        .eq('id', contactId)
-        .eq('professional_account_id', proAccount.id)
-        .single();
+        .select(`
+          *,
+          contact_notes(count),
+          placement_history!placement_history_contact_id_fkey(
+            id,
+            dog_id,
+            status,
+            placement_type,
+            start_date,
+            dogs(id, name, breed, photo_url)
+          )
+        `)
+        .eq('professional_account_id', proAccountId)
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setContact(data);
-    } catch (err) {
-      console.error('Erreur chargement contact:', err);
-      navigate('/pro/crm/contacts');
+
+      const formattedContacts = data.map(contact => ({
+        ...contact,
+        current_dogs: contact.placement_history
+          ?.filter(ph => ph.status === 'active')
+          ?.map(ph => ph.dogs)
+          || [],
+        notes_count: contact.contact_notes?.[0]?.count || 0
+      }));
+
+      setContacts(formattedContacts);
+
+      const totalContacts = formattedContacts.length;
+      const activeFosterFamilies = formattedContacts.filter(
+        c => (c.type === 'foster_family' || c.type === 'both') && c.status === 'active'
+      ).length;
+      const totalAdopters = formattedContacts.filter(
+        c => (c.type === 'adopter' || c.type === 'both')
+      ).length;
+      const dogsInFoster = formattedContacts.reduce(
+        (sum, c) => sum + c.current_dogs.length, 0
+      );
+      const availableCapacity = formattedContacts
+        .filter(c => c.availability === 'available')
+        .reduce((sum, c) => sum + (c.max_dogs - c.current_dogs_count), 0);
+
+      setStats({
+        totalContacts,
+        activeFosterFamilies,
+        totalAdopters,
+        dogsInFoster,
+        availableCapacity
+      });
+
+    } catch (error) {
+      console.error('Erreur chargement contacts:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const fetchPlacementHistory = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('placement_history')
-        .select(`
-          *,
-          dogs(id, name, breed, photo_url)
-        `)
-        .eq('contact_id', contactId)
-        .order('start_date', { ascending: false });
+  const filteredContacts = contacts.filter(contact => {
+    const matchesSearch = 
+      contact.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      contact.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      contact.phone?.includes(searchTerm);
 
-      if (error) throw error;
-      setPlacementHistory(data || []);
-    } catch (err) {
-      console.error('Erreur chargement historique:', err);
+    let matchesType = true;
+    if (filterType !== 'all') {
+      matchesType = contact.type === filterType || contact.type === 'both';
+    }
+
+    let matchesStatus = true;
+    if (filterStatus !== 'all') {
+      matchesStatus = contact.status === filterStatus;
+    }
+
+    let matchesAvailability = true;
+    if (filterAvailability !== 'all') {
+      matchesAvailability = contact.availability === filterAvailability;
+    }
+
+    return matchesSearch && matchesType && matchesStatus && matchesAvailability;
+  });
+
+  const getAvailabilityBadge = (contact) => {
+    if (contact.type === 'adopter') {
+      return null;
+    }
+
+    switch (contact.availability) {
+      case 'available':
+        return {
+          text: 'Disponible',
+          color: 'bg-green-100 text-green-700 border-green-200'
+        };
+      case 'full':
+        return {
+          text: 'Complet',
+          color: 'bg-orange-100 text-orange-700 border-orange-200'
+        };
+      case 'temporarily_unavailable':
+        return {
+          text: 'Indisponible',
+          color: 'bg-gray-100 text-gray-700 border-gray-200'
+        };
+      case 'inactive':
+        return {
+          text: 'Inactif',
+          color: 'bg-red-100 text-red-700 border-red-200'
+        };
+      default:
+        return null;
     }
   };
 
-  const fetchNotes = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('contact_notes')
-        .select('*')
-        .eq('contact_id', contactId)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setNotes(data || []);
-    } catch (err) {
-      console.error('Erreur chargement notes:', err);
-    }
-  };
-
-  const handleAddNote = async (e) => {
-    e.preventDefault();
-
-    try {
-      const { error } = await supabase
-        .from('contact_notes')
-        .insert([{
-          contact_id: contactId,
-          professional_account_id: proAccount.id,
-          created_by_user_id: user.id,
-          ...noteForm
-        }]);
-
-      if (error) throw error;
-
-      // Rafraîchir les notes
-      await fetchNotes();
-
-      // Réinitialiser le formulaire
-      setNoteForm({
-        note_type: 'general',
-        title: '',
-        description: '',
-        is_important: false
-      });
-      setShowAddNoteModal(false);
-
-      alert('✅ Note ajoutée avec succès !');
-    } catch (err) {
-      console.error('Erreur ajout note:', err);
-      alert('❌ Erreur lors de l\'ajout de la note');
-    }
-  };
-
-  const handleDeleteNote = async (noteId) => {
-    if (!window.confirm('Êtes-vous sûr de vouloir supprimer cette note ?')) return;
-
-    try {
-      const { error } = await supabase
-        .from('contact_notes')
-        .delete()
-        .eq('id', noteId);
-
-      if (error) throw error;
-
-      await fetchNotes();
-      alert('✅ Note supprimée');
-    } catch (err) {
-      console.error('Erreur suppression note:', err);
-      alert('❌ Erreur lors de la suppression');
-    }
-  };
-
-  const handleDelete = async () => {
-    if (!window.confirm(`Êtes-vous sûr de vouloir supprimer ${contact.full_name} ?`)) return;
-
-    try {
-      const { error } = await supabase
-        .from('contacts')
-        .delete()
-        .eq('id', contactId);
-
-      if (error) throw error;
-
-      alert('✅ Contact supprimé');
-      navigate('/pro/crm/contacts');
-    } catch (err) {
-      console.error('Erreur suppression:', err);
-      alert('❌ Erreur lors de la suppression');
-    }
+  const getTypeIcon = (type) => {
+    if (type === 'foster_family' || type === 'both') return Home;
+    if (type === 'adopter') return Heart;
+    return Users;
   };
 
   const getTypeLabel = (type) => {
@@ -195,72 +187,12 @@ const CRMContactDetail = () => {
     }
   };
 
-  const getNoteTypeLabel = (type) => {
-    switch (type) {
-      case 'visit': return 'Visite';
-      case 'placement': return 'Placement';
-      case 'removal': return 'Retrait';
-      case 'adoption': return 'Adoption';
-      case 'issue': return 'Problème';
-      case 'followup': return 'Suivi';
-      case 'general': return 'Général';
-      default: return type;
-    }
-  };
-
-  const getNoteTypeColor = (type) => {
-    switch (type) {
-      case 'visit': return 'bg-blue-100 text-blue-700';
-      case 'placement': return 'bg-green-100 text-green-700';
-      case 'removal': return 'bg-orange-100 text-orange-700';
-      case 'adoption': return 'bg-purple-100 text-purple-700';
-      case 'issue': return 'bg-red-100 text-red-700';
-      case 'followup': return 'bg-yellow-100 text-yellow-700';
-      default: return 'bg-gray-100 text-gray-700';
-    }
-  };
-
-  const getPlacementStatusBadge = (status) => {
-    switch (status) {
-      case 'active':
-        return { text: 'En cours', color: 'bg-green-100 text-green-700', icon: CheckCircle };
-      case 'completed':
-        return { text: 'Terminé', color: 'bg-gray-100 text-gray-700', icon: CheckCircle };
-      case 'cancelled':
-        return { text: 'Annulé', color: 'bg-red-100 text-red-700', icon: AlertCircle };
-      default:
-        return { text: status, color: 'bg-gray-100 text-gray-700', icon: Clock };
-    }
-  };
-
-  const tabs = [
-    { id: 'info', label: 'Informations', icon: User },
-    { id: 'dogs', label: 'Historique chiens', icon: Dog },
-    { id: 'notes', label: 'Notes & Suivi', icon: FileText }
-  ];
-
-  const activePlacements = placementHistory.filter(p => p.status === 'active');
-  const completedPlacements = placementHistory.filter(p => p.status !== 'active');
-
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin h-12 w-12 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
+          <div className="animate-spin h-16 w-16 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
           <p className="text-muted-foreground">Chargement...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!contact) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-muted-foreground mb-4">Contact non trouvé</p>
-          <Button onClick={() => navigate('/pro/crm/contacts')}>
-            Retour à la liste
-          </Button>
         </div>
       </div>
     );
@@ -268,119 +200,79 @@ const CRMContactDetail = () => {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      {/* Header */}
       <div className="sticky top-0 z-50 bg-card border-b border-border shadow-soft">
-        <div className="max-w-7xl mx-auto px-3 sm:px-4 py-3 sm:py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => navigate('/pro/crm/contacts')}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-smooth"
-              >
-                <ArrowLeft size={20} />
-              </button>
-              <div>
-                <h1 className="text-lg sm:text-2xl font-heading font-semibold text-foreground">
-                  {contact.full_name}
-                </h1>
-                <p className="text-sm text-muted-foreground">
-                  {getTypeLabel(contact.type)}
-                </p>
-              </div>
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
+          <div className="flex items-center justify-between mb-4 sm:mb-6">
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-heading font-bold text-foreground mb-1">
+                Gestion des contacts
+              </h1>
+              <p className="text-sm text-muted-foreground">
+                Familles d'accueil et adoptants
+              </p>
             </div>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                iconName="Edit"
-                onClick={() => navigate(`/pro/crm/contacts/${contactId}/edit`)}
-                size="sm"
-              >
-                <span className="hidden sm:inline">Modifier</span>
-              </Button>
+            <div className="flex items-center gap-2 sm:gap-3">
               <button
-                onClick={handleDelete}
-                className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-smooth"
+                onClick={() => navigate('/pro/crm/contacts/new')}
+                className="px-4 sm:px-6 py-2 sm:py-3 bg-primary text-primary-foreground rounded-xl font-medium hover:bg-primary/90 transition-smooth flex items-center gap-2 shadow-soft min-h-[44px]"
               >
-                <Trash2 size={18} />
+                <Plus size={20} />
+                <span className="hidden xs:inline">Nouveau contact</span>
+                <span className="xs:hidden">Nouveau</span>
               </button>
               <UserMenuPro />
             </div>
           </div>
-        </div>
-      </div>
 
-      {/* Profile Header */}
-      <div className="bg-gradient-to-r from-primary/10 to-primary/5">
-        <div className="max-w-7xl mx-auto px-3 sm:px-4 py-6">
-          <div className="flex flex-col sm:flex-row items-start gap-4">
-            {/* Avatar */}
-            <div className="w-24 h-24 rounded-full bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center text-white text-3xl font-bold shadow-lg">
-              {contact.full_name.charAt(0).toUpperCase()}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
+            <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-4 border border-blue-200">
+              <div className="flex items-center justify-between mb-2">
+                <div className="p-2 bg-blue-500 rounded-lg">
+                  <Users size={20} className="text-white" />
+                </div>
+              </div>
+              <p className="text-2xl sm:text-3xl font-bold text-blue-900">{stats.totalContacts}</p>
+              <p className="text-xs sm:text-sm text-blue-700">Total contacts</p>
             </div>
 
-            {/* Info */}
-            <div className="flex-1">
-              <div className="flex items-center gap-3 mb-2">
-                <h2 className="text-2xl font-heading font-bold text-foreground">
-                  {contact.full_name}
-                </h2>
-                {contact.rating && (
-                  <div className="flex items-center gap-1">
-                    {[...Array(5)].map((_, i) => (
-                      <Star
-                        key={i}
-                        size={16}
-                        className={i < contact.rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}
-                      />
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Mail size={16} />
-                  <a href={`mailto:${contact.email}`} className="hover:text-primary">
-                    {contact.email}
-                  </a>
-                </div>
-                {contact.phone && (
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <Phone size={16} />
-                    <a href={`tel:${contact.phone}`} className="hover:text-primary">
-                      {contact.phone}
-                    </a>
-                  </div>
-                )}
-                {contact.city && (
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <MapPin size={16} />
-                    <span>{contact.city}</span>
-                  </div>
-                )}
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Calendar size={16} />
-                  <span>Depuis {new Date(contact.created_at).toLocaleDateString('fr-FR')}</span>
+            <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-4 border border-purple-200">
+              <div className="flex items-center justify-between mb-2">
+                <div className="p-2 bg-purple-500 rounded-lg">
+                  <Home size={20} className="text-white" />
                 </div>
               </div>
+              <p className="text-2xl sm:text-3xl font-bold text-purple-900">{stats.activeFosterFamilies}</p>
+              <p className="text-xs sm:text-sm text-purple-700">FA actives</p>
+            </div>
 
-              {/* Stats rapides */}
-              {(contact.type === 'foster_family' || contact.type === 'both') && (
-                <div className="flex flex-wrap gap-3">
-                  <div className="bg-card rounded-lg px-4 py-2 border border-border">
-                    <span className="text-sm text-muted-foreground">Actuellement :</span>
-                    <span className="ml-2 font-bold text-primary">
-                      {contact.current_dogs_count}/{contact.max_dogs}
-                    </span>
-                  </div>
-                  <div className="bg-card rounded-lg px-4 py-2 border border-border">
-                    <span className="text-sm text-muted-foreground">Total accueillis :</span>
-                    <span className="ml-2 font-bold text-purple-600">
-                      {contact.total_dogs_fostered}
-                    </span>
-                  </div>
+            <div className="bg-gradient-to-br from-pink-50 to-pink-100 rounded-xl p-4 border border-pink-200">
+              <div className="flex items-center justify-between mb-2">
+                <div className="p-2 bg-pink-500 rounded-lg">
+                  <Heart size={20} className="text-white" />
                 </div>
-              )}
+              </div>
+              <p className="text-2xl sm:text-3xl font-bold text-pink-900">{stats.totalAdopters}</p>
+              <p className="text-xs sm:text-sm text-pink-700">Adoptants</p>
+            </div>
+
+            <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl p-4 border border-orange-200">
+              <div className="flex items-center justify-between mb-2">
+                <div className="p-2 bg-orange-500 rounded-lg">
+                  <TrendingUp size={20} className="text-white" />
+                </div>
+              </div>
+              <p className="text-2xl sm:text-3xl font-bold text-orange-900">{stats.dogsInFoster}</p>
+              <p className="text-xs sm:text-sm text-orange-700">Chiens en FA</p>
+            </div>
+
+            <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-4 border border-green-200">
+              <div className="flex items-center justify-between mb-2">
+                <div className="p-2 bg-green-500 rounded-lg">
+                  <CheckCircle size={20} className="text-white" />
+                </div>
+              </div>
+              <p className="text-2xl sm:text-3xl font-bold text-green-900">{stats.availableCapacity}</p>
+              <p className="text-xs sm:text-sm text-green-700">Places dispo</p>
             </div>
           </div>
         </div>
@@ -388,386 +280,213 @@ const CRMContactDetail = () => {
 
       <TabNavigationPro />
 
-      {/* Tabs */}
-      <div className="bg-card border-b border-border sticky top-[calc(4rem)] z-40">
-        <div className="max-w-7xl mx-auto px-3 sm:px-4">
-          <div className="flex overflow-x-auto">
-            {tabs.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 px-6 py-3 font-medium transition-smooth border-b-2 whitespace-nowrap ${
-                  activeTab === tab.id
-                    ? 'border-primary text-primary'
-                    : 'border-transparent text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                <tab.icon size={20} />
-                {tab.label}
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Content */}
-      <main className="flex-1">
+      <main className="main-content flex-1">
         <div className="max-w-7xl mx-auto px-3 sm:px-4 py-6">
-          {activeTab === 'info' && (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Informations personnelles */}
-              <div className="bg-card rounded-xl shadow-soft p-6 border border-border">
-                <h3 className="text-lg font-heading font-semibold mb-4">Informations personnelles</h3>
-                <div className="space-y-3">
-                  <div>
-                    <label className="text-sm font-medium text-muted-foreground">Email</label>
-                    <p className="text-foreground">{contact.email}</p>
-                  </div>
-                  {contact.phone && (
-                    <div>
-                      <label className="text-sm font-medium text-muted-foreground">Téléphone</label>
-                      <p className="text-foreground">{contact.phone}</p>
-                    </div>
-                  )}
-                  {contact.address && (
-                    <div>
-                      <label className="text-sm font-medium text-muted-foreground">Adresse</label>
-                      <p className="text-foreground">{contact.address}</p>
-                    </div>
-                  )}
-                  {contact.city && (
-                    <div>
-                      <label className="text-sm font-medium text-muted-foreground">Ville</label>
-                      <p className="text-foreground">{contact.city}</p>
-                    </div>
-                  )}
-                </div>
+          <div className="bg-card rounded-xl shadow-soft p-4 mb-6">
+            <div className="flex flex-col gap-3">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" size={20} />
+                <input
+                  type="text"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="Rechercher un contact..."
+                  className="w-full pl-10 pr-4 py-3 border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent bg-background text-sm"
+                />
               </div>
 
-              {/* Informations logement (pour FA) */}
-              {(contact.type === 'foster_family' || contact.type === 'both') && (
-                <div className="bg-card rounded-xl shadow-soft p-6 border border-border">
-                  <h3 className="text-lg font-heading font-semibold mb-4">Informations logement</h3>
-                  <div className="space-y-3">
-                    {contact.housing_type && (
-                      <div>
-                        <label className="text-sm font-medium text-muted-foreground">Type de logement</label>
-                        <p className="text-foreground capitalize">{contact.housing_type.replace('_', ' ')}</p>
-                      </div>
-                    )}
-                    <div>
-                      <label className="text-sm font-medium text-muted-foreground">Jardin</label>
-                      <p className="text-foreground">{contact.has_garden ? 'Oui' : 'Non'}</p>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium text-muted-foreground">Autres animaux</label>
-                      <p className="text-foreground">{contact.has_other_pets ? 'Oui' : 'Non'}</p>
-                      {contact.other_pets_details && (
-                        <p className="text-sm text-muted-foreground mt-1">{contact.other_pets_details}</p>
-                      )}
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium text-muted-foreground">Capacité d'accueil</label>
-                      <p className="text-foreground">{contact.max_dogs} chien(s)</p>
-                    </div>
-                    {contact.preferences_notes && (
-                      <div>
-                        <label className="text-sm font-medium text-muted-foreground">Préférences</label>
-                        <p className="text-foreground">{contact.preferences_notes}</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
+              <div className="flex flex-wrap gap-2">
+                <select
+                  value={filterType}
+                  onChange={(e) => setFilterType(e.target.value)}
+                  className="px-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent bg-background text-sm"
+                >
+                  <option value="all">Tous les types</option>
+                  <option value="foster_family">Familles d'accueil</option>
+                  <option value="adopter">Adoptants</option>
+                </select>
+
+                <select
+                  value={filterStatus}
+                  onChange={(e) => setFilterStatus(e.target.value)}
+                  className="px-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent bg-background text-sm"
+                >
+                  <option value="all">Tous les statuts</option>
+                  <option value="active">Actifs</option>
+                  <option value="inactive">Inactifs</option>
+                </select>
+
+                <select
+                  value={filterAvailability}
+                  onChange={(e) => setFilterAvailability(e.target.value)}
+                  className="px-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent bg-background text-sm"
+                >
+                  <option value="all">Toutes disponibilités</option>
+                  <option value="available">Disponibles</option>
+                  <option value="full">Complets</option>
+                  <option value="temporarily_unavailable">Indisponibles</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {filteredContacts.length === 0 ? (
+            <div className="bg-card rounded-xl shadow-soft p-12 text-center">
+              <div className="w-20 h-20 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
+                <Users size={40} className="text-muted-foreground" />
+              </div>
+              <h3 className="text-xl font-heading font-bold text-foreground mb-2">
+                Aucun contact trouvé
+              </h3>
+              <p className="text-muted-foreground mb-6">
+                {searchTerm 
+                  ? 'Essayez avec d\'autres mots-clés'
+                  : 'Commencez par ajouter votre premier contact'
+                }
+              </p>
+              {!searchTerm && (
+                <button
+                  onClick={() => navigate('/pro/crm/contacts/new')}
+                  className="px-6 py-3 bg-primary text-primary-foreground rounded-xl font-medium hover:bg-primary/90 transition-smooth inline-flex items-center gap-2"
+                >
+                  <Plus size={20} />
+                  Ajouter un contact
+                </button>
               )}
             </div>
-          )}
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
+              {filteredContacts.map((contact) => {
+                const TypeIcon = getTypeIcon(contact.type);
+                const availabilityBadge = getAvailabilityBadge(contact);
 
-          {activeTab === 'dogs' && (
-            <div className="space-y-6">
-              {/* Chiens actuels */}
-              {activePlacements.length > 0 && (
-                <div>
-                  <h3 className="text-xl font-heading font-semibold mb-4">
-                    Chiens actuellement en garde ({activePlacements.length})
-                  </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {activePlacements.map((placement) => {
-                      const badge = getPlacementStatusBadge(placement.status);
-                      const StatusIcon = badge.icon;
-                      
-                      return (
-                        <div key={placement.id} className="bg-card rounded-xl shadow-soft border border-border overflow-hidden">
-                          <div className="flex items-center gap-4 p-4">
-                            <div className="w-16 h-16 rounded-xl overflow-hidden bg-gradient-to-br from-primary/10 to-primary/5 flex-shrink-0">
-                              {placement.dogs?.photo_url ? (
-                                <img
-                                  src={placement.dogs.photo_url}
-                                  alt={placement.dogs.name}
-                                  className="w-full h-full object-cover"
-                                />
-                              ) : (
-                                <div className="w-full h-full flex items-center justify-center text-2xl font-bold text-primary/30">
-                                  {placement.dogs?.name?.charAt(0).toUpperCase()}
-                                </div>
-                              )}
-                            </div>
-                            
-                            <div className="flex-1 min-w-0">
-                              <h4 className="font-semibold text-foreground truncate">{placement.dogs?.name}</h4>
-                              <p className="text-sm text-muted-foreground truncate">{placement.dogs?.breed}</p>
-                              <p className="text-xs text-muted-foreground mt-1">
-                                Depuis le {new Date(placement.start_date).toLocaleDateString('fr-FR')}
-                              </p>
-                            </div>
-
-                            <div>
-                              <span className={`px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1 ${badge.color}`}>
-                                <StatusIcon size={12} />
-                                {badge.text}
-                              </span>
-                            </div>
-                          </div>
+                return (
+                  <div
+                    key={contact.id}
+                    onClick={() => navigate(`/pro/crm/contacts/${contact.id}`)}
+                    className="group bg-card rounded-2xl shadow-soft border border-border hover:shadow-lg transition-all duration-300 cursor-pointer hover:-translate-y-1 overflow-hidden"
+                  >
+                    <div className="bg-gradient-to-r from-primary/10 to-primary/5 px-4 py-3 border-b border-border">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <TypeIcon size={18} className="text-primary" />
+                          <span className="text-sm font-medium text-muted-foreground">
+                            {getTypeLabel(contact.type)}
+                          </span>
                         </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
+                        {availabilityBadge && (
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium border ${availabilityBadge.color}`}>
+                            {availabilityBadge.text}
+                          </span>
+                        )}
+                      </div>
+                    </div>
 
-              {/* Historique */}
-              {completedPlacements.length > 0 && (
-                <div>
-                  <h3 className="text-xl font-heading font-semibold mb-4">
-                    Historique ({completedPlacements.length})
-                  </h3>
-                  <div className="space-y-3">
-                    {completedPlacements.map((placement) => {
-                      const badge = getPlacementStatusBadge(placement.status);
-                      const StatusIcon = badge.icon;
-                      
-                      return (
-                        <div key={placement.id} className="bg-card rounded-lg border border-border p-4">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                              {placement.dogs?.photo_url ? (
-                                <img
-                                  src={placement.dogs.photo_url}
-                                  alt={placement.dogs.name}
-                                  className="w-10 h-10 rounded-lg object-cover"
+                    <div className="p-4">
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex-1">
+                          <h3 className="font-heading font-bold text-lg text-foreground mb-1 group-hover:text-primary transition-colors">
+                            {contact.full_name}
+                          </h3>
+                          {contact.rating && (
+                            <div className="flex items-center gap-1">
+                              {[...Array(5)].map((_, i) => (
+                                <Star
+                                  key={i}
+                                  size={14}
+                                  className={i < contact.rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}
                                 />
-                              ) : (
-                                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-lg font-bold text-primary/30">
-                                  {placement.dogs?.name?.charAt(0).toUpperCase()}
-                                </div>
-                              )}
-                              
-                              <div>
-                                <h4 className="font-medium text-foreground">{placement.dogs?.name}</h4>
-                                <p className="text-sm text-muted-foreground">
-                                  {new Date(placement.start_date).toLocaleDateString('fr-FR')} - 
-                                  {placement.end_date ? ` ${new Date(placement.end_date).toLocaleDateString('fr-FR')}` : ' En cours'}
-                                </p>
-                              </div>
+                              ))}
                             </div>
-
-                            <span className={`px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1 ${badge.color}`}>
-                              <StatusIcon size={12} />
-                              {badge.text}
-                            </span>
-                          </div>
-
-                          {placement.end_notes && (
-                            <p className="mt-3 text-sm text-muted-foreground bg-background rounded-lg p-3">
-                              {placement.end_notes}
-                            </p>
                           )}
                         </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
+                      </div>
 
-              {placementHistory.length === 0 && (
-                <div className="text-center py-12 bg-card rounded-xl">
-                  <Dog size={48} className="text-muted-foreground mx-auto mb-3" />
-                  <p className="text-muted-foreground">Aucun historique de placement</p>
-                </div>
-              )}
-            </div>
-          )}
+                      <div className="space-y-2 mb-4">
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Mail size={14} />
+                          <span className="truncate">{contact.email}</span>
+                        </div>
+                        {contact.phone && (
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <Phone size={14} />
+                            <span>{contact.phone}</span>
+                          </div>
+                        )}
+                        {contact.city && (
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <MapPin size={14} />
+                            <span className="truncate">{contact.city}</span>
+                          </div>
+                        )}
+                      </div>
 
-          {activeTab === 'notes' && (
-            <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                <h3 className="text-xl font-heading font-semibold">
-                  Notes & Suivi ({notes.length})
-                </h3>
-                <Button
-                  iconName="Plus"
-                  onClick={() => setShowAddNoteModal(true)}
-                >
-                  Ajouter une note
-                </Button>
-              </div>
-
-              {notes.length === 0 ? (
-                <div className="text-center py-12 bg-card rounded-xl">
-                  <FileText size={48} className="text-muted-foreground mx-auto mb-3" />
-                  <p className="text-muted-foreground mb-4">Aucune note enregistrée</p>
-                  <Button
-                    iconName="Plus"
-                    onClick={() => setShowAddNoteModal(true)}
-                  >
-                    Ajouter la première note
-                  </Button>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {notes.map((note) => (
-                    <div
-                      key={note.id}
-                      className={`bg-card rounded-xl border p-4 ${
-                        note.is_important ? 'border-yellow-400 bg-yellow-50/50' : 'border-border'
-                      }`}
-                    >
-                      <div className="flex items-start justify-between mb-2">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className={`px-2 py-1 rounded text-xs font-medium ${getNoteTypeColor(note.note_type)}`}>
-                              {getNoteTypeLabel(note.note_type)}
+                      {(contact.type === 'foster_family' || contact.type === 'both') && (
+                        <div className="bg-purple-50 rounded-lg p-3 mb-4">
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-purple-700 font-medium">
+                              Chiens actuels : {contact.current_dogs_count}/{contact.max_dogs}
                             </span>
-                            {note.is_important && (
-                              <span className="px-2 py-1 rounded bg-yellow-100 text-yellow-700 text-xs font-medium">
-                                Important
-                              </span>
-                            )}
-                            <span className="text-xs text-muted-foreground">
-                              {new Date(note.created_at).toLocaleDateString('fr-FR')} à{' '}
-                              {new Date(note.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                            <span className="text-purple-600">
+                              Total : {contact.total_dogs_fostered}
                             </span>
                           </div>
-                          <h4 className="font-semibold text-foreground">{note.title}</h4>
                         </div>
-                        <button
-                          onClick={() => handleDeleteNote(note.id)}
-                          className="p-1 text-red-600 hover:bg-red-50 rounded"
-                        >
-                          <Trash2 size={16} />
-                        </button>
+                      )}
+
+                      {contact.current_dogs.length > 0 && (
+                        <div className="mb-4">
+                          <p className="text-xs font-medium text-muted-foreground mb-2">
+                            Chiens actuellement en garde :
+                          </p>
+                          <div className="flex flex-wrap gap-2">
+                            {contact.current_dogs.map((dog) => (
+                              <div
+                                key={dog.id}
+                                className="flex items-center gap-2 bg-background rounded-lg px-2 py-1 border border-border"
+                              >
+                                {dog.photo_url ? (
+                                  <img
+                                    src={dog.photo_url}
+                                    alt={dog.name}
+                                    className="w-6 h-6 rounded-full object-cover"
+                                  />
+                                ) : (
+                                  <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
+                                    <span className="text-xs font-bold text-primary">
+                                      {dog.name?.charAt(0)}
+                                    </span>
+                                  </div>
+                                )}
+                                <span className="text-xs font-medium">{dog.name}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="pt-3 border-t border-border flex items-center justify-between text-xs text-muted-foreground">
+                        <span className="flex items-center gap-1">
+                          <Calendar size={12} />
+                          {new Date(contact.created_at).toLocaleDateString('fr-FR')}
+                        </span>
+                        {contact.notes_count > 0 && (
+                          <span className="flex items-center gap-1">
+                            <AlertCircle size={12} />
+                            {contact.notes_count} note{contact.notes_count > 1 ? 's' : ''}
+                          </span>
+                        )}
                       </div>
-                      <p className="text-muted-foreground text-sm whitespace-pre-wrap">
-                        {note.description}
-                      </p>
                     </div>
-                  ))}
-                </div>
-              )}
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
       </main>
-
-      {/* Modal Ajouter Note */}
-      {showAddNoteModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-card rounded-2xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-xl font-heading font-bold">Ajouter une note</h3>
-                <button
-                  onClick={() => setShowAddNoteModal(false)}
-                  className="p-2 hover:bg-gray-100 rounded-lg"
-                >
-                  <Icon name="X" size={20} />
-                </button>
-              </div>
-
-              <form onSubmit={handleAddNote} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-muted-foreground mb-2">
-                    Type de note
-                  </label>
-                  <select
-                    value={noteForm.note_type}
-                    onChange={(e) => setNoteForm({ ...noteForm, note_type: e.target.value })}
-                    className="w-full px-4 py-3 border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent bg-background"
-                    required
-                  >
-                    <option value="general">Général</option>
-                    <option value="visit">Visite</option>
-                    <option value="placement">Placement</option>
-                    <option value="removal">Retrait</option>
-                    <option value="adoption">Adoption</option>
-                    <option value="issue">Problème</option>
-                    <option value="followup">Suivi</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-muted-foreground mb-2">
-                    Titre
-                  </label>
-                  <input
-                    type="text"
-                    value={noteForm.title}
-                    onChange={(e) => setNoteForm({ ...noteForm, title: e.target.value })}
-                    placeholder="Ex: Visite de contrôle"
-                    className="w-full px-4 py-3 border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent bg-background"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-muted-foreground mb-2">
-                    Description
-                  </label>
-                  <textarea
-                    value={noteForm.description}
-                    onChange={(e) => setNoteForm({ ...noteForm, description: e.target.value })}
-                    placeholder="Détails de la note..."
-                    rows={4}
-                    className="w-full px-4 py-3 border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent bg-background resize-none"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={noteForm.is_important}
-                      onChange={(e) => setNoteForm({ ...noteForm, is_important: e.target.checked })}
-                      className="w-4 h-4 rounded border-gray-300 text-yellow-600 focus:ring-yellow-500"
-                    />
-                    <span className="text-sm font-medium text-muted-foreground">
-                      Marquer comme important
-                    </span>
-                  </label>
-                </div>
-
-                <div className="flex gap-3 pt-4">
-                  <button
-                    type="button"
-                    onClick={() => setShowAddNoteModal(false)}
-                    className="flex-1 py-3 border-2 border-border rounded-xl font-medium hover:bg-muted"
-                  >
-                    Annuler
-                  </button>
-                  <button
-                    type="submit"
-                    className="flex-1 py-3 bg-primary text-primary-foreground rounded-xl font-medium hover:bg-primary/90"
-                  >
-                    Ajouter
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
 
-export default CRMContactDetail;
+export default CRMContacts;
