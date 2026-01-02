@@ -1,9 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import { supabase } from '../../lib/supabase';
-import { useAuth } from '../../contexts/AuthContext';
-import Icon from '../../components/AppIcon';
-import { ArrowLeft, Save, X } from 'lucide-react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { supabase } from '../../../lib/supabase';
+import { useAuth } from '../../../contexts/AuthContext';
+import TabNavigationPro from '../../../components/TabNavigationPro';
+import UserMenuPro from '../../../components/UserMenuPro';
+import Icon from '../../../components/AppIcon';
+import Button from '../../../components/ui/Button';
+import { 
+  ArrowLeft, Edit, Trash2, Plus, Phone, Mail, MapPin,
+  Home, Star, Calendar, FileText, Dog, AlertCircle,
+  CheckCircle, Clock, User
+} from 'lucide-react';
 
 const CRMContactForm = () => {
   const { contactId } = useParams();
