@@ -243,15 +243,15 @@ const ProDogDetail = () => {
         if (data && data.length > 0) {
           const note = data[0];
           setHealthNotes({
-            allergies: note.tags?.includes('allergies') ? note.description : '',
-            medications: note.tags?.includes('medications') ? note.description : '',
-            veterinaryNotes: note.description || '',
-            veterinarian: note.tags?.includes('vet') ? note.title : '',
-            veterinarianPhone: ''
+            allergies: note.allergies || '',
+            medications: note.medications || '',
+            veterinaryNotes: note.veterinary_notes || '',
+            veterinarian: note.veterinarian || '',
+            veterinarianPhone: note.veterinarian_phone || ''
           });
         }
       } catch (err) {
-        console.error('Erreur chargement notes santé:', err);
+        console.error('Erreur chargement notes médicales:', err);
       }
     };
 
@@ -261,7 +261,7 @@ const ProDogDetail = () => {
   useEffect(() => {
     if (!dogId) return;
 
-    const fetchPhotos = async () => {
+    const fetchPhotoGallery = async () => {
       try {
         const { data, error } = await supabase
           .from('dog_photos')
@@ -270,18 +270,17 @@ const ProDogDetail = () => {
           .order('created_at', { ascending: false });
 
         if (error) throw error;
-
         setPhotoGallery(data || []);
       } catch (err) {
-        console.error('Erreur chargement photos:', err);
+        console.error('Erreur chargement galerie:', err);
       }
     };
 
-    fetchPhotos();
+    fetchPhotoGallery();
   }, [dogId]);
 
-  const openModal = (modalName, item = null) => {
-    setEditingItem(item);
+  const openModal = (modalName, editData = null) => {
+    setEditingItem(editData);
     setModals({ ...modals, [modalName]: true });
   };
 
@@ -290,60 +289,48 @@ const ProDogDetail = () => {
     setEditingItem(null);
   };
 
-  const handleSaveVaccination = async (data) => {
+  const handleSaveVaccination = async (vaccinationData) => {
     try {
       if (editingItem) {
         const { error } = await supabase
           .from('vaccinations')
           .update({
-            vaccine_name: data.name,
-            vaccination_date: new Date(data.lastDate).toISOString().split('T')[0],
-            next_due_date: data.nextDate ? new Date(data.nextDate).toISOString().split('T')[0] : null,
-            veterinarian: data.veterinarian,
-            notes: data.notes
+            vaccine_name: vaccinationData.name,
+            vaccination_date: vaccinationData.lastDate,
+            next_due_date: vaccinationData.nextDate,
+            veterinarian: vaccinationData.veterinarian,
+            notes: vaccinationData.notes
           })
           .eq('id', editingItem.id);
 
         if (error) throw error;
-
-        setVaccinations(vaccinations.map(v => 
-          v.id === editingItem.id ? { ...data, id: v.id } : v
-        ));
+        alert('✅ Vaccination mise à jour !');
       } else {
-        const { data: newVac, error } = await supabase
+        const { error } = await supabase
           .from('vaccinations')
           .insert([{
             dog_id: dogId,
-            vaccine_name: data.name,
-            vaccination_date: new Date(data.lastDate).toISOString().split('T')[0],
-            next_due_date: data.nextDate ? new Date(data.nextDate).toISOString().split('T')[0] : null,
-            veterinarian: data.veterinarian,
-            notes: data.notes
-          }])
-          .select()
-          .single();
+            vaccine_name: vaccinationData.name,
+            vaccination_date: vaccinationData.lastDate,
+            next_due_date: vaccinationData.nextDate,
+            veterinarian: vaccinationData.veterinarian,
+            notes: vaccinationData.notes
+          }]);
 
         if (error) throw error;
-
-        setVaccinations([...vaccinations, {
-          id: newVac.id,
-          name: data.name,
-          lastDate: new Date(data.lastDate).toLocaleDateString('fr-FR'),
-          nextDate: data.nextDate ? new Date(data.nextDate).toLocaleDateString('fr-FR') : 'Non défini',
-          veterinarian: data.veterinarian,
-          notes: data.notes
-        }]);
+        alert('✅ Vaccination ajoutée !');
       }
 
       closeModal('vaccination');
+      window.location.reload();
     } catch (err) {
       console.error('Erreur sauvegarde vaccination:', err);
-      alert('Erreur lors de la sauvegarde de la vaccination');
+      alert('❌ Erreur lors de la sauvegarde');
     }
   };
 
   const handleDeleteVaccination = async (id) => {
-    if (!window.confirm('Êtes-vous sûr de vouloir supprimer cette vaccination ?')) return;
+    if (!confirm('Supprimer cette vaccination ?')) return;
 
     try {
       const { error } = await supabase
@@ -352,70 +339,58 @@ const ProDogDetail = () => {
         .eq('id', id);
 
       if (error) throw error;
-
-      setVaccinations(vaccinations.filter(v => v.id !== id));
+      alert('✅ Vaccination supprimée');
+      window.location.reload();
     } catch (err) {
-      console.error('Erreur suppression vaccination:', err);
-      alert('Erreur lors de la suppression');
+      console.error('Erreur suppression:', err);
+      alert('❌ Erreur lors de la suppression');
     }
   };
 
-  const handleSaveTreatment = async (data, type) => {
+  const handleSaveTreatment = async (treatmentData, type) => {
     try {
-      const treatmentType = type === 'vermifuge' ? 'worm' : 'flea';
+      const dbType = type === 'vermifuge' ? 'worm' : type === 'flea' ? 'flea' : 'tick';
 
       if (editingItem) {
         const { error } = await supabase
           .from('treatments')
           .update({
-            product_name: data.product,
-            treatment_date: new Date(data.lastDate).toISOString().split('T')[0],
-            next_due_date: data.nextDate ? new Date(data.nextDate).toISOString().split('T')[0] : null,
-            notes: data.notes,
-            treatment_type: treatmentType
+            product_name: treatmentData.product,
+            treatment_date: treatmentData.lastDate,
+            next_due_date: treatmentData.nextDate,
+            notes: treatmentData.notes,
+            treatment_type: dbType
           })
           .eq('id', editingItem.id);
 
         if (error) throw error;
-
-        setTreatments(treatments.map(t => 
-          t.id === editingItem.id ? { ...data, id: t.id, type: treatmentType } : t
-        ));
+        alert('✅ Traitement mis à jour !');
       } else {
-        const { data: newTreat, error } = await supabase
+        const { error } = await supabase
           .from('treatments')
           .insert([{
             dog_id: dogId,
-            product_name: data.product,
-            treatment_date: new Date(data.lastDate).toISOString().split('T')[0],
-            next_due_date: data.nextDate ? new Date(data.nextDate).toISOString().split('T')[0] : null,
-            notes: data.notes,
-            treatment_type: treatmentType
-          }])
-          .select()
-          .single();
+            product_name: treatmentData.product,
+            treatment_date: treatmentData.lastDate,
+            next_due_date: treatmentData.nextDate,
+            notes: treatmentData.notes,
+            treatment_type: dbType
+          }]);
 
         if (error) throw error;
-
-        setTreatments([...treatments, {
-          id: newTreat.id,
-          product: data.product,
-          lastDate: new Date(data.lastDate).toLocaleDateString('fr-FR'),
-          nextDate: data.nextDate ? new Date(data.nextDate).toLocaleDateString('fr-FR') : 'Non défini',
-          notes: data.notes,
-          type: treatmentType
-        }]);
+        alert('✅ Traitement ajouté !');
       }
 
       closeModal(type);
+      window.location.reload();
     } catch (err) {
       console.error('Erreur sauvegarde traitement:', err);
-      alert('Erreur lors de la sauvegarde du traitement');
+      alert('❌ Erreur lors de la sauvegarde');
     }
   };
 
   const handleDeleteTreatment = async (id) => {
-    if (!window.confirm('Êtes-vous sûr de vouloir supprimer ce traitement ?')) return;
+    if (!confirm('Supprimer ce traitement ?')) return;
 
     try {
       const { error } = await supabase
@@ -424,63 +399,62 @@ const ProDogDetail = () => {
         .eq('id', id);
 
       if (error) throw error;
-
-      setTreatments(treatments.filter(t => t.id !== id));
+      alert('✅ Traitement supprimé');
+      window.location.reload();
     } catch (err) {
-      console.error('Erreur suppression traitement:', err);
-      alert('Erreur lors de la suppression');
+      console.error('Erreur suppression:', err);
+      alert('❌ Erreur lors de la suppression');
     }
   };
 
-  const handleSaveWeight = async (data) => {
+  const handleSaveWeight = async (weightData) => {
     try {
-      const { data: newWeight, error } = await supabase
+      const { error } = await supabase
         .from('weight_records')
         .insert([{
           dog_id: dogId,
-          weight: parseFloat(data.weight),
-          measurement_date: new Date(data.date).toISOString().split('T')[0]
-        }])
-        .select()
-        .single();
+          weight: parseFloat(weightData.weight),
+          measurement_date: weightData.date
+        }]);
 
       if (error) throw error;
 
-      setWeightData([...weightData, {
-        date: new Date(data.date).toLocaleDateString('fr-FR'),
-        weight: parseFloat(data.weight)
-      }]);
+      await supabase
+        .from('dogs')
+        .update({ weight: parseFloat(weightData.weight) })
+        .eq('id', dogId);
 
+      alert('✅ Poids ajouté !');
       closeModal('weight');
+      window.location.reload();
     } catch (err) {
       console.error('Erreur sauvegarde poids:', err);
-      alert('Erreur lors de la sauvegarde du poids');
+      alert('❌ Erreur lors de la sauvegarde');
     }
   };
 
-  const handleSaveProfile = async (data) => {
+  const handleSaveProfile = async (profileData) => {
     try {
       const { error } = await supabase
         .from('dogs')
         .update({
-          name: data.name,
-          breed: data.breed,
-          gender: data.gender,
-          weight: parseFloat(data.weight.replace(' kg', '')),
-          is_sterilized: data.sterilized === 'Stérilisé',
-          notes: data.notes,
-          microchip_number: data.microchip_number
+          name: profileData.name,
+          breed: profileData.breed,
+          birth_date: profileData.birthDate,
+          gender: profileData.gender,
+          is_sterilized: profileData.sterilized === 'Stérilisé',
+          microchip_number: profileData.microchipNumber,
+          notes: profileData.notes
         })
         .eq('id', dogId);
 
       if (error) throw error;
-
-      setDog(data);
-      closeModal('editProfile');
       alert('✅ Profil mis à jour !');
+      closeModal('editProfile');
+      window.location.reload();
     } catch (err) {
-      console.error('Erreur sauvegarde profil:', err);
-      alert('Erreur lors de la sauvegarde du profil');
+      console.error('Erreur mise à jour profil:', err);
+      alert('❌ Erreur lors de la mise à jour');
     }
   };
 
@@ -492,27 +466,34 @@ const ProDogDetail = () => {
         .eq('id', dogId);
 
       if (error) throw error;
-
-      setDog({ ...dog, image: photoUrl });
       alert('✅ Photo de profil mise à jour !');
+      window.location.reload();
     } catch (err) {
-      console.error('Erreur mise à jour photo de profil:', err);
-      alert('❌ Erreur lors de la mise à jour de la photo de profil');
+      console.error('Erreur mise à jour photo:', err);
+      alert('❌ Erreur lors de la mise à jour');
     }
   };
 
-  const handleCoverPhotoUpload = async (e) => {
-    const file = e.target.files?.[0];
+  const handleCoverPhotoUpload = async (event) => {
+    const file = event.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 5 * 1024 * 1024) {
-      alert('⚠️ L\'image est trop volumineuse (max 5MB)');
+    const maxSize = 5 * 1024 * 1024;
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+
+    if (!allowedTypes.includes(file.type)) {
+      alert('⚠️ Format non supporté. Utilisez JPG, PNG ou WebP');
       return;
     }
 
-    setIsUploadingCover(true);
+    if (file.size > maxSize) {
+      alert('⚠️ Fichier trop volumineux (max 5 MB)');
+      return;
+    }
 
     try {
+      setIsUploadingCover(true);
+
       const fileExt = file.name.split('.').pop().toLowerCase();
       const fileName = `${user.id}/${dogId}/cover_${Date.now()}.${fileExt}`;
       
@@ -526,18 +507,17 @@ const ProDogDetail = () => {
         .from('dog-photos')
         .getPublicUrl(fileName);
 
-      const { error: dbError } = await supabase
+      const { error: updateError } = await supabase
         .from('dogs')
         .update({ cover_photo_url: publicUrl })
         .eq('id', dogId);
 
-      if (dbError) throw dbError;
+      if (updateError) throw updateError;
 
       setDog({ ...dog, cover_photo_url: publicUrl });
       alert('✅ Photo de couverture mise à jour !');
-      e.target.value = '';
     } catch (err) {
-      console.error('Erreur upload cover:', err);
+      console.error('Erreur upload couverture:', err);
       alert('❌ Erreur lors de l\'upload: ' + err.message);
     } finally {
       setIsUploadingCover(false);
@@ -545,7 +525,10 @@ const ProDogDetail = () => {
   };
 
   const handleAddPhoto = async (file) => {
-    if (!file || file.size > 5 * 1024 * 1024) {
+    const maxSize = 5 * 1024 * 1024;
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+
+    if (!allowedTypes.includes(file.type) || file.size > maxSize) {
       alert('⚠️ Fichier invalide ou trop volumineux');
       return;
     }
@@ -884,12 +867,12 @@ const ProDogDetail = () => {
       )}
 
       <TabNavigationPro />
-      
+
       <main className="main-content flex-1">
         <div className="max-w-7xl mx-auto px-3 sm:px-4 py-6">
-          <div className="bg-card rounded-xl shadow-soft overflow-hidden">
-            <div className="border-b border-border overflow-x-auto">
-              <div className="flex min-w-max">
+          <div className="bg-card rounded-xl shadow-soft border border-border">
+            <div className="border-b border-border">
+              <div className="flex overflow-x-auto">
                 {tabs.map((tab) => (
                   <button
                     key={tab.id}
@@ -917,13 +900,13 @@ const ProDogDetail = () => {
                         Gérez le calendrier vaccinal de {dog.name}
                       </p>
                     </div>
-                    <Button
-                      variant="default"
-                      iconName="Plus"
+                    <button
                       onClick={() => openModal('vaccination')}
+                      className="px-4 py-2 bg-primary text-primary-foreground rounded-xl font-medium hover:bg-primary/90 flex items-center gap-2 min-h-[44px]"
                     >
+                      <Icon name="Plus" size={16} />
                       Ajouter
-                    </Button>
+                    </button>
                   </div>
 
                   {vaccinations.length === 0 ? (
@@ -932,13 +915,13 @@ const ProDogDetail = () => {
                         <Icon name="Syringe" size={32} color="var(--color-muted-foreground)" />
                       </div>
                       <p className="text-muted-foreground mb-4">Aucune vaccination enregistrée</p>
-                      <Button
-                        variant="default"
-                        iconName="Plus"
+                      <button
                         onClick={() => openModal('vaccination')}
+                        className="px-4 py-2 bg-primary text-primary-foreground rounded-xl font-medium hover:bg-primary/90 inline-flex items-center gap-2 min-h-[44px]"
                       >
+                        <Icon name="Plus" size={16} />
                         Ajouter une vaccination
-                      </Button>
+                      </button>
                     </div>
                   ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -964,13 +947,13 @@ const ProDogDetail = () => {
                         Suivez les traitements antiparasitaires internes
                       </p>
                     </div>
-                    <Button
-                      variant="default"
-                      iconName="Plus"
+                    <button
                       onClick={() => openModal('vermifuge')}
+                      className="px-4 py-2 bg-primary text-primary-foreground rounded-xl font-medium hover:bg-primary/90 flex items-center gap-2 min-h-[44px]"
                     >
+                      <Icon name="Plus" size={16} />
                       Ajouter
-                    </Button>
+                    </button>
                   </div>
 
                   {vermifuges.length === 0 ? (
@@ -979,13 +962,13 @@ const ProDogDetail = () => {
                         <Icon name="Pill" size={32} color="var(--color-muted-foreground)" />
                       </div>
                       <p className="text-muted-foreground mb-4">Aucun traitement vermifuge enregistré</p>
-                      <Button
-                        variant="default"
-                        iconName="Plus"
+                      <button
                         onClick={() => openModal('vermifuge')}
+                        className="px-4 py-2 bg-primary text-primary-foreground rounded-xl font-medium hover:bg-primary/90 inline-flex items-center gap-2 min-h-[44px]"
                       >
+                        <Icon name="Plus" size={16} />
                         Ajouter un traitement
-                      </Button>
+                      </button>
                     </div>
                   ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1012,13 +995,13 @@ const ProDogDetail = () => {
                         Gérez les traitements antiparasitaires externes
                       </p>
                     </div>
-                    <Button
-                      variant="default"
-                      iconName="Plus"
+                    <button
                       onClick={() => openModal('flea')}
+                      className="px-4 py-2 bg-primary text-primary-foreground rounded-xl font-medium hover:bg-primary/90 flex items-center gap-2 min-h-[44px]"
                     >
+                      <Icon name="Plus" size={16} />
                       Ajouter
-                    </Button>
+                    </button>
                   </div>
 
                   {fleaTreatments.length === 0 ? (
@@ -1027,13 +1010,13 @@ const ProDogDetail = () => {
                         <Icon name="Bug" size={32} color="var(--color-muted-foreground)" />
                       </div>
                       <p className="text-muted-foreground mb-4">Aucun traitement anti-puces enregistré</p>
-                      <Button
-                        variant="default"
-                        iconName="Plus"
+                      <button
                         onClick={() => openModal('flea')}
+                        className="px-4 py-2 bg-primary text-primary-foreground rounded-xl font-medium hover:bg-primary/90 inline-flex items-center gap-2 min-h-[44px]"
                       >
+                        <Icon name="Plus" size={16} />
                         Ajouter un traitement
-                      </Button>
+                      </button>
                     </div>
                   ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
