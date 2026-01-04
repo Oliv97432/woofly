@@ -159,7 +159,7 @@ const AdoptionDetail = () => {
             
             {/* Badge statut : FA ou Disponible */}
             <div className="absolute top-3 right-3 sm:top-6 sm:right-6">
-              {dog.foster_family_user_id ? (
+              {dog.foster_family_contact_id ? (
                 <div className="bg-purple-500 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-full font-bold flex items-center gap-1 sm:gap-2 text-xs sm:text-sm shadow-lg">
                   <Home size={14} className="sm:w-5 sm:h-5" />
                   <span className="hidden xs:inline">En famille d'accueil</span>
