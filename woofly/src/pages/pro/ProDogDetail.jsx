@@ -116,12 +116,13 @@ const ProDogDetail = () => {
           cover_photo_url: data.cover_photo_url || null,
           adoption_status: data.adoption_status,
           is_for_adoption: data.is_for_adoption,
-          foster_family_user_id: data.foster_family_user_id
+          foster_family_user_id: data.foster_family_user_id,
+          foster_family_contact_id: data.foster_family_contact_id
         });
 
         // Charger la FA si le chien est en famille d'accueil
-        if (data.foster_family_user_id) {
-          fetchFosterFamily(data.foster_family_user_id);
+        if (data.foster_family_contact_id) {
+          fetchFosterFamily(data.foster_family_contact_id);
         } else {
           setFosterFamily(null);
         }
@@ -572,14 +573,14 @@ const ProDogDetail = () => {
   };
 
   // Charger les informations de la famille d'accueil
-  const fetchFosterFamily = async (fosterFamilyUserId) => {
-    if (!fosterFamilyUserId || !proAccount?.id) return;
+  const fetchFosterFamily = async (fosterFamilyContactId) => {
+    if (!fosterFamilyContactId || !proAccount?.id) return;
     
     try {
       const { data, error } = await supabase
         .from('contacts')
         .select('*')
-        .eq('user_id', fosterFamilyUserId)
+        .eq('id', fosterFamilyContactId)
         .eq('professional_account_id', proAccount.id)
         .single();
       
@@ -629,7 +630,10 @@ const ProDogDetail = () => {
       // 2. Retirer la FA du chien
       await supabase
         .from('dogs')
-        .update({ foster_family_user_id: null })
+        .update({ 
+          foster_family_user_id: null,
+          foster_family_contact_id: null
+        })
         .eq('id', dog.id);
 
       alert(`✅ ${dog.name} a été retiré de la famille d'accueil`);
@@ -806,7 +810,7 @@ const ProDogDetail = () => {
           <div className="bg-card rounded-xl shadow-soft p-6 border border-border">
             
             {/* SI le chien est en FA */}
-            {dog.foster_family_user_id && fosterFamily ? (
+            {dog.foster_family_contact_id && fosterFamily ? (
               <div className="space-y-4">
                 <div className="flex items-center gap-3 p-4 bg-purple-50 rounded-xl border border-purple-200">
                   <div className="w-12 h-12 rounded-full bg-purple-500 text-white flex items-center justify-center text-xl font-bold">
