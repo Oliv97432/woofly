@@ -52,7 +52,7 @@ const TransferToAdopterModal = ({ isOpen, onClose, dog, proAccount, onSuccess })
       setLoading(true);
 
       // 1. Si le chien était en FA, fermer le placement
-      if (dog.foster_family_user_id) {
+      if (dog.foster_family_contact_id) {
         // Trouver le placement actif
         const { data: activePlacement } = await supabase
           .from('placement_history')
@@ -106,6 +106,7 @@ const TransferToAdopterModal = ({ isOpen, onClose, dog, proAccount, onSuccess })
           professional_account_id: null,        // Le refuge perd la propriété
           user_id: adopterUser.id,              // L'adoptant devient propriétaire
           foster_family_user_id: null,          // Plus en FA
+          foster_family_contact_id: null,       // Plus en FA
           adoption_status: 'adopted'            // Statut adopté
         })
         .eq('id', dog.id);
