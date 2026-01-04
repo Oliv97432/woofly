@@ -78,6 +78,7 @@ const PlaceFAModal = ({ isOpen, onClose, dog, proAccount, onSuccess }) => {
       const { error: dogError } = await supabase
         .from('dogs')
         .update({ 
+          foster_family_contact_id: selectedFA.id,
           foster_family_user_id: selectedFA.user_id || null
         })
         .eq('id', dog.id);
