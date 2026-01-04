@@ -2,7 +2,7 @@ import React from 'react';
 import { X, Heart, Check, Sparkles, Coffee } from 'lucide-react';
 
 const DonationModalUser = ({ isOpen, onClose }) => {
-  if (
+  if (!isOpen) return null;
 
   const handleDonate = () => {
     // À REMPLACER par ton vrai lien PayPal ou Buy Me a Coffee
