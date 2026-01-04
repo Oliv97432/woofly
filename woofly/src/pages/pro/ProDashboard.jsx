@@ -54,10 +54,11 @@ const ProDashboard = () => {
         .from('dogs')
         .select(`
           *,
-          foster_family:user_profiles!dogs_foster_family_user_id_fkey(
+          foster_family:contacts!dogs_foster_family_contact_id_fkey(
             id,
             full_name,
-            email
+            email,
+            city
           )
         `)
         .eq('professional_account_id', proAccountId)
@@ -92,8 +93,8 @@ const ProDashboard = () => {
 
   const stats = {
     total: dogs.length,
-    available: dogs.filter(d => d.adoption_status === 'available' && !d.foster_family_user_id).length,
-    inFoster: dogs.filter(d => d.foster_family_user_id).length,
+    available: dogs.filter(d => d.adoption_status === 'available' && !d.foster_family_contact_id).length,
+    inFoster: dogs.filter(d => d.foster_family_contact_id).length,
     pending: dogs.filter(d => d.adoption_status === 'pending').length,
     applications: applications.length
   };
@@ -104,9 +105,9 @@ const ProDashboard = () => {
     
     let matchesFilter = true;
     if (filterStatus === 'available') {
-      matchesFilter = dog.adoption_status === 'available' && !dog.foster_family_user_id;
+      matchesFilter = dog.adoption_status === 'available' && !dog.foster_family_contact_id;
     } else if (filterStatus === 'foster') {
-      matchesFilter = !!dog.foster_family_user_id;
+      matchesFilter = !!dog.foster_family_contact_id;
     } else if (filterStatus === 'pending') {
       matchesFilter = dog.adoption_status === 'pending';
     }
@@ -115,7 +116,7 @@ const ProDashboard = () => {
   });
 
   const getStatusBadge = (dog) => {
-    if (dog.foster_family_user_id) {
+    if (dog.foster_family_contact_id) {
       return {
         text: 'En famille d\'accueil',
         icon: Home,
@@ -385,7 +386,7 @@ const ProDashboard = () => {
                         {dog.breed}
                       </p>
 
-                      {dog.foster_family_user_id && dog.foster_family && (
+                      {dog.foster_family_contact_id && dog.foster_family && (
                         <div className="flex items-center gap-2 text-xs text-purple-600 bg-purple-50 rounded-lg p-2 mb-3">
                           <Home size={14} />
                           <span className="truncate">Chez {dog.foster_family.full_name}</span>
