@@ -592,24 +592,36 @@ const ProDogDetail = () => {
     }
   };
 
-  // Retirer le chien de la famille d'accueil
+  // Retirer le chien de la famille d'accueil - FONCTION CORRIGÉE
   const handleReturnFromFA = async () => {
     if (!confirm(`Retirer ${dog.name} de chez ${fosterFamily?.full_name} ?`)) {
       return;
     }
 
     try {
-      // 1. Fermer le placement FA
-      const { data: activePlacement } = await supabase
+      console.log('🔄 Début retour au refuge pour chien:', dog.id);
+      console.log('📋 FA actuelle (contact):', dog.foster_family_contact_id);
+      console.log('📋 FA actuelle (user):', dog.foster_family_user_id);
+
+      // 1. Chercher le placement actif (utiliser maybeSingle au lieu de single)
+      const { data: activePlacement, error: findError } = await supabase
         .from('placement_history')
         .select('*')
         .eq('dog_id', dog.id)
         .eq('status', 'active')
         .eq('placement_type', 'foster')
-        .single();
+        .maybeSingle();
+
+      if (findError) {
+        console.error('❌ Erreur recherche placement:', findError);
+        throw findError;
+      }
+
+      console.log('📍 Placement actif trouvé:', activePlacement);
 
       if (activePlacement) {
-        await supabase
+        // Fermer le placement
+        const { error: closeError } = await supabase
           .from('placement_history')
           .update({
             end_date: new Date().toISOString(),
@@ -618,17 +630,37 @@ const ProDogDetail = () => {
           })
           .eq('id', activePlacement.id);
 
+        if (closeError) {
+          console.error('❌ Erreur fermeture placement:', closeError);
+          throw closeError;
+        }
+
+        console.log('✅ Placement fermé avec succès');
+
         // Décrémenter le compteur de la FA
-        await supabase
+        const { data: contact } = await supabase
           .from('contacts')
-          .update({
-            current_dogs_count: supabase.raw('current_dogs_count - 1')
-          })
+          .select('current_dogs_count')
+          .eq('id', activePlacement.contact_id)
+          .single();
+
+        const newCount = Math.max(0, (contact?.current_dogs_count || 1) - 1);
+
+        const { error: decrementError } = await supabase
+          .from('contacts')
+          .update({ current_dogs_count: newCount })
           .eq('id', activePlacement.contact_id);
+
+        if (decrementError) {
+          console.error('❌ Erreur décrémentation compteur:', decrementError);
+          throw decrementError;
+        }
+
+        console.log('✅ Compteur FA décrémenté:', newCount);
       }
 
       // 2. Retirer la FA du chien
-      await supabase
+      const { error: updateError } = await supabase
         .from('dogs')
         .update({ 
           foster_family_user_id: null,
@@ -636,10 +668,17 @@ const ProDogDetail = () => {
         })
         .eq('id', dog.id);
 
+      if (updateError) {
+        console.error('❌ Erreur mise à jour chien:', updateError);
+        throw updateError;
+      }
+
+      console.log('✅ Chien mis à jour - retour au refuge');
+
       alert(`✅ ${dog.name} a été retiré de la famille d'accueil`);
       window.location.reload();
     } catch (err) {
-      console.error('Erreur retour FA:', err);
+      console.error('💥 Erreur retour FA:', err);
       alert('❌ Erreur lors du retour: ' + err.message);
     }
   };
