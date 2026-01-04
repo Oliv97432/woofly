@@ -60,6 +60,20 @@ const PlaceFAModal = ({ isOpen, onClose, dog, proAccount, onSuccess }) => {
     try {
       setLoading(true);
 
+      // 0. VÉRIFIER si le chien n'est pas déjà placé
+      const { data: existingPlacement } = await supabase
+        .from('placement_history')
+        .select('*')
+        .eq('dog_id', dog.id)
+        .eq('status', 'active')
+        .eq('placement_type', 'foster')
+        .single();
+
+      if (existingPlacement) {
+        alert(`❌ ${dog.name} est déjà placé en famille d'accueil !\n\nVeuillez d'abord le retirer de sa FA actuelle.`);
+        return;
+      }
+
       // 1. Créer l'historique de placement
       const { error: historyError } = await supabase
         .from('placement_history')
