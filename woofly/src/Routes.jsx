@@ -38,6 +38,7 @@ import ProRegistration from './pages/pro/ProRegistration';
 import ProDashboard from './pages/pro/ProDashboard';
 import ProDogManagement from './pages/pro/ProDogManagement';
 import ProDogDetail from './pages/pro/ProDogDetail';
+import ProDogsList from './pages/pro/ProDogsList';
 import ProFosterFamilies from './pages/pro/ProFosterFamilies';
 import ProApplications from './pages/pro/ProApplications';
 import InstagramGenerator from './pages/pro/InstagramGenerator';
@@ -100,6 +101,7 @@ const Routes = () => {
         <Route path="/pro/dogs" element={<ProDogManagement />} />
         <Route path="/pro/dogs/new" element={<ProDogManagement />} />
         <Route path="/pro/dogs/:dogId" element={<ProDogDetail />} />
+        <Route path="/pro/dogs-list" element={<ProDogsList />} />
         <Route path="/pro/foster-families" element={<ProFosterFamilies />} />
         <Route path="/pro/applications" element={<ProApplications />} />
         <Route path="/pro/instagram" element={<InstagramGenerator />} />
