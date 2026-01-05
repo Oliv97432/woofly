@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 
 const PublicDogDetail = () => {
-  const { id } = useParams();
+  const { dogId } = useParams(); // Changé de 'id' à 'dogId' pour cohérence avec Routes.js
   const navigate = useNavigate();
   const { user } = useAuth();
   const [dog, setDog] = useState(null);
@@ -16,7 +16,7 @@ const PublicDogDetail = () => {
 
   useEffect(() => {
     fetchDogDetails();
-  }, [id]);
+  }, [dogId]);
 
   const fetchDogDetails = async () => {
     try {
@@ -34,7 +34,7 @@ const PublicDogDetail = () => {
             postal_code
           )
         `)
-        .eq('id', id)
+        .eq('id', dogId) // Utilise dogId au lieu de id
         .eq('adoption_status', 'available')
         .eq('is_published', true)
         .single();
@@ -63,12 +63,12 @@ const PublicDogDetail = () => {
   const handleAdoptClick = () => {
     if (user) {
       // Si connecté, aller au formulaire de candidature
-      navigate(`/adoption-application/${id}`);
+      navigate(`/adoption-application/${dogId}`);
     } else {
       // Si pas connecté, aller à l'inscription avec retour
-      navigate('/signup', { 
+      navigate('/register', { 
         state: { 
-          returnTo: `/adoption/${id}`,
+          returnTo: `/adoption/${dogId}`,
           message: `Créez un compte pour adopter ${dog?.name} 🐕`
         } 
       });
