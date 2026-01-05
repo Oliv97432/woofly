@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   User, Crown, Trash2, ChevronLeft, Mail, Phone, 
-  MapPin, Save, AlertCircle, Lock, X
+  MapPin, Save, AlertCircle, X
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
@@ -327,26 +327,26 @@ const Settings = () => {
             </div>
           </section>
 
-          {/* Passer à Premium (grisé) */}
-          <section className="bg-card rounded-xl border border-border p-6 mx-4 opacity-50 cursor-not-allowed">
+          {/* Passer à Premium - VERSION CLIQUABLE */}
+          <section 
+            onClick={() => navigate('/premium')}
+            className="bg-gradient-to-br from-amber-50 to-yellow-50 rounded-xl border-2 border-amber-200 p-6 mx-4 cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-[1.02]"
+          >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-amber-100 to-yellow-100 flex items-center justify-center flex-shrink-0">
-                  <Crown className="text-amber-500" size={24} />
+                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-amber-400 to-yellow-500 flex items-center justify-center flex-shrink-0 shadow-md">
+                  <Crown className="text-white" size={24} />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h3 className="text-lg font-heading font-semibold text-foreground flex items-center gap-2">
+                  <h3 className="text-lg font-heading font-semibold text-amber-900 flex items-center gap-2">
                     Passer à Premium
-                    <span className="text-xs bg-gradient-to-r from-amber-500 to-yellow-500 text-white px-2 py-1 rounded font-medium whitespace-nowrap">
-                      Bientôt
-                    </span>
                   </h3>
-                  <p className="text-sm text-muted-foreground">
-                    Sans pub + fonctionnalités avancées
+                  <p className="text-sm text-amber-700 font-medium">
+                    Chiens et photos illimités • 3,99€/mois
                   </p>
                 </div>
               </div>
-              <Lock size={24} className="text-muted-foreground flex-shrink-0" />
+              <ChevronLeft size={24} className="text-amber-600 flex-shrink-0 rotate-180" />
             </div>
           </section>
 
