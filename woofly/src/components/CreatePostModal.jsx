@@ -20,8 +20,8 @@ const CreatePostModal = ({ onClose, onSuccess }) => {
   
   const AVAILABLE_TAGS = ['santé', 'chiot', 'alimentation', 'comportement', 'balade', 'astuce'];
   const MAX_PHOTOS = 2;
-  const MAX_VIDEO_DURATION = 30; // secondes
-  const MIN_VIDEO_DURATION = 10; // secondes
+  const MAX_VIDEO_DURATION = 30;
+  const MIN_VIDEO_DURATION = 10;
   
   const toggleTag = (tag) => {
     if (selectedTags.includes(tag)) {
@@ -43,19 +43,17 @@ const CreatePostModal = ({ onClose, onSuccess }) => {
       return;
     }
     
-    // Valider taille et type
     for (const file of files) {
       if (!file.type.startsWith('image/')) {
         alert('Seules les images sont acceptées');
         return;
       }
-      if (file.size > 5 * 1024 * 1024) { // 5MB max
+      if (file.size > 5 * 1024 * 1024) {
         alert('Taille maximum : 5MB par photo');
         return;
       }
     }
     
-    // Créer les previews
     const newPhotos = files.map(file => ({
       file,
       preview: URL.createObjectURL(file)
@@ -68,19 +66,16 @@ const CreatePostModal = ({ onClose, onSuccess }) => {
     const file = e.target.files[0];
     if (!file) return;
     
-    // Valider type
     if (!file.type.startsWith('video/')) {
       alert('Seules les vidéos sont acceptées');
       return;
     }
     
-    // Valider taille (50MB max)
     if (file.size > 50 * 1024 * 1024) {
       alert('Taille maximum : 50MB pour les vidéos');
       return;
     }
     
-    // Vérifier la durée
     const video = document.createElement('video');
     video.preload = 'metadata';
     
@@ -130,7 +125,7 @@ const CreatePostModal = ({ onClose, onSuccess }) => {
       const fileName = `${user.id}/posts/${postId}_${i + 1}.${fileExt}`;
       
       const { data, error } = await supabase.storage
-        .from('social-feed-media')  // ✅ CORRIGÉ (minuscules)
+        .from('social-feed-media')
         .upload(fileName, photo.file, {
           cacheControl: '3600',
           upsert: false
@@ -138,9 +133,8 @@ const CreatePostModal = ({ onClose, onSuccess }) => {
       
       if (error) throw error;
       
-      // Obtenir l'URL publique
       const { data: { publicUrl } } = supabase.storage
-        .from('social-feed-media')  // ✅ CORRIGÉ (minuscules)
+        .from('social-feed-media')
         .getPublicUrl(fileName);
       
       uploadedUrls.push(publicUrl);
@@ -154,7 +148,7 @@ const CreatePostModal = ({ onClose, onSuccess }) => {
     const fileName = `${user.id}/shorts/${postId}.${fileExt}`;
     
     const { data, error } = await supabase.storage
-      .from('social-feed-media')  // ✅ CORRIGÉ (minuscules)
+      .from('social-feed-media')
       .upload(fileName, videoFile, {
         cacheControl: '3600',
         upsert: false
@@ -162,9 +156,8 @@ const CreatePostModal = ({ onClose, onSuccess }) => {
     
     if (error) throw error;
     
-    // Obtenir l'URL publique
     const { data: { publicUrl } } = supabase.storage
-      .from('social-feed-media')  // ✅ CORRIGÉ (minuscules)
+      .from('social-feed-media')
       .getPublicUrl(fileName);
     
     return publicUrl;
@@ -178,7 +171,6 @@ const CreatePostModal = ({ onClose, onSuccess }) => {
       return;
     }
     
-    // Ne peut pas avoir photos ET vidéo
     if (photos.length > 0 && videoFile) {
       alert('❌ Vous ne pouvez pas publier à la fois des photos et une vidéo');
       return;
@@ -188,7 +180,6 @@ const CreatePostModal = ({ onClose, onSuccess }) => {
     setUploadProgress(10);
     
     try {
-      // 1. Créer le post
       const { data: post, error: postError } = await supabase
         .from('forum_posts')
         .insert({
@@ -207,12 +198,10 @@ const CreatePostModal = ({ onClose, onSuccess }) => {
       
       setUploadProgress(30);
       
-      // 2. Upload photos si présentes
       if (photos.length > 0) {
         const photoUrls = await uploadPhotos(post.id);
         setUploadProgress(60);
         
-        // Créer les entrées dans forum_post_images
         const imageInserts = photoUrls.map((url, index) => ({
           post_id: post.id,
           image_url: url,
@@ -226,12 +215,10 @@ const CreatePostModal = ({ onClose, onSuccess }) => {
         if (imagesError) throw imagesError;
       }
       
-      // 3. Upload vidéo si présente
       if (videoFile) {
         const videoUrl = await uploadVideo(post.id);
         setUploadProgress(60);
         
-        // Mettre à jour le post avec l'URL de la vidéo
         const { error: updateError } = await supabase
           .from('forum_posts')
           .update({ video_url: videoUrl })
@@ -254,42 +241,44 @@ const CreatePostModal = ({ onClose, onSuccess }) => {
   };
   
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
-      <div className="bg-card rounded-3xl shadow-elevated max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-heading font-bold">Créer un post</h2>
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-3">
+      <div className="bg-card rounded-2xl shadow-elevated w-full max-w-lg mx-2 p-4 max-h-[95vh] overflow-y-auto">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-5 sticky top-0 bg-card z-10 pb-3">
+          <h2 className="text-lg font-heading font-bold">Créer un post</h2>
           <button
             onClick={onClose}
             disabled={submitting}
-            className="text-muted-foreground hover:text-foreground text-2xl disabled:opacity-50"
+            className="p-2 text-muted-foreground hover:text-foreground disabled:opacity-50 min-w-[44px] min-h-[44px] flex items-center justify-center"
+            aria-label="Fermer"
           >
-            <X size={24} />
+            <X size={22} />
           </button>
         </div>
         
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Titre */}
           <div>
-            <label className="block text-sm font-medium mb-2">Titre (optionnel)</label>
+            <label className="block text-sm font-medium mb-1">Titre (optionnel)</label>
             <input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Donnez un titre à votre post..."
-              className="w-full px-4 py-3 border border-border rounded-xl focus:ring-2 focus:ring-primary"
+              className="w-full px-4 py-3 border border-border rounded-xl focus:ring-2 focus:ring-primary bg-card text-sm"
               disabled={submitting}
             />
           </div>
           
           {/* Contenu */}
           <div>
-            <label className="block text-sm font-medium mb-2">Contenu *</label>
+            <label className="block text-sm font-medium mb-1">Contenu *</label>
             <textarea
               value={content}
               onChange={(e) => setContent(e.target.value)}
               placeholder="Quoi de neuf avec ton chien ?..."
-              rows={6}
-              className="w-full px-4 py-3 border border-border rounded-xl focus:ring-2 focus:ring-primary resize-none"
+              rows={4}
+              className="w-full px-4 py-3 border border-border rounded-xl focus:ring-2 focus:ring-primary resize-none bg-card text-sm"
               required
               disabled={submitting}
             />
@@ -297,15 +286,15 @@ const CreatePostModal = ({ onClose, onSuccess }) => {
           
           {/* Tags */}
           <div>
-            <label className="block text-sm font-medium mb-2">Tags (max 2)</label>
-            <div className="flex flex-wrap gap-2">
+            <label className="block text-sm font-medium mb-1">Tags (max 2)</label>
+            <div className="flex flex-wrap gap-1">
               {AVAILABLE_TAGS.map((tag) => (
                 <button
                   key={tag}
                   type="button"
                   onClick={() => toggleTag(tag)}
                   disabled={submitting}
-                  className={`px-4 py-2 rounded-full text-sm font-medium transition-smooth disabled:opacity-50 ${
+                  className={`px-3 py-2 rounded-full text-xs font-medium transition-smooth disabled:opacity-50 ${
                     selectedTags.includes(tag)
                       ? 'bg-primary text-primary-foreground'
                       : 'bg-muted hover:bg-muted/80'
@@ -319,26 +308,27 @@ const CreatePostModal = ({ onClose, onSuccess }) => {
           
           {/* Photos */}
           <div>
-            <label className="block text-sm font-medium mb-2">
+            <label className="block text-sm font-medium mb-1">
               Photos (max {MAX_PHOTOS})
             </label>
             
             {photos.length > 0 && (
-              <div className="grid grid-cols-2 gap-3 mb-3">
+              <div className="grid grid-cols-2 gap-2 mb-3">
                 {photos.map((photo, index) => (
                   <div key={index} className="relative">
                     <img
                       src={photo.preview}
                       alt={`Preview ${index + 1}`}
-                      className="w-full h-40 object-cover rounded-xl"
+                      className="w-full h-32 object-cover rounded-lg"
                     />
                     <button
                       type="button"
                       onClick={() => removePhoto(index)}
                       disabled={submitting}
-                      className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 disabled:opacity-50"
+                      className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 disabled:opacity-50 w-6 h-6 flex items-center justify-center"
+                      aria-label="Supprimer la photo"
                     >
-                      <X size={16} />
+                      <X size={12} />
                     </button>
                   </div>
                 ))}
@@ -360,9 +350,9 @@ const CreatePostModal = ({ onClose, onSuccess }) => {
                   type="button"
                   onClick={() => photoInputRef.current?.click()}
                   disabled={submitting}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-border rounded-xl hover:bg-muted transition-smooth disabled:opacity-50"
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-border rounded-xl hover:bg-muted transition-smooth disabled:opacity-50 text-sm"
                 >
-                  <ImageIcon size={20} />
+                  <ImageIcon size={18} />
                   <span>Ajouter des photos</span>
                 </button>
               </>
@@ -371,7 +361,7 @@ const CreatePostModal = ({ onClose, onSuccess }) => {
           
           {/* Vidéo (Short) */}
           <div>
-            <label className="block text-sm font-medium mb-2">
+            <label className="block text-sm font-medium mb-1">
               Vidéo courte ({MIN_VIDEO_DURATION}-{MAX_VIDEO_DURATION} secondes)
             </label>
             
@@ -380,18 +370,17 @@ const CreatePostModal = ({ onClose, onSuccess }) => {
                 <video
                   src={videoPreview}
                   controls
-                  className="w-full rounded-xl"
-                  style={{ maxHeight: '300px' }}
+                  className="w-full rounded-lg max-h-[200px]"
                 />
                 <div className="flex items-center justify-between mt-2">
-                  <span className="text-sm text-muted-foreground">
+                  <span className="text-xs text-muted-foreground">
                     Durée : {videoDuration}s
                   </span>
                   <button
                     type="button"
                     onClick={removeVideo}
                     disabled={submitting}
-                    className="px-3 py-1 bg-red-500 text-white text-sm rounded-lg hover:bg-red-600 disabled:opacity-50"
+                    className="px-3 py-1 bg-red-500 text-white text-xs rounded-lg hover:bg-red-600 disabled:opacity-50"
                   >
                     Supprimer
                   </button>
@@ -411,9 +400,9 @@ const CreatePostModal = ({ onClose, onSuccess }) => {
                   type="button"
                   onClick={() => videoInputRef.current?.click()}
                   disabled={submitting}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-border rounded-xl hover:bg-muted transition-smooth disabled:opacity-50"
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-border rounded-xl hover:bg-muted transition-smooth disabled:opacity-50 text-sm"
                 >
-                  <Video size={20} />
+                  <Video size={18} />
                   <span>Ajouter une vidéo</span>
                 </button>
               </>
@@ -427,28 +416,28 @@ const CreatePostModal = ({ onClose, onSuccess }) => {
           {/* Barre de progression */}
           {submitting && uploadProgress > 0 && (
             <div className="space-y-2">
-              <div className="w-full bg-gray-200 rounded-full h-2">
+              <div className="w-full bg-gray-200 rounded-full h-1.5">
                 <div
-                  className="bg-primary h-2 rounded-full transition-all duration-300"
+                  className="bg-primary h-1.5 rounded-full transition-all duration-300"
                   style={{ width: `${uploadProgress}%` }}
                 />
               </div>
-              <p className="text-sm text-center text-muted-foreground">
+              <p className="text-xs text-center text-muted-foreground">
                 Publication en cours... {uploadProgress}%
               </p>
             </div>
           )}
           
           {/* Boutons */}
-          <div className="flex gap-3">
+          <div className="flex gap-2 sticky bottom-0 bg-card pt-4">
             <button
               type="submit"
               disabled={submitting || !content.trim()}
-              className="flex-1 bg-primary text-primary-foreground py-3 rounded-xl font-semibold hover:bg-primary/90 transition-smooth disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="flex-1 bg-primary text-primary-foreground py-3 rounded-xl font-semibold hover:bg-primary/90 transition-smooth disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm min-h-[44px]"
             >
               {submitting ? (
                 <>
-                  <Loader className="animate-spin" size={18} />
+                  <Loader className="animate-spin" size={16} />
                   Publication...
                 </>
               ) : (
@@ -459,7 +448,7 @@ const CreatePostModal = ({ onClose, onSuccess }) => {
               type="button"
               onClick={onClose}
               disabled={submitting}
-              className="px-6 py-3 border-2 border-border rounded-xl font-medium hover:bg-muted transition-smooth disabled:opacity-50"
+              className="px-4 py-3 border-2 border-border rounded-xl font-medium hover:bg-muted transition-smooth disabled:opacity-50 text-sm min-h-[44px]"
             >
               Annuler
             </button>
