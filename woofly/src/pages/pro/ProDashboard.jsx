@@ -26,7 +26,7 @@ const ProDashboard = () => {
   const [showModal, setShowModal] = useState(false);
   const [modalTitle, setModalTitle] = useState('');
   const [modalItems, setModalItems] = useState([]);
-  const [modalType, setModalType] = useState('dogs'); // 'dogs' ou 'contacts'
+  const [modalType, setModalType] = useState('dogs');
 
   useEffect(() => {
     if (user) {
@@ -75,7 +75,6 @@ const ProDashboard = () => {
 
       if (error) throw error;
       
-      // Formater pour ajouter le nom de la FA dans le chien
       const formattedDogs = data?.map(dog => ({
         ...dog,
         foster_family_name: dog.foster_family?.full_name
@@ -89,28 +88,53 @@ const ProDashboard = () => {
 
   const fetchApplications = async (proAccountId) => {
     try {
-      const { data, error } = await supabase
+      // ÉTAPE 1 : Récupérer les candidatures avec les chiens
+      const { data: applicationsData, error: appsError } = await supabase
         .from('adoption_applications')
         .select(`
           *,
-          dogs!adoption_applications_dog_id_fkey(id, name, breed, photo_url),
-          user_profiles!adoption_applications_user_id_fkey(id, full_name, email)
+          dogs!adoption_applications_dog_id_fkey(id, name, breed, photo_url)
         `)
         .eq('professional_account_id', proAccountId)
         .eq('status', 'pending')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      
-      const formattedData = data?.map(app => ({
-        ...app,
-        dog: app.dogs,
-        applicant: app.user_profiles
-      })) || [];
-      
-      setApplications(formattedData);
+      if (appsError) throw appsError;
+
+      // ÉTAPE 2 : Récupérer les user_profiles séparément
+      if (applicationsData && applicationsData.length > 0) {
+        const userIds = applicationsData.map(app => app.user_id);
+        
+        const { data: profiles, error: profilesError } = await supabase
+          .from('user_profiles')
+          .select('id, full_name, email')
+          .in('id', userIds);
+
+        if (profilesError) {
+          console.error('Erreur chargement profils:', profilesError);
+        }
+
+        // ÉTAPE 3 : Combiner les données
+        const formattedData = applicationsData.map(app => {
+          const profile = profiles?.find(p => p.id === app.user_id);
+          return {
+            ...app,
+            dog: app.dogs,
+            applicant: profile || { 
+              id: app.user_id, 
+              full_name: 'Utilisateur inconnu', 
+              email: 'N/A' 
+            }
+          };
+        });
+
+        setApplications(formattedData);
+      } else {
+        setApplications([]);
+      }
     } catch (error) {
       console.error('Erreur chargement candidatures:', error);
+      setApplications([]);
     }
   };
 
@@ -163,7 +187,6 @@ const ProDashboard = () => {
   };
 
   const handleApplicationsClick = () => {
-    // Pour les candidatures, navigation directe vers la page dédiée
     navigate('/pro/applications');
   };
 
@@ -277,7 +300,7 @@ const ProDashboard = () => {
             </div>
           </div>
 
-          {/* TOUTES LES CARTES SONT MAINTENANT CLIQUABLES */}
+          {/* TOUTES LES CARTES CLIQUABLES */}
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
             {/* Total chiens - CLIQUABLE */}
             <button
