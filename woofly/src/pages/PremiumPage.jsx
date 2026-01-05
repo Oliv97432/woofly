@@ -129,12 +129,21 @@ const PremiumPage = () => {
               </div>
             </div>
 
-            <button
-              onClick={() => navigate('/register')}
-              className="w-full px-6 py-3 bg-card border-2 border-border text-foreground rounded-xl font-medium hover:bg-muted transition-smooth"
-            >
-              Créer un compte gratuit
-            </button>
+            {user ? (
+              // Si connecté : afficher badge "Plan actuel"
+              <div className="w-full px-6 py-3 bg-primary/10 border-2 border-primary/20 text-primary rounded-xl font-medium flex items-center justify-center gap-2">
+                <Check size={20} />
+                <span>Votre plan actuel</span>
+              </div>
+            ) : (
+              // Si non connecté : afficher bouton inscription
+              <button
+                onClick={() => navigate('/register')}
+                className="w-full px-6 py-3 bg-card border-2 border-border text-foreground rounded-xl font-medium hover:bg-muted transition-smooth"
+              >
+                Créer un compte gratuit
+              </button>
+            )}
           </div>
 
           {/* Premium */}
