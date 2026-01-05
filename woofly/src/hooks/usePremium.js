@@ -22,6 +22,10 @@ export const usePremium = () => {
     premium: {
       dogs: Infinity,
       photos: Infinity
+    },
+    professional: {
+      dogs: Infinity,
+      photos: Infinity
     }
   };
 
@@ -60,6 +64,9 @@ export const usePremium = () => {
         } else {
           setIsPremium(true);
         }
+      } else if (tier === 'professional') {
+        // Les professionnels ont accès illimité gratuit
+        setIsPremium(true);
       } else {
         setIsPremium(false);
       }
@@ -151,7 +158,11 @@ export const usePremium = () => {
    * Obtenir les limites actuelles
    */
   const getLimits = () => {
-    const tier = isPremium ? 'premium' : 'free';
+    let tier = 'free';
+    if (subscriptionTier === 'premium' || subscriptionTier === 'professional') {
+      tier = isPremium ? subscriptionTier : 'free';
+    }
+    
     return {
       dogs: {
         current: dogsCount,
