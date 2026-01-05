@@ -9,6 +9,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import TabNavigation from '../../components/TabNavigation';
 import TabNavigationPro from '../../components/TabNavigationPro';
 import Footer from '../../components/Footer';
+import SubscriptionBadge from '../../components/SubscriptionBadge';
 
 const Settings = () => {
   const { user, signOut } = useAuth();
@@ -16,6 +17,7 @@ const Settings = () => {
   
   const [isProAccount, setIsProAccount] = useState(false);
   const [checkingAccountType, setCheckingAccountType] = useState(true);
+  const [subscriptionTier, setSubscriptionTier] = useState('free');
   
   const [profile, setProfile] = useState({
     full_name: '',
@@ -77,6 +79,9 @@ const Settings = () => {
         phone: data?.phone || user.user_metadata?.phone || '',
         location: data?.location || user.user_metadata?.location || ''
       });
+      
+      // Charger le subscription_tier
+      setSubscriptionTier(data?.subscription_tier || 'free');
     } catch (err) {
       console.error('Erreur chargement profil:', err);
       setProfile({
@@ -85,6 +90,7 @@ const Settings = () => {
         phone: user.user_metadata?.phone || '',
         location: user.user_metadata?.location || ''
       });
+      setSubscriptionTier('free');
     }
   };
 
@@ -209,15 +215,16 @@ const Settings = () => {
 
           {/* Carte utilisateur */}
           <div className="bg-card rounded-xl border border-border p-6 mx-4 shadow-soft">
-            <div className="flex items-center gap-4 mb-6">
-              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-2xl font-bold">
+            <div className="flex items-center gap-4">
+              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-2xl font-bold flex-shrink-0">
                 {profile.full_name?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || 'U'}
               </div>
               <div className="flex-1 min-w-0">
                 <h2 className="text-lg font-heading font-semibold text-foreground truncate">
                   {profile.full_name || 'Utilisateur'}
                 </h2>
-                <p className="text-sm text-muted-foreground truncate">{profile.email}</p>
+                <p className="text-sm text-muted-foreground truncate mb-2">{profile.email}</p>
+                <SubscriptionBadge tier={subscriptionTier} size="sm" />
               </div>
             </div>
           </div>
