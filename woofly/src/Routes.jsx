@@ -15,6 +15,7 @@ import PostDetail from './pages/post-detail';
 import MultiProfileManagement from './pages/multi-profile-management';
 import Register from './pages/register';
 import UserProfile from './pages/profile/UserProfile';
+import MyProfile from './pages/MyProfile';
 import Notifications from './pages/Notifications';
 import Settings from './pages/settings';
 import CGU from './pages/CGU';
@@ -92,6 +93,7 @@ const Routes = () => {
         <Route path="/register" element={<Register />} />
         
         <Route path="/profile/:userId" element={<UserProfile />} />
+        <Route path="/mon-profil" element={<MyProfile />} />
         
         <Route path="/notifications" element={<Notifications />} />
         
