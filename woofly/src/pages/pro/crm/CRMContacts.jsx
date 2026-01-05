@@ -4,6 +4,7 @@ import { supabase } from '../../../lib/supabase';
 import { useAuth } from '../../../contexts/AuthContext';
 import TabNavigationPro from '../../../components/TabNavigationPro';
 import UserMenuPro from '../../../components/UserMenuPro';
+import ContactListModal from '../../../components/ContactListModal';
 import Icon from '../../../components/AppIcon';
 import { 
   Plus, Search, Filter, Users, Home, Heart,
@@ -25,6 +26,12 @@ const CRMContacts = () => {
     dogsInFoster: 0,
     availableCapacity: 0
   });
+
+  // États pour le modal
+  const [showModal, setShowModal] = useState(false);
+  const [modalTitle, setModalTitle] = useState('');
+  const [modalItems, setModalItems] = useState([]);
+  const [modalType, setModalType] = useState('contacts'); // 'contacts' ou 'dogs'
 
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('all');
@@ -115,6 +122,70 @@ const CRMContacts = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Fonctions pour ouvrir le modal avec différents filtres
+  const handleTotalContactsClick = () => {
+    setModalTitle(`Total contacts (${stats.totalContacts})`);
+    setModalItems(contacts);
+    setModalType('contacts');
+    setShowModal(true);
+  };
+
+  const handleActiveFAClick = () => {
+    const activeFAs = contacts.filter(
+      c => (c.type === 'foster_family' || c.type === 'both') && c.status === 'active'
+    );
+    setModalTitle(`FA actives (${activeFAs.length})`);
+    setModalItems(activeFAs);
+    setModalType('contacts');
+    setShowModal(true);
+  };
+
+  const handleAdoptersClick = () => {
+    const adopters = contacts.filter(
+      c => (c.type === 'adopter' || c.type === 'both')
+    );
+    setModalTitle(`Adoptants (${adopters.length})`);
+    setModalItems(adopters);
+    setModalType('contacts');
+    setShowModal(true);
+  };
+
+  const handleDogsInFosterClick = async () => {
+    // Récupérer tous les chiens actuellement en FA
+    try {
+      const { data: dogs, error } = await supabase
+        .from('dogs')
+        .select(`
+          *,
+          contacts!dogs_foster_family_contact_id_fkey(full_name)
+        `)
+        .eq('professional_account_id', proAccount.id)
+        .not('foster_family_contact_id', 'is', null);
+
+      if (error) throw error;
+
+      const formattedDogs = dogs.map(dog => ({
+        ...dog,
+        foster_family_name: dog.contacts?.full_name
+      }));
+
+      setModalTitle(`Chiens en FA (${formattedDogs.length})`);
+      setModalItems(formattedDogs);
+      setModalType('dogs');
+      setShowModal(true);
+    } catch (error) {
+      console.error('Erreur chargement chiens:', error);
+    }
+  };
+
+  const handleAvailablePlacesClick = () => {
+    const availableFAs = contacts.filter(c => c.availability === 'available');
+    setModalTitle(`Places disponibles (${stats.availableCapacity})`);
+    setModalItems(availableFAs);
+    setModalType('contacts');
+    setShowModal(true);
   };
 
   const filteredContacts = contacts.filter(contact => {
@@ -224,8 +295,12 @@ const CRMContacts = () => {
             </div>
           </div>
 
+          {/* Cartes statistiques - MAINTENANT CLIQUABLES */}
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
-            <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-4 border border-blue-200">
+            <button
+              onClick={handleTotalContactsClick}
+              className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-4 border border-blue-200 hover:shadow-lg hover:scale-105 transition-all duration-200 cursor-pointer text-left"
+            >
               <div className="flex items-center justify-between mb-2">
                 <div className="p-2 bg-blue-500 rounded-lg">
                   <Users size={20} className="text-white" />
@@ -233,9 +308,12 @@ const CRMContacts = () => {
               </div>
               <p className="text-2xl sm:text-3xl font-bold text-blue-900">{stats.totalContacts}</p>
               <p className="text-xs sm:text-sm text-blue-700">Total contacts</p>
-            </div>
+            </button>
 
-            <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-4 border border-purple-200">
+            <button
+              onClick={handleActiveFAClick}
+              className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-4 border border-purple-200 hover:shadow-lg hover:scale-105 transition-all duration-200 cursor-pointer text-left"
+            >
               <div className="flex items-center justify-between mb-2">
                 <div className="p-2 bg-purple-500 rounded-lg">
                   <Home size={20} className="text-white" />
@@ -243,9 +321,12 @@ const CRMContacts = () => {
               </div>
               <p className="text-2xl sm:text-3xl font-bold text-purple-900">{stats.activeFosterFamilies}</p>
               <p className="text-xs sm:text-sm text-purple-700">FA actives</p>
-            </div>
+            </button>
 
-            <div className="bg-gradient-to-br from-pink-50 to-pink-100 rounded-xl p-4 border border-pink-200">
+            <button
+              onClick={handleAdoptersClick}
+              className="bg-gradient-to-br from-pink-50 to-pink-100 rounded-xl p-4 border border-pink-200 hover:shadow-lg hover:scale-105 transition-all duration-200 cursor-pointer text-left"
+            >
               <div className="flex items-center justify-between mb-2">
                 <div className="p-2 bg-pink-500 rounded-lg">
                   <Heart size={20} className="text-white" />
@@ -253,9 +334,12 @@ const CRMContacts = () => {
               </div>
               <p className="text-2xl sm:text-3xl font-bold text-pink-900">{stats.totalAdopters}</p>
               <p className="text-xs sm:text-sm text-pink-700">Adoptants</p>
-            </div>
+            </button>
 
-            <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl p-4 border border-orange-200">
+            <button
+              onClick={handleDogsInFosterClick}
+              className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl p-4 border border-orange-200 hover:shadow-lg hover:scale-105 transition-all duration-200 cursor-pointer text-left"
+            >
               <div className="flex items-center justify-between mb-2">
                 <div className="p-2 bg-orange-500 rounded-lg">
                   <TrendingUp size={20} className="text-white" />
@@ -263,9 +347,12 @@ const CRMContacts = () => {
               </div>
               <p className="text-2xl sm:text-3xl font-bold text-orange-900">{stats.dogsInFoster}</p>
               <p className="text-xs sm:text-sm text-orange-700">Chiens en FA</p>
-            </div>
+            </button>
 
-            <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-4 border border-green-200">
+            <button
+              onClick={handleAvailablePlacesClick}
+              className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-4 border border-green-200 hover:shadow-lg hover:scale-105 transition-all duration-200 cursor-pointer text-left"
+            >
               <div className="flex items-center justify-between mb-2">
                 <div className="p-2 bg-green-500 rounded-lg">
                   <CheckCircle size={20} className="text-white" />
@@ -273,7 +360,7 @@ const CRMContacts = () => {
               </div>
               <p className="text-2xl sm:text-3xl font-bold text-green-900">{stats.availableCapacity}</p>
               <p className="text-xs sm:text-sm text-green-700">Places dispo</p>
-            </div>
+            </button>
           </div>
         </div>
       </div>
@@ -485,6 +572,15 @@ const CRMContacts = () => {
           )}
         </div>
       </main>
+
+      {/* Modal de liste */}
+      <ContactListModal
+        isOpen={showModal}
+        onClose={() => setShowModal(false)}
+        title={modalTitle}
+        items={modalItems}
+        type={modalType}
+      />
     </div>
   );
 };
