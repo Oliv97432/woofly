@@ -4,6 +4,7 @@ import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import TabNavigationPro from '../../components/TabNavigationPro';
 import UserMenuPro from '../../components/UserMenuPro';
+import ContactListModal from '../../components/ContactListModal';
 import Icon from '../../components/AppIcon';
 import { 
   Plus, Search, Heart, Users, CheckCircle, Clock, 
@@ -17,8 +18,12 @@ const ProDashboard = () => {
   const [proAccount, setProAccount] = useState(null);
   const [dogs, setDogs] = useState([]);
   const [applications, setApplications] = useState([]);
+  const [fosterFamilies, setFosterFamilies] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
+
+  // États pour le modal FA
+  const [showFAModal, setShowFAModal] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -38,7 +43,8 @@ const ProDashboard = () => {
       setProAccount(account);
       await Promise.all([
         fetchDogs(account.id),
-        fetchApplications(account.id)
+        fetchApplications(account.id),
+        fetchFosterFamilies(account.id)
       ]);
     } catch (error) {
       console.error('Erreur:', error);
@@ -73,7 +79,6 @@ const ProDashboard = () => {
 
   const fetchApplications = async (proAccountId) => {
     try {
-      // CORRECTION : Utiliser les vrais noms de foreign keys
       const { data, error } = await supabase
         .from('adoption_applications')
         .select(`
@@ -87,7 +92,6 @@ const ProDashboard = () => {
 
       if (error) throw error;
       
-      // Reformater pour garder les mêmes noms que l'ancien code
       const formattedData = data?.map(app => ({
         ...app,
         dog: app.dogs,
@@ -100,12 +104,36 @@ const ProDashboard = () => {
     }
   };
 
+  const fetchFosterFamilies = async (proAccountId) => {
+    try {
+      const { data, error } = await supabase
+        .from('contacts')
+        .select('*')
+        .eq('professional_account_id', proAccountId)
+        .or('type.eq.foster_family,type.eq.both')
+        .order('full_name', { ascending: true });
+
+      if (error) throw error;
+      setFosterFamilies(data || []);
+    } catch (error) {
+      console.error('Erreur chargement familles:', error);
+    }
+  };
+
+  const handleFACardClick = () => {
+    setShowFAModal(true);
+  };
+
   const stats = {
     total: dogs.length,
     available: dogs.filter(d => d.adoption_status === 'available' && !d.foster_family_contact_id).length,
     inFoster: dogs.filter(d => d.foster_family_contact_id).length,
     pending: dogs.filter(d => d.adoption_status === 'pending').length,
-    applications: applications.length
+    applications: applications.length,
+    totalFosterFamilies: fosterFamilies.length,
+    availablePlaces: fosterFamilies
+      .filter(fa => fa.availability === 'available')
+      .reduce((sum, fa) => sum + (fa.max_dogs - (fa.current_dogs_count || 0)), 0)
   };
 
   const filteredDogs = dogs.filter(dog => {
@@ -199,7 +227,9 @@ const ProDashboard = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
+          {/* Grille de cartes - MAINTENANT 6 CARTES avec FA */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
+            {/* Total chiens */}
             <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-4 border border-blue-200">
               <div className="flex items-center justify-between mb-2">
                 <div className="p-2 bg-blue-500 rounded-lg">
@@ -211,6 +241,7 @@ const ProDashboard = () => {
               <p className="text-xs sm:text-sm text-blue-700">Total chiens</p>
             </div>
 
+            {/* Disponibles */}
             <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-4 border border-green-200">
               <div className="flex items-center justify-between mb-2">
                 <div className="p-2 bg-green-500 rounded-lg">
@@ -221,6 +252,7 @@ const ProDashboard = () => {
               <p className="text-xs sm:text-sm text-green-700">Disponibles</p>
             </div>
 
+            {/* En FA */}
             <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-4 border border-purple-200">
               <div className="flex items-center justify-between mb-2">
                 <div className="p-2 bg-purple-500 rounded-lg">
@@ -231,6 +263,7 @@ const ProDashboard = () => {
               <p className="text-xs sm:text-sm text-purple-700">En FA</p>
             </div>
 
+            {/* En cours */}
             <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl p-4 border border-orange-200">
               <div className="flex items-center justify-between mb-2">
                 <div className="p-2 bg-orange-500 rounded-lg">
@@ -241,6 +274,7 @@ const ProDashboard = () => {
               <p className="text-xs sm:text-sm text-orange-700">En cours</p>
             </div>
 
+            {/* Candidatures */}
             <div className="bg-gradient-to-br from-pink-50 to-pink-100 rounded-xl p-4 border border-pink-200">
               <div className="flex items-center justify-between mb-2">
                 <div className="p-2 bg-pink-500 rounded-lg">
@@ -250,6 +284,23 @@ const ProDashboard = () => {
               <p className="text-2xl sm:text-3xl font-bold text-pink-900">{stats.applications}</p>
               <p className="text-xs sm:text-sm text-pink-700">Candidatures</p>
             </div>
+
+            {/* NOUVELLE CARTE : Familles d'accueil - CLIQUABLE */}
+            <button
+              onClick={handleFACardClick}
+              className="bg-gradient-to-br from-teal-50 to-teal-100 rounded-xl p-4 border border-teal-200 hover:shadow-lg hover:scale-105 transition-all duration-200 cursor-pointer text-left"
+            >
+              <div className="flex items-center justify-between mb-2">
+                <div className="p-2 bg-teal-500 rounded-lg">
+                  <Home size={20} className="text-white" />
+                </div>
+              </div>
+              <p className="text-2xl sm:text-3xl font-bold text-teal-900">{stats.totalFosterFamilies}</p>
+              <p className="text-xs sm:text-sm text-teal-700 mb-1">Familles FA</p>
+              <p className="text-xs text-teal-600 font-medium">
+                {stats.availablePlaces} places dispo
+              </p>
+            </button>
           </div>
         </div>
       </div>
@@ -482,6 +533,15 @@ const ProDashboard = () => {
           )}
         </div>
       </main>
+
+      {/* Modal Familles d'accueil */}
+      <ContactListModal
+        isOpen={showFAModal}
+        onClose={() => setShowFAModal(false)}
+        title={`Familles d'accueil (${stats.totalFosterFamilies})`}
+        items={fosterFamilies}
+        type="contacts"
+      />
     </div>
   );
 };
