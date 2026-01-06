@@ -174,7 +174,7 @@ const ProRegistration = () => {
         {/* Hero Section */}
         <div className="text-center mb-8 sm:mb-12">
           <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-green-500 to-teal-600 rounded-2xl sm:rounded-3xl flex items-center justify-center mx-auto mb-4 sm:mb-6">
-            <Shield size={28} className="sm:size-10 text-white" />
+            <Shield className="size-7 sm:size-10 text-white" />
           </div>
           <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-heading font-bold text-gray-900 mb-3 sm:mb-4 leading-tight">
             Inscription Professionnelle
@@ -202,7 +202,7 @@ const ProRegistration = () => {
                 Email professionnel *
               </label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} className="sm:size-5" />
+                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 size-4 sm:size-5" />
                 <input
                   type="email"
                   name="email"
@@ -222,7 +222,7 @@ const ProRegistration = () => {
                 Mot de passe *
               </label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} className="sm:size-5" />
+                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 size-4 sm:size-5" />
                 <input
                   type="password"
                   name="password"
@@ -242,7 +242,7 @@ const ProRegistration = () => {
                 Confirmer le mot de passe *
               </label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} className="sm:size-5" />
+                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 size-4 sm:size-5" />
                 <input
                   type="password"
                   name="confirmPassword"
@@ -264,7 +264,7 @@ const ProRegistration = () => {
                 Nom du refuge / association *
               </label>
               <div className="relative">
-                <Building2 className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} className="sm:size-5" />
+                <Building2 className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 size-4 sm:size-5" />
                 <input
                   type="text"
                   name="organizationName"
@@ -302,7 +302,7 @@ const ProRegistration = () => {
                 Téléphone *
               </label>
               <div className="relative">
-                <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} className="sm:size-5" />
+                <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 size-4 sm:size-5" />
                 <input
                   type="tel"
                   name="phone"
@@ -322,7 +322,7 @@ const ProRegistration = () => {
                 Ville *
               </label>
               <div className="relative">
-                <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} className="sm:size-5" />
+                <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 size-4 sm:size-5" />
                 <input
                   type="text"
                   name="city"
@@ -357,9 +357,9 @@ const ProRegistration = () => {
                 </>
               ) : (
                 <>
-                  <Shield size={20} className="sm:size-6" />
+                  <Shield className="size-5 sm:size-6" />
                   <span className="text-sm sm:text-base">Créer mon compte professionnel</span>
-                  <ArrowRight size={18} className="sm:size-5" />
+                  <ArrowRight className="size-4 sm:size-5" />
                 </>
               )}
             </button>
@@ -391,3 +391,4 @@ const ProRegistration = () => {
 };
 
 export default ProRegistration;
+
