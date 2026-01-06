@@ -1,334 +1,330 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { supabase } from '../../lib/supabase';
-import { useAuth } from '../../contexts/AuthContext';
+import { useParams, useNavigate } from 'react-router-dom';
+import { supabase } from '../lib/supabase';
+import { useAuth } from '../contexts/AuthContext';
 import { 
-  Heart, MapPin, Calendar, Share2, ArrowLeft, Check,
-  Info, CheckCircle, Mail, Phone, User
+  ArrowLeft, Heart, Calendar, MapPin, Info, 
+  Shield, Home, Phone, Mail, AlertCircle 
 } from 'lucide-react';
-import TabNavigation from '../../components/TabNavigation';
-import UserMenu from '../../components/UserMenu';
-import Footer from '../../components/Footer';
 
-/**
- * Fiche publique d'un chien
- * Affichée quand un visiteur non-propriétaire consulte /chien/:id
- */
-const PublicDogProfile = ({ dog }) => {
-  const { user } = useAuth() || {};
+const PublicDogDetail = () => {
+  const { dogId } = useParams(); // Changé de 'id' à 'dogId' pour cohérence avec Routes.js
   const navigate = useNavigate();
-  
-  const [currentProfile, setCurrentProfile] = useState(null);
-  const [dogProfiles, setDogProfiles] = useState([]);
-  const [owner, setOwner] = useState(null);
+  const { user } = useAuth();
+  const [dog, setDog] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (user?.id) {
-      fetchDogProfiles();
-    }
-    fetchOwner();
-  }, [user?.id, dog.user_id]);
+    fetchDogDetails();
+  }, [dogId]);
 
-  const fetchDogProfiles = async () => {
-    if (!user?.id) {
-      setDogProfiles([]);
-      setCurrentProfile(null);
-      return;
-    }
-    
+  const fetchDogDetails = async () => {
     try {
       const { data, error } = await supabase
         .from('dogs')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: true });
-      
-      if (error) throw error;
-      
-      if (data && data.length > 0) {
-        setDogProfiles(data);
-        const savedProfile = localStorage.getItem('currentDogProfile');
-        if (savedProfile) {
-          setCurrentProfile(JSON.parse(savedProfile));
-        } else {
-          setCurrentProfile(data[0]);
-        }
-      }
-    } catch (error) {
-      console.error('Erreur chargement profils:', error);
-    }
-  };
-
-  const fetchOwner = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('users')
-        .select('id, name, avatar_url, city')
-        .eq('id', dog.user_id)
+        .select(`
+          *,
+          professional_accounts!dogs_professional_account_id_fkey(
+            id,
+            organization_name,
+            phone,
+            email,
+            address,
+            city,
+            postal_code
+          )
+        `)
+        .eq('id', dogId) // Utilise dogId au lieu de id
+        .eq('adoption_status', 'available')
+        .eq('is_published', true)
         .single();
 
       if (error) throw error;
-      setOwner(data);
-    } catch (error) {
-      console.error('Erreur chargement propriétaire:', error);
-    }
-  };
 
-  const handleProfileChange = (profile) => {
-    setCurrentProfile(profile);
-    localStorage.setItem('currentDogProfile', JSON.stringify(profile));
+      setDog({
+        ...data,
+        organization: data.professional_accounts
+      });
+    } catch (error) {
+      console.error('Erreur chargement chien:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const calculateAge = (birthDate) => {
-    if (!birthDate) return 'Âge inconnu';
-    const age = Math.floor((new Date() - new Date(birthDate)) / (365.25 * 24 * 60 * 60 * 1000));
-    if (age < 1) return 'Moins d\'1 an';
-    return `${age} an${age > 1 ? 's' : ''}`;
+    if (!birthDate) return null;
+    const years = new Date().getFullYear() - new Date(birthDate).getFullYear();
+    const months = new Date().getMonth() - new Date(birthDate).getMonth();
+    if (years === 0) return `${months} mois`;
+    return `${years} an${years > 1 ? 's' : ''}`;
   };
 
-  const handleShare = () => {
-    if (navigator.share) {
-      navigator.share({
-        title: `${dog.name} - Doogybook`,
-        text: `Découvrez ${dog.name}, ${dog.breed} de ${calculateAge(dog.birth_date)}`,
-        url: window.location.href
-      });
+  const handleAdoptClick = () => {
+    if (user) {
+      // Si connecté, aller au formulaire de candidature
+      navigate(`/adoption-application/${dogId}`);
     } else {
-      // Fallback : copier le lien
-      navigator.clipboard.writeText(window.location.href);
-      alert('Lien copié !');
+      // Si pas connecté, aller à l'inscription avec retour
+      navigate('/register', { 
+        state: { 
+          returnTo: `/adoption/${dogId}`,
+          message: `Créez un compte pour adopter ${dog?.name} 🐕`
+        } 
+      });
     }
   };
 
-  return (
-    <div className="min-h-screen bg-background flex flex-col">
-      {/* Header */}
-      <div className="sticky top-0 z-50 bg-card border-b border-border shadow-soft">
-        <div className="max-w-screen-xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <button
-              onClick={() => navigate(-1)}
-              className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
-            >
-              <ArrowLeft size={20} />
-              <span className="font-medium">Retour</span>
-            </button>
-            
-            {/* Afficher UserMenu si connecté, sinon bouton connexion */}
-            {user ? (
-              <UserMenu
-                dogProfiles={dogProfiles}
-                currentDog={currentProfile}
-                onDogChange={handleProfileChange}
-              />
-            ) : (
-              <button
-                onClick={() => navigate('/login')}
-                className="px-4 py-2 bg-blue-500 text-white rounded-xl font-medium hover:bg-blue-600 transition-smooth"
-              >
-                Se connecter
-              </button>
-            )}
-          </div>
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin h-16 w-16 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Chargement...</p>
         </div>
       </div>
+    );
+  }
 
-      <TabNavigation />
+  if (!dog) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <AlertCircle size={64} className="text-muted-foreground mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-foreground mb-2">Chien non trouvé</h2>
+          <p className="text-muted-foreground mb-6">Ce chien n'est plus disponible à l'adoption</p>
+          <button
+            onClick={() => navigate('/adoption')}
+            className="px-6 py-3 bg-primary text-primary-foreground rounded-xl font-medium hover:bg-primary/90 transition-smooth"
+          >
+            Retour aux chiens disponibles
+          </button>
+        </div>
+      </div>
+    );
+  }
 
-      {/* Main content */}
-      <main className="main-content flex-1">
-        <div className="max-w-5xl mx-auto px-4 py-6">
-          
-          {/* Bannière info : Fiche publique */}
-          <div className="bg-blue-50 border border-blue-200 rounded-3xl p-4 mb-6 flex items-center gap-3">
-            <Info size={20} className="text-blue-600 flex-shrink-0" />
-            <p className="text-sm text-blue-900">
-              Vous consultez la fiche publique de <strong>{dog.name}</strong>. 
-              Seul le propriétaire peut voir les informations de santé complètes.
-            </p>
-          </div>
+  return (
+    <div className="min-h-screen bg-background">
+      {/* Header avec retour */}
+      <header className="bg-card border-b border-border shadow-soft sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 py-4">
+          <button
+            onClick={() => navigate('/adoption')}
+            className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <ArrowLeft size={20} />
+            <span>Retour aux chiens</span>
+          </button>
+        </div>
+      </header>
 
-          {/* Image principale */}
-          <div className="relative aspect-[16/9] rounded-3xl overflow-hidden mb-6">
-            {dog.photo_url ? (
-              <img
-                src={dog.photo_url}
-                alt={dog.name}
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <div className="w-full h-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center">
-                <span className="text-9xl text-white font-bold">
-                  {dog.name?.charAt(0).toUpperCase()}
-                </span>
-              </div>
-            )}
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            
-            {/* Colonne principale */}
-            <div className="lg:col-span-2 space-y-6">
-              
-              {/* Infos principales */}
-              <div className="bg-white rounded-3xl shadow-sm border border-gray-200 p-6">
-                <h1 className="text-3xl font-heading font-bold text-gray-900 mb-2">
-                  {dog.name}
-                </h1>
-                <div className="flex flex-wrap gap-3 text-gray-600 mb-6">
-                  <span className="px-3 py-1 bg-gray-100 rounded-full text-sm font-medium">
-                    {dog.breed}
+      <main className="max-w-7xl mx-auto px-4 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Colonne gauche - Photo */}
+          <div>
+            <div className="relative aspect-square rounded-3xl overflow-hidden bg-gradient-to-br from-primary/10 to-primary/5 shadow-lg">
+              {dog.photo_url ? (
+                <img
+                  src={dog.photo_url}
+                  alt={dog.name}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center">
+                  <span className="text-9xl font-bold text-primary/30">
+                    {dog.name?.charAt(0).toUpperCase()}
                   </span>
-                  <span className="px-3 py-1 bg-gray-100 rounded-full text-sm font-medium">
-                    {dog.gender === 'male' ? 'Mâle' : 'Femelle'}
-                  </span>
-                  <span className="px-3 py-1 bg-gray-100 rounded-full text-sm font-medium">
-                    {calculateAge(dog.birth_date)}
-                  </span>
-                  {dog.size && (
-                    <span className="px-3 py-1 bg-gray-100 rounded-full text-sm font-medium">
-                      Taille : {dog.size}
-                    </span>
-                  )}
-                </div>
-
-                {/* Description/Bio du chien */}
-                {dog.bio && (
-                  <div className="mb-6">
-                    <h2 className="text-xl font-heading font-semibold text-gray-900 mb-3">
-                      📖 À propos
-                    </h2>
-                    <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
-                      {dog.bio}
-                    </p>
-                  </div>
-                )}
-
-                {/* Caractère / Personnalité */}
-                {dog.personality && (
-                  <div>
-                    <h2 className="text-xl font-heading font-semibold text-gray-900 mb-3">
-                      ✨ Personnalité
-                    </h2>
-                    <p className="text-gray-700 leading-relaxed">
-                      {dog.personality}
-                    </p>
-                  </div>
-                )}
-              </div>
-
-              {/* Informations complémentaires */}
-              <div className="bg-white rounded-3xl shadow-sm border border-gray-200 p-6">
-                <h2 className="text-xl font-heading font-semibold text-gray-900 mb-4">
-                  ℹ️ Informations
-                </h2>
-                <div className="space-y-3">
-                  {dog.birth_date && (
-                    <div className="flex items-center gap-2">
-                      <Calendar size={20} className="text-blue-600" />
-                      <span className="text-gray-700">
-                        Né(e) le {new Date(dog.birth_date).toLocaleDateString('fr-FR')}
-                      </span>
-                    </div>
-                  )}
-                  {dog.sterilized !== null && (
-                    <div className="flex items-center gap-2">
-                      <CheckCircle size={20} className={dog.sterilized ? 'text-green-600' : 'text-gray-400'} />
-                      <span className="text-gray-700">
-                        {dog.sterilized ? 'Stérilisé(e)' : 'Non stérilisé(e)'}
-                      </span>
-                    </div>
-                  )}
-                  {dog.weight && (
-                    <div className="flex items-center gap-2">
-                      <Info size={20} className="text-blue-600" />
-                      <span className="text-gray-700">
-                        Poids : {dog.weight} kg
-                      </span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Colonne sidebar */}
-            <div className="space-y-6">
-              
-              {/* Informations du propriétaire */}
-              {owner && (
-                <div className="bg-white rounded-3xl shadow-sm border border-gray-200 p-6">
-                  <h3 className="font-heading font-semibold text-gray-900 mb-4">
-                    Propriétaire
-                  </h3>
-                  <div className="flex items-center gap-3 mb-4">
-                    {owner.avatar_url ? (
-                      <img 
-                        src={owner.avatar_url} 
-                        alt={owner.name} 
-                        className="w-16 h-16 rounded-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-16 h-16 rounded-full bg-blue-500 flex items-center justify-center text-white text-2xl font-bold">
-                        {owner.name?.charAt(0).toUpperCase()}
-                      </div>
-                    )}
-                    <div>
-                      <p className="font-semibold text-gray-900">{owner.name}</p>
-                      {owner.city && (
-                        <p className="text-sm text-gray-600 flex items-center gap-1">
-                          <MapPin size={14} />
-                          {owner.city}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-
-                  {user ? (
-                    <button
-                      onClick={() => navigate(`/profile/${owner.id}`)}
-                      className="w-full py-3 bg-blue-500 text-white rounded-xl font-medium hover:bg-blue-600 transition-smooth"
-                    >
-                      Voir le profil
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => navigate('/login')}
-                      className="w-full py-3 bg-blue-500 text-white rounded-xl font-medium hover:bg-blue-600 transition-smooth"
-                    >
-                      Se connecter pour contacter
-                    </button>
-                  )}
                 </div>
               )}
 
-              {/* Partager */}
-              <div className="bg-white rounded-3xl shadow-sm border border-gray-200 p-6">
-                <button 
-                  onClick={handleShare}
-                  className="w-full py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-medium transition-smooth flex items-center justify-center gap-2"
-                >
-                  <Share2 size={18} />
-                  Partager ce profil
-                </button>
-              </div>
+              {/* Badges */}
+              {dog.is_urgent && (
+                <div className="absolute top-4 left-4">
+                  <span className="px-4 py-2 bg-red-500 text-white text-sm font-bold rounded-full shadow-lg animate-pulse">
+                    URGENT - À adopter rapidement
+                  </span>
+                </div>
+              )}
 
-              {/* Badge Doogybook */}
-              <div className="bg-gradient-to-r from-blue-500 to-purple-600 rounded-3xl p-6 text-white">
-                <h3 className="font-bold text-lg mb-2">
-                  🐕 Profil vérifié Doogybook
-                </h3>
-                <p className="text-sm text-white/90">
-                  Ce chien fait partie de la communauté Doogybook
-                </p>
+              <div className="absolute top-4 right-4">
+                <span className="px-4 py-2 bg-green-500 text-white text-sm font-bold rounded-full shadow-lg backdrop-blur-sm">
+                  ✓ Disponible
+                </span>
               </div>
             </div>
           </div>
+
+          {/* Colonne droite - Infos */}
+          <div>
+            {/* Titre */}
+            <div className="mb-6">
+              <h1 className="text-4xl font-heading font-bold text-foreground mb-2">
+                {dog.name}
+              </h1>
+              <p className="text-xl text-muted-foreground">{dog.breed}</p>
+            </div>
+
+            {/* Infos principales */}
+            <div className="grid grid-cols-2 gap-4 mb-6">
+              <div className="bg-card rounded-xl p-4 border border-border">
+                <p className="text-sm text-muted-foreground mb-1">Sexe</p>
+                <p className="text-lg font-semibold text-foreground">
+                  {dog.gender === 'male' ? '♂️ Mâle' : '♀️ Femelle'}
+                </p>
+              </div>
+
+              {dog.birth_date && (
+                <div className="bg-card rounded-xl p-4 border border-border">
+                  <p className="text-sm text-muted-foreground mb-1">Âge</p>
+                  <p className="text-lg font-semibold text-foreground flex items-center gap-2">
+                    <Calendar size={18} />
+                    {calculateAge(dog.birth_date)}
+                  </p>
+                </div>
+              )}
+
+              {dog.size && (
+                <div className="bg-card rounded-xl p-4 border border-border">
+                  <p className="text-sm text-muted-foreground mb-1">Taille</p>
+                  <p className="text-lg font-semibold text-foreground capitalize">
+                    {dog.size}
+                  </p>
+                </div>
+              )}
+
+              {dog.weight && (
+                <div className="bg-card rounded-xl p-4 border border-border">
+                  <p className="text-sm text-muted-foreground mb-1">Poids</p>
+                  <p className="text-lg font-semibold text-foreground">
+                    {dog.weight} kg
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Caractère */}
+            {dog.character && (
+              <div className="bg-card rounded-xl p-4 border border-border mb-6">
+                <h3 className="font-semibold text-foreground mb-2 flex items-center gap-2">
+                  <Heart size={18} />
+                  Caractère
+                </h3>
+                <p className="text-muted-foreground">{dog.character}</p>
+              </div>
+            )}
+
+            {/* Description */}
+            {dog.description && (
+              <div className="bg-card rounded-xl p-4 border border-border mb-6">
+                <h3 className="font-semibold text-foreground mb-2 flex items-center gap-2">
+                  <Info size={18} />
+                  Description
+                </h3>
+                <p className="text-muted-foreground whitespace-pre-line">{dog.description}</p>
+              </div>
+            )}
+
+            {/* Santé */}
+            <div className="bg-card rounded-xl p-4 border border-border mb-6">
+              <h3 className="font-semibold text-foreground mb-3 flex items-center gap-2">
+                <Shield size={18} />
+                Santé
+              </h3>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="flex items-center gap-2">
+                  {dog.is_sterilized ? (
+                    <span className="text-green-500">✓</span>
+                  ) : (
+                    <span className="text-red-500">✗</span>
+                  )}
+                  <span className="text-sm text-muted-foreground">Stérilisé</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  {dog.is_vaccinated ? (
+                    <span className="text-green-500">✓</span>
+                  ) : (
+                    <span className="text-red-500">✗</span>
+                  )}
+                  <span className="text-sm text-muted-foreground">Vacciné</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  {dog.is_microchipped ? (
+                    <span className="text-green-500">✓</span>
+                  ) : (
+                    <span className="text-red-500">✗</span>
+                  )}
+                  <span className="text-sm text-muted-foreground">Pucé</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Frais d'adoption */}
+            {dog.adoption_fee && (
+              <div className="bg-gradient-to-br from-primary/10 to-primary/5 rounded-xl p-6 border border-primary/20 mb-6">
+                <h3 className="font-semibold text-foreground mb-2">
+                  Participation aux frais vétérinaires
+                </h3>
+                <p className="text-3xl font-bold text-primary mb-2">
+                  {dog.adoption_fee}€
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Couvre les frais de stérilisation, vaccination et identification
+                </p>
+              </div>
+            )}
+
+            {/* Informations refuge */}
+            {dog.organization && (
+              <div className="bg-card rounded-xl p-4 border border-border mb-6">
+                <h3 className="font-semibold text-foreground mb-3 flex items-center gap-2">
+                  <Home size={18} />
+                  Refuge
+                </h3>
+                <p className="font-medium text-foreground mb-2">
+                  {dog.organization.organization_name}
+                </p>
+                {dog.organization.city && (
+                  <p className="text-sm text-muted-foreground flex items-center gap-2 mb-2">
+                    <MapPin size={14} />
+                    {dog.organization.city}
+                    {dog.organization.postal_code && ` (${dog.organization.postal_code})`}
+                  </p>
+                )}
+                {dog.organization.phone && (
+                  <p className="text-sm text-muted-foreground flex items-center gap-2 mb-2">
+                    <Phone size={14} />
+                    {dog.organization.phone}
+                  </p>
+                )}
+                {dog.organization.email && (
+                  <p className="text-sm text-muted-foreground flex items-center gap-2">
+                    <Mail size={14} />
+                    {dog.organization.email}
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* Bouton CTA principal */}
+            <button
+              onClick={handleAdoptClick}
+              className="w-full px-8 py-4 bg-primary text-primary-foreground rounded-xl font-bold text-lg hover:bg-primary/90 transition-smooth flex items-center justify-center gap-3 shadow-lg"
+            >
+              <Heart size={24} />
+              <span>Je veux adopter {dog.name}</span>
+            </button>
+
+            {!user && (
+              <p className="text-center text-sm text-muted-foreground mt-3">
+                Vous serez redirigé vers la création de compte
+              </p>
+            )}
+          </div>
         </div>
       </main>
-
-      <Footer />
     </div>
   );
 };
 
-export default PublicDogProfile;
+export default PublicDogDetail;
