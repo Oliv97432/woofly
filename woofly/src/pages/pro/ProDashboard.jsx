@@ -5,7 +5,6 @@ import { useAuth } from '../../contexts/AuthContext';
 import TabNavigationPro from '../../components/TabNavigationPro';
 import UserMenuPro from '../../components/UserMenuPro';
 import ContactListModal from '../../components/ContactListModal';
-import Icon from '../../components/AppIcon';
 import { 
   Plus, Search, Heart, Users, CheckCircle, Clock, 
   TrendingUp, Calendar, Home, AlertCircle
@@ -271,7 +270,7 @@ const ProDashboard = () => {
         </div>
       </div>
     );
-  }
+  };
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -544,7 +543,7 @@ const ProDashboard = () => {
                       <div className="flex items-center gap-3 text-xs text-muted-foreground">
                         {dog.gender && (
                           <div className="flex items-center gap-1">
-                            <Icon name={dog.gender === 'male' ? 'Mars' : 'Venus'} size={14} />
+                            <span>{dog.gender === 'male' ? '♂️' : '♀️'}</span>
                             <span>{dog.gender === 'male' ? 'Mâle' : 'Femelle'}</span>
                           </div>
                         )}
