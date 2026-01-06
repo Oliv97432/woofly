@@ -2,10 +2,9 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tsconfigPaths from "vite-tsconfig-paths";
 import tagger from "@dhiwise/component-tagger";
-import { vitePluginForArctic } from 'vite-plugin-for-arctic';
 import { VitePWA } from 'vite-plugin-pwa';
 
-// ✅ VERSION SIMPLE - Fonctionne immédiatement sans installer de plugin
+// ✅ VERSION OPTIMISÉE et FONCTIONNELLE
 // Gain : +15-20 points PageSpeed
 
 // https://vitejs.dev/config/
@@ -31,18 +30,42 @@ export default defineConfig({
     // ✅ OPTIMISATION 3 : Code splitting intelligent
     rollupOptions: {
       output: {
-        manualChunks: {
-          // Séparer les grosses librairies
-          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
-          'vendor-ui': ['lucide-react', 'framer-motion'],
-          'vendor-charts': ['recharts', 'd3'],
-          'vendor-supabase': ['@supabase/supabase-js'],
-          'vendor-forms': ['react-hook-form'],
+        manualChunks(id) {
+          // Solution plus intelligente pour le chunking
+          if (id.includes('node_modules')) {
+            if (id.includes('react') || id.includes('react-dom')) {
+              return 'vendor-react';
+            }
+            if (id.includes('@supabase')) {
+              return 'vendor-supabase';
+            }
+            if (id.includes('lucide-react')) {
+              return 'vendor-ui';
+            }
+            if (id.includes('framer-motion')) {
+              return 'vendor-animations';
+            }
+            if (id.includes('recharts') || id.includes('d3')) {
+              return 'vendor-charts';
+            }
+            // Regrouper les autres node_modules
+            return 'vendor-other';
+          }
         },
         // Noms de fichiers optimisés
         chunkFileNames: 'assets/js/[name]-[hash].js',
         entryFileNames: 'assets/js/[name]-[hash].js',
-        assetFileNames: 'assets/[ext]/[name]-[hash].[ext]',
+        assetFileNames: (assetInfo) => {
+          const info = assetInfo.name.split('.');
+          const extType = info[info.length - 1];
+          if (/\.(png|jpe?g|gif|svg|webp|avif)$/.test(assetInfo.name)) {
+            return `assets/images/[name]-[hash][extname]`;
+          }
+          if (/\.(woff|woff2|eot|ttf|otf)$/.test(assetInfo.name)) {
+            return `assets/fonts/[name]-[hash][extname]`;
+          }
+          return `assets/[ext]/[name]-[hash].[ext]`;
+        },
       },
     },
     
@@ -55,36 +78,26 @@ export default defineConfig({
     // ✅ OPTIMISATION 6 : CSS code splitting
     cssCodeSplit: true,
     
-    // ✅ NOUVEAU : Optimisation avancée des assets
+    // ✅ OPTIMISATION 7 : Optimisation des assets
     assetsInlineLimit: 4096, // 4KB inline max
-    rollupOptions: {
-      output: {
-        manualChunks: {
-          // Séparer les grosses librairies
-          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
-          'vendor-ui': ['lucide-react', 'framer-motion'],
-          'vendor-charts': ['recharts', 'd3'],
-          'vendor-supabase': ['@supabase/supabase-js'],
-          'vendor-forms': ['react-hook-form'],
-        },
-        // Noms de fichiers optimisés
-        chunkFileNames: 'assets/js/[name]-[hash].js',
-        entryFileNames: 'assets/js/[name]-[hash].js',
-        assetFileNames: 'assets/[ext]/[name]-[hash].[ext]',
-      },
-    },
   },
   
-  // ✅ OPTIMISATION 7 : Plugins performance avancés
+  // ✅ OPTIMISATION 8 : Plugins performance avancés
   plugins: [
     tsconfigPaths(),
-    react(),
+    react({
+      // Optimisation React
+      babel: {
+        plugins: ['babel-plugin-react-compiler'],
+      },
+    }),
     tagger(),
-    // ✅ NOUVEAU : PWA pour performance mobile
+    // ✅ PWA pour performance mobile
     VitePWA({
       registerType: 'autoUpdate',
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5MB max
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
@@ -93,18 +106,29 @@ export default defineConfig({
               cacheName: 'google-fonts-cache',
               expiration: {
                 maxEntries: 10,
-                maxAgeSeconds: 60 * 60 * 24 * 365, // 1 an
+                maxAgeSeconds: 60 * 60 * 24 * 365,
               },
             },
           },
           {
-            urlPattern: /^https:\/\/.*\.(png|jpg|jpeg|svg|webp)$/i,
+            urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'gstatic-fonts-cache',
+              expiration: {
+                maxEntries: 10,
+                maxAgeSeconds: 60 * 60 * 24 * 365,
+              },
+            },
+          },
+          {
+            urlPattern: /^https:\/\/.*\.(png|jpg|jpeg|svg|webp|avif)$/i,
             handler: 'CacheFirst',
             options: {
               cacheName: 'images-cache',
               expiration: {
                 maxEntries: 100,
-                maxAgeSeconds: 60 * 60 * 24 * 30, // 30 jours
+                maxAgeSeconds: 60 * 60 * 24 * 30,
               },
             },
           },
@@ -128,13 +152,19 @@ export default defineConfig({
             src: 'pwa-512x512.png',
             sizes: '512x512',
             type: 'image/png'
+          },
+          {
+            src: 'pwa-512x512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'any maskable'
           }
         ]
       }
     }),
   ],
   
-  // ✅ OPTIMISATION 8 : Optimisation des dépendances
+  // ✅ OPTIMISATION 9 : Optimisation des dépendances
   optimizeDeps: {
     include: [
       'react',
@@ -150,7 +180,7 @@ export default defineConfig({
     ],
   },
   
-  // ✅ OPTIMISATION 9 : Server config (inchangé)
+  // ✅ OPTIMISATION 10 : Server config
   server: {
     port: "4028",
     host: "0.0.0.0",
@@ -158,10 +188,9 @@ export default defineConfig({
     allowedHosts: ['.amazonaws.com', '.builtwithrocket.new'],
   },
   
-  // ✅ OPTIMISATION 10 : Preview config pour production
+  // ✅ OPTIMISATION 11 : Preview config pour production
   preview: {
     port: 4028,
     host: "0.0.0.0",
   },
 });
-
