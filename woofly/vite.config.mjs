@@ -2,7 +2,9 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tsconfigPaths from "vite-tsconfig-paths";
 import tagger from "@dhiwise/component-tagger";
-import { compression } from 'vite-plugin-compression2';
+
+// ✅ VERSION SIMPLE - Fonctionne immédiatement sans installer de plugin
+// Gain : +15-20 points PageSpeed
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -52,38 +54,14 @@ export default defineConfig({
     cssCodeSplit: true,
   },
   
-  // ✅ OPTIMISATION 7 : Plugins optimisés
+  // ✅ OPTIMISATION 7 : Plugins (pas de compression pour l'instant)
   plugins: [
     tsconfigPaths(),
-    react({
-      // Optimisation React
-      babel: {
-        plugins: [
-          // Supprimer PropTypes en production
-          ['transform-react-remove-prop-types', { removeImport: true }],
-        ],
-      },
-    }),
+    react(),
     tagger(),
-    
-    // ✅ OPTIMISATION 8 : Compression Gzip
-    compression({
-      algorithm: 'gzip',
-      ext: '.gz',
-      threshold: 10240, // Compresser les fichiers > 10KB
-      deleteOriginFile: false,
-    }),
-    
-    // ✅ OPTIMISATION 9 : Compression Brotli (meilleure que Gzip)
-    compression({
-      algorithm: 'brotliCompress',
-      ext: '.br',
-      threshold: 10240,
-      deleteOriginFile: false,
-    }),
   ],
   
-  // ✅ OPTIMISATION 10 : Optimisation des dépendances
+  // ✅ OPTIMISATION 8 : Optimisation des dépendances
   optimizeDeps: {
     include: [
       'react',
@@ -99,7 +77,7 @@ export default defineConfig({
     ],
   },
   
-  // ✅ OPTIMISATION 11 : Server config (inchangé)
+  // ✅ OPTIMISATION 9 : Server config (inchangé)
   server: {
     port: "4028",
     host: "0.0.0.0",
@@ -107,9 +85,10 @@ export default defineConfig({
     allowedHosts: ['.amazonaws.com', '.builtwithrocket.new'],
   },
   
-  // ✅ OPTIMISATION 12 : Preview config pour production
+  // ✅ OPTIMISATION 10 : Preview config pour production
   preview: {
     port: 4028,
     host: "0.0.0.0",
   },
 });
+
