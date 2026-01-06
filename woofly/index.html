@@ -4,13 +4,44 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/png" href="/logo.png" />
     
-    <!-- CHANGEMENT IMPORTANT ICI : -->
+    <!-- Viewport optimisé -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     
     <title>Doogybook - Le réseau social des chiens</title>
     <meta name="description" content="Doogybook - Le réseau social qui connecte les propriétaires de chiens. Partagez, échangez et découvrez une communauté passionnée." />
     
-    <!-- Script pour empêcher le zoom sur mobile -->
+    <!-- ✅ OPTIMISATION 1 : DNS Prefetch pour domaines externes -->
+    <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
+    <link rel="dns-prefetch" href="https://fonts.gstatic.com" />
+    <link rel="dns-prefetch" href="https://pagead2.googlesyndication.com" />
+    <link rel="dns-prefetch" href="https://static.rocket.new" />
+    
+    <!-- ✅ OPTIMISATION 2 : Preconnect pour Google Fonts (CRITIQUE) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    
+    <!-- ✅ OPTIMISATION 3 : Charger SEULEMENT Inter (400,500,600,700) -->
+    <link 
+      rel="stylesheet" 
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      media="print" 
+      onload="this.media='all'"
+    />
+    <noscript>
+      <link 
+        rel="stylesheet" 
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      />
+    </noscript>
+    
+    <!-- ✅ OPTIMISATION 4 : Preload de la font critique -->
+    <link 
+      rel="preload" 
+      as="style" 
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+    />
+    
+    <!-- Script pour empêcher le zoom sur mobile (inchangé) -->
     <script>
       (function() {
         // Empêcher le zoom avec plusieurs doigts
@@ -19,7 +50,6 @@
             e.preventDefault();
           }
         }, { passive: false });
-
         // Empêcher le double-tap zoom
         let lastTouchEnd = 0;
         document.addEventListener('touchend', function(e) {
@@ -29,7 +59,6 @@
           }
           lastTouchEnd = now;
         }, { passive: false });
-
         // Empêcher le zoom avec Ctrl+molette
         document.addEventListener('wheel', function(e) {
           if (e.ctrlKey) {
@@ -39,10 +68,11 @@
       })();
     </script>
     
-    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6868379943051269"
-     crossorigin="anonymous"></script>
+    <!-- ✅ OPTIMISATION 5 : AdSense avec defer au lieu de async -->
+    <script defer src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6868379943051269" crossorigin="anonymous"></script>
   
-    <script type="module" async src="https://static.rocket.new/rocket-web.js?_cfg=https%3A%2F%2FDoogybook5761back.builtwithrocket.new&_be=https%3A%2F%2Fapplication.rocket.new&_v=0.1.10"></script>
+    <!-- ✅ OPTIMISATION 6 : Scripts Rocket avec defer -->
+    <script type="module" defer src="https://static.rocket.new/rocket-web.js?_cfg=https%3A%2F%2FDoogybook5761back.builtwithrocket.new&_be=https%3A%2F%2Fapplication.rocket.new&_v=0.1.10"></script>
     <script type="module" defer src="https://static.rocket.new/rocket-shot.js?v=0.0.1"></script>
   </head>
   <body>
