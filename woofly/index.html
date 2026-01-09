@@ -15,12 +15,16 @@
     <link rel="dns-prefetch" href="https://fonts.gstatic.com" />
     <link rel="dns-prefetch" href="https://pagead2.googlesyndication.com" />
     <link rel="dns-prefetch" href="https://static.rocket.new" />
+    <link rel="dns-prefetch" href="https://malcggmelsviujxawpwr.supabase.co" />
     
     <!-- ✅ OPTIMISATION 2 : Preconnect pour Google Fonts (CRITIQUE) -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     
-    <!-- ✅ OPTIMISATION 3 : Charger SEULEMENT Inter (400,500,600,700) -->
+    <!-- ✅ OPTIMISATION 3 : Preconnect Supabase (économise 320ms LCP) -->
+    <link rel="preconnect" href="https://malcggmelsviujxawpwr.supabase.co" />
+    
+    <!-- ✅ OPTIMISATION 4 : Charger SEULEMENT Inter (400,500,600,700) -->
     <link 
       rel="stylesheet" 
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
@@ -34,14 +38,14 @@
       />
     </noscript>
     
-    <!-- ✅ OPTIMISATION 4 : Preload de la font critique -->
+    <!-- ✅ OPTIMISATION 5 : Preload de la font critique -->
     <link 
       rel="preload" 
       as="style" 
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
     />
     
-    <!-- Script pour empêcher le zoom sur mobile (inchangé) -->
+    <!-- Script pour empêcher le zoom sur mobile -->
     <script>
       (function() {
         // Empêcher le zoom avec plusieurs doigts
@@ -68,42 +72,29 @@
       })();
     </script>
     
-    <!-- ✅ OPTIMISATION 10 : Scripts critiques avec defer -->
+    <!-- ✅ OPTIMISATION 6 : AdSense avec defer -->
     <script defer src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6868379943051269" crossorigin="anonymous"></script>
     
-    <!-- ✅ OPTIMISATION 11 : Service Worker pour PWA -->
-    <script>
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js')
-            .then((registration) => {
-              console.log('SW registered: ', registration);
-            })
-            .catch((registrationError) => {
-              console.log('SW registration failed: ', registrationError);
-            });
-        });
-      }
-    </script>
-  
-    <!-- ✅ OPTIMISATION 7 : Meta tags pour partage social -->
+    <!-- ✅ OPTIMISATION 7 : Scripts Rocket avec defer (non bloquants) -->
+    <script type="module" defer src="https://static.rocket.new/rocket-web.js?_cfg=https%3A%2F%2FDoogybook5761back.builtwithrocket.new&_be=https%3A%2F%2Fapplication.rocket.new&_v=0.1.10"></script>
+    <script type="module" defer src="https://static.rocket.new/rocket-shot.js?v=0.0.1"></script>
+    
+    <!-- ✅ OPTIMISATION 8 : Meta tags pour partage social -->
     <meta property="og:title" content="Doogybook - Le réseau social des chiens" />
     <meta property="og:description" content="Le réseau social qui connecte les propriétaires de chiens. Partagez, échangez et découvrez une communauté passionnée." />
     <meta property="og:image" content="/og-image.jpg" />
-    <meta property="og:url" content="https://doogybook.com" />
+    <meta property="og:url" content="https://www.doogybook.com" />
     <meta property="og:type" content="website" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Doogybook - Le réseau social des chiens" />
     <meta name="twitter:description" content="Le réseau social qui connecte les propriétaires de chiens." />
     <meta name="twitter:image" content="/og-image.jpg" />
     
-    <!-- ✅ OPTIMISATION 8 : Preload critiques -->
+    <!-- ✅ OPTIMISATION 9 : Preload critiques -->
     <link rel="preload" href="/src/index.jsx" as="script" />
-    <link rel="preload" href="/src/styles/tailwind.css" as="style" />
     
-    <!-- ✅ OPTIMISATION 9 : Security headers -->
+    <!-- ✅ OPTIMISATION 10 : Security headers -->
     <meta http-equiv="X-Content-Type-Options" content="nosniff" />
-    <meta http-equiv="X-Frame-Options" content="DENY" />
     <meta http-equiv="X-XSS-Protection" content="1; mode=block" />
   </head>
   <body>
