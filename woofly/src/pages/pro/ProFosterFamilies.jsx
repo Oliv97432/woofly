@@ -2,11 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
-import TabNavigationPro from '../../components/TabNavigationPro';
 import UserMenuPro from '../../components/UserMenuPro';
 import { 
-  ArrowLeft, Home, Mail, Phone, Calendar, Dog, 
-  Plus, Search, X, Check, MapPin, User
+  ArrowLeft, Home, Mail, Phone, MapPin, Dog, 
+  Plus, Search, X, Check
 } from 'lucide-react';
 
 const ProFosterFamilies = () => {
@@ -161,7 +160,7 @@ const ProFosterFamilies = () => {
         return;
       }
 
-      alert(`${userProfile.full_name || userProfile.email} a été ajouté(e) comme famille d'accueil sur Doogybook.`);
+      alert(`${userProfile.full_name || userProfile.email} a été ajouté(e) comme famille d'accueil.`);
       
       setShowAddModal(false);
       setNewFamilyEmail('');
@@ -268,123 +267,150 @@ const ProFosterFamilies = () => {
             )}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          <div className="space-y-4">
             {filteredFamilies.map((family) => (
               <div
                 key={family.id}
                 className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow"
               >
-                {/* Card Header */}
-                <div className="p-4 border-b border-gray-100">
-                  <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-green-500 to-blue-500 flex items-center justify-center text-white text-sm font-bold">
-                      {family.full_name?.charAt(0).toUpperCase() || 'F'}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-bold text-gray-900 truncate">
-                        {family.full_name || 'Famille d\'accueil'}
-                      </h3>
-                      <div className="flex items-center gap-2 mt-1">
-                        <div className="flex items-center gap-1 text-xs text-gray-600">
-                          <Dog size={12} />
-                          <span>{family.current_dogs_count}/{family.max_dogs}</span>
+                {/* Card Header with Family Info */}
+                <div className="p-6 border-b border-gray-100">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-start gap-4">
+                      <div className="w-16 h-16 rounded-full bg-gradient-to-br from-green-500 to-blue-500 flex items-center justify-center text-white text-xl font-bold">
+                        {family.full_name?.charAt(0).toUpperCase() || 'F'}
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-2">
+                          <h3 className="text-xl font-bold text-gray-900">
+                            {family.full_name || 'Famille d\'accueil'}
+                          </h3>
+                          {family.status === 'disponible' && (
+                            <span className="px-3 py-1 bg-green-100 text-green-800 text-sm rounded-full font-medium">
+                              Disponible
+                            </span>
+                          )}
+                          {family.status === 'complet' && (
+                            <span className="px-3 py-1 bg-orange-100 text-orange-800 text-sm rounded-full font-medium">
+                              Complet
+                            </span>
+                          )}
                         </div>
-                        {family.status === 'disponible' && (
-                          <span className="px-2 py-0.5 bg-green-100 text-green-800 text-xs rounded-full font-medium">
-                            Disponible
-                          </span>
-                        )}
-                        {family.status === 'complet' && (
-                          <span className="px-2 py-0.5 bg-orange-100 text-orange-800 text-xs rounded-full font-medium">
-                            Complet
-                          </span>
-                        )}
+                        
+                        {/* Contact Info */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                          {family.address && (
+                            <div className="flex items-center gap-3">
+                              <MapPin size={18} className="text-gray-400 flex-shrink-0" />
+                              <div>
+                                <p className="text-sm font-medium text-gray-700">Adresse</p>
+                                <p className="text-gray-900">{family.address}</p>
+                              </div>
+                            </div>
+                          )}
+                          
+                          {family.email && (
+                            <div className="flex items-center gap-3">
+                              <Mail size={18} className="text-gray-400 flex-shrink-0" />
+                              <div>
+                                <p className="text-sm font-medium text-gray-700">Email</p>
+                                <a 
+                                  href={`mailto:${family.email}`}
+                                  className="text-blue-600 hover:underline"
+                                >
+                                  {family.email}
+                                </a>
+                              </div>
+                            </div>
+                          )}
+                          
+                          {family.phone && (
+                            <div className="flex items-center gap-3">
+                              <Phone size={18} className="text-gray-400 flex-shrink-0" />
+                              <div>
+                                <p className="text-sm font-medium text-gray-700">Téléphone</p>
+                                <a 
+                                  href={`tel:${family.phone}`}
+                                  className="text-gray-900 hover:text-blue-600"
+                                >
+                                  {family.phone}
+                                </a>
+                              </div>
+                            </div>
+                          )}
+                          
+                          {/* Dog Count */}
+                          <div className="flex items-center gap-3">
+                            <Dog size={18} className="text-gray-400 flex-shrink-0" />
+                            <div>
+                              <p className="text-sm font-medium text-gray-700">Capacité</p>
+                              <p className="text-gray-900">
+                                {family.current_dogs_count} chien{family.current_dogs_count > 1 ? 's' : ''} sur {family.max_dogs}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
 
-                {/* Card Body */}
-                <div className="p-4 space-y-3">
-                  {/* Contact Info */}
-                  <div className="space-y-2">
-                    {family.email && (
-                      <div className="flex items-center gap-2 text-sm">
-                        <Mail size={14} className="text-gray-400 flex-shrink-0" />
-                        <a 
-                          href={`mailto:${family.email}`}
-                          className="text-blue-600 hover:underline truncate"
-                        >
-                          {family.email}
-                        </a>
-                      </div>
-                    )}
-                    
-                    {family.phone && (
-                      <div className="flex items-center gap-2 text-sm">
-                        <Phone size={14} className="text-gray-400 flex-shrink-0" />
-                        <a 
-                          href={`tel:${family.phone}`}
-                          className="text-gray-700 hover:text-blue-600 truncate"
-                        >
-                          {family.phone}
-                        </a>
-                      </div>
-                    )}
-                    
-                    {family.address && (
-                      <div className="flex items-center gap-2 text-sm">
-                        <MapPin size={14} className="text-gray-400 flex-shrink-0" />
-                        <span className="text-gray-600 truncate">
-                          {family.address}
-                        </span>
-                      </div>
-                    )}
+                {/* Dogs Section with Photos */}
+                <div className="p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h4 className="text-lg font-semibold text-gray-900">
+                      Chiens actuellement accueillis
+                    </h4>
+                    <span className="text-sm text-gray-600">
+                      {family.dogs.length} chien{family.dogs.length > 1 ? 's' : ''}
+                    </span>
                   </div>
 
-                  {/* Dogs Section */}
-                  {family.dogs.length > 0 && (
-                    <div className="pt-2 border-t border-gray-100">
-                      <p className="text-xs font-medium text-gray-500 mb-2">
-                        Chiens accueillis :
-                      </p>
-                      <div className="space-y-1">
-                        {family.dogs.slice(0, 2).map((dog) => (
-                          <div
-                            key={dog.id}
-                            onClick={() => navigate(`/pro/dogs/${dog.id}`)}
-                            className="flex items-center gap-2 p-2 bg-gray-50 rounded hover:bg-gray-100 transition-colors cursor-pointer"
-                          >
-                            <div className="w-8 h-8 rounded bg-gradient-to-br from-green-100 to-blue-100 flex items-center justify-center text-xs font-bold text-green-700">
-                              {dog.name?.charAt(0).toUpperCase() || 'C'}
+                  {family.dogs.length > 0 ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {family.dogs.map((dog) => (
+                        <div
+                          key={dog.id}
+                          onClick={() => navigate(`/pro/dogs/${dog.id}`)}
+                          className="bg-gray-50 rounded-lg p-4 hover:bg-gray-100 transition-colors cursor-pointer"
+                        >
+                          <div className="flex items-center gap-4">
+                            {/* Dog Photo */}
+                            <div className="w-16 h-16 rounded-lg overflow-hidden bg-gradient-to-br from-green-100 to-blue-100 flex-shrink-0">
+                              {dog.photo_url ? (
+                                <img
+                                  src={dog.photo_url}
+                                  alt={dog.name}
+                                  className="w-full h-full object-cover"
+                                  onError={(e) => {
+                                    e.target.onerror = null;
+                                    e.target.parentElement.innerHTML = `
+                                      <div class="w-full h-full flex items-center justify-center text-xl font-bold text-green-700">
+                                        ${dog.name?.charAt(0).toUpperCase() || 'C'}
+                                      </div>
+                                    `;
+                                  }}
+                                />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center text-xl font-bold text-green-700">
+                                  {dog.name?.charAt(0).toUpperCase() || 'C'}
+                                </div>
+                              )}
                             </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="font-medium text-sm text-gray-900 truncate">
-                                {dog.name}
-                              </p>
-                              <p className="text-xs text-gray-500 truncate">
-                                {dog.breed || 'Non spécifié'}
-                              </p>
+                            
+                            {/* Dog Info */}
+                            <div className="flex-1">
+                              <h5 className="font-semibold text-gray-900">{dog.name}</h5>
+                              <p className="text-sm text-gray-600">{dog.breed || 'Non spécifié'}</p>
                             </div>
                           </div>
-                        ))}
-                        
-                        {family.dogs.length > 2 && (
-                          <div className="text-center">
-                            <p className="text-xs text-gray-500">
-                              +{family.dogs.length - 2} autre{family.dogs.length - 2 > 1 ? 's' : ''}
-                            </p>
-                          </div>
-                        )}
-                      </div>
+                        </div>
+                      ))}
                     </div>
-                  )}
-                  
-                  {family.dogs.length === 0 && (
-                    <div className="pt-2 border-t border-gray-100">
-                      <p className="text-sm text-gray-500 text-center italic">
-                        Aucun chien actuellement
-                      </p>
+                  ) : (
+                    <div className="text-center py-8">
+                      <Dog size={48} className="text-gray-300 mx-auto mb-3" />
+                      <p className="text-gray-600">Aucun chien actuellement accueilli</p>
                     </div>
                   )}
                 </div>
@@ -411,7 +437,7 @@ const ProFosterFamilies = () => {
             </div>
 
             <p className="text-sm text-gray-600 mb-4">
-              Entrez l'email d'un utilisateur Doogybook existant pour l'ajouter comme famille d'accueil.
+              Entrez l'email d'un utilisateur existant pour l'ajouter comme famille d'accueil.
             </p>
 
             <div className="space-y-4">
@@ -423,7 +449,7 @@ const ProFosterFamilies = () => {
                   type="email"
                   value={newFamilyEmail}
                   onChange={(e) => setNewFamilyEmail(e.target.value)}
-                  placeholder="famille@doogybook.fr"
+                  placeholder="famille@example.com"
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   onKeyPress={(e) => e.key === 'Enter' && handleAddFamily()}
                 />
