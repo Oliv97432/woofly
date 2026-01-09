@@ -69,6 +69,7 @@ const ProDogDetail = () => {
           .single();
 
         if (error) throw error;
+        console.log('✅ Compte pro chargé:', data.id);
         setProAccount(data);
       } catch (err) {
         console.error('Erreur chargement compte pro:', err);
@@ -101,6 +102,10 @@ const ProDogDetail = () => {
           age--;
         }
 
+        console.log('🐕 Chien chargé:', data.name);
+        console.log('📍 foster_family_contact_id:', data.foster_family_contact_id);
+        console.log('👤 foster_family_user_id:', data.foster_family_user_id);
+
         setDog({
           id: data.id,
           name: data.name,
@@ -120,9 +125,9 @@ const ProDogDetail = () => {
           foster_family_contact_id: data.foster_family_contact_id
         });
 
-        // Charger la FA si le chien est en famille d'accueil
+        // ✅ CORRECTION : Passer proAccount.id en paramètre
         if (data.foster_family_contact_id) {
-          fetchFosterFamily(data.foster_family_contact_id);
+          fetchFosterFamily(data.foster_family_contact_id, proAccount.id);
         } else {
           setFosterFamily(null);
         }
@@ -572,27 +577,37 @@ const ProDogDetail = () => {
     alert(`📄 Export PDF en développement\n\nLe fichier "${dog?.name}_fiche_sante.pdf" sera généré`);
   };
 
-  // Charger les informations de la famille d'accueil
-  const fetchFosterFamily = async (fosterFamilyContactId) => {
-    if (!fosterFamilyContactId || !proAccount?.id) return;
+  // ✅ FONCTION CORRIGÉE : Prend professionalAccountId en paramètre
+  const fetchFosterFamily = async (fosterFamilyContactId, professionalAccountId) => {
+    if (!fosterFamilyContactId || !professionalAccountId) {
+      console.log('❌ Impossible de charger FA - paramètres manquants');
+      console.log('   - fosterFamilyContactId:', fosterFamilyContactId);
+      console.log('   - professionalAccountId:', professionalAccountId);
+      setFosterFamily(null);
+      return;
+    }
+    
+    console.log('🔍 Chargement FA:', fosterFamilyContactId, 'pour pro:', professionalAccountId);
     
     try {
       const { data, error } = await supabase
         .from('contacts')
         .select('*')
         .eq('id', fosterFamilyContactId)
-        .eq('professional_account_id', proAccount.id)
+        .eq('professional_account_id', professionalAccountId)
         .single();
       
       if (error) throw error;
+      
+      console.log('✅ FA chargée:', data.full_name);
       setFosterFamily(data);
     } catch (err) {
-      console.error('Erreur chargement FA:', err);
+      console.error('❌ Erreur chargement FA:', err);
       setFosterFamily(null);
     }
   };
 
-  // Retirer le chien de la famille d'accueil - FONCTION CORRIGÉE
+  // Retirer le chien de la famille d'accueil
   const handleReturnFromFA = async () => {
     if (!confirm(`Retirer ${dog.name} de chez ${fosterFamily?.full_name} ?`)) {
       return;
@@ -603,7 +618,7 @@ const ProDogDetail = () => {
       console.log('📋 FA actuelle (contact):', dog.foster_family_contact_id);
       console.log('📋 FA actuelle (user):', dog.foster_family_user_id);
 
-      // 1. Chercher le placement actif (utiliser maybeSingle au lieu de single)
+      // 1. Chercher le placement actif
       const { data: activePlacement, error: findError } = await supabase
         .from('placement_history')
         .select('*')
@@ -843,7 +858,7 @@ const ProDogDetail = () => {
         </div>
       </div>
 
-      {/* Gestion du placement */}
+      {/* ✅ Gestion du placement - SECTION CORRIGÉE */}
       {dog && dog.adoption_status !== 'adopted' && proAccount?.id && (
         <div className="max-w-7xl mx-auto px-3 sm:px-4 pb-6">
           <div className="bg-card rounded-xl shadow-soft p-6 border border-border">
