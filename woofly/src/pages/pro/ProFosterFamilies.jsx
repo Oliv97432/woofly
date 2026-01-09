@@ -241,8 +241,6 @@ const ProFosterFamilies = () => {
         </div>
       </div>
 
-      <TabNavigationPro />
-
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 py-6">
         {filteredFamilies.length === 0 ? (
