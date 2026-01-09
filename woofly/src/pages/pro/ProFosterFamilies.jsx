@@ -45,56 +45,55 @@ const ProFosterFamilies = () => {
     }
   };
 
-  // ✅ CORRECTION : Utiliser contacts_with_current_dogs
+  // ✅ CORRECTION FINALE : Récupérer depuis contacts_with_current_dogs + user_profiles
   const fetchFosterFamilies = async (proAccountId) => {
     try {
-      // Récupérer les contacts de type "foster_family" ou "both"
+      // 1. Récupérer les contacts de type "foster_family" ou "both"
       const { data: contacts, error: contactsError } = await supabase
         .from('contacts_with_current_dogs')
-        .select('*')
+        .select('user_id, full_name, type')
         .eq('professional_account_id', proAccountId)
         .in('type', ['foster_family', 'both']);
 
-      if (contactsError) throw contactsError;
+      if (contactsError) {
+        console.error('Erreur contacts:', contactsError);
+        throw contactsError;
+      }
 
       if (!contacts || contacts.length === 0) {
         setFosterFamilies([]);
         return;
       }
 
-      // Pour chaque contact, récupérer les chiens en FA
+      // 2. Pour chaque contact, récupérer les infos complètes + chiens
       const familiesWithDogs = await Promise.all(
         contacts.map(async (contact) => {
-          const { data: dogs, error: dogsError } = await supabase
+          // Récupérer les infos complètes depuis user_profiles
+          const { data: userProfile } = await supabase
+            .from('user_profiles')
+            .select('email, phone, created_at')
+            .eq('id', contact.user_id)
+            .single();
+
+          // Récupérer les chiens en FA
+          const { data: dogs } = await supabase
             .from('dogs')
             .select('id, name, breed, photo_url')
             .eq('professional_account_id', proAccountId)
             .eq('foster_family_user_id', contact.user_id);
 
-          if (dogsError) {
-            console.error('Erreur chargement chiens:', dogsError);
-            return {
-              id: contact.user_id,
-              full_name: contact.full_name,
-              email: contact.email || '',
-              phone: contact.phone || '',
-              created_at: contact.created_at,
-              dogs: []
-            };
-          }
-
           return {
             id: contact.user_id,
             full_name: contact.full_name,
-            email: contact.email || '',
-            phone: contact.phone || '',
-            created_at: contact.created_at,
+            email: userProfile?.email || '',
+            phone: userProfile?.phone || '',
+            created_at: userProfile?.created_at || null,
             dogs: dogs || []
           };
         })
       );
 
-      // Filtrer les familles qui ont au moins un chien
+      // 3. Filtrer les familles qui ont au moins un chien
       const activeFamilies = familiesWithDogs.filter(family => family.dogs.length > 0);
       setFosterFamilies(activeFamilies);
 
@@ -143,7 +142,6 @@ const ProFosterFamilies = () => {
           professional_account_id: proAccount.id,
           user_id: userProfile.id,
           full_name: userProfile.full_name,
-          email: userProfile.email,
           type: 'foster_family'
         });
 
