@@ -5,7 +5,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import UserMenuPro from '../../components/UserMenuPro';
 import { 
   ArrowLeft, Home, Mail, Phone, MapPin, Dog, 
-  Plus, Search, X, Check, Circle, Shield
+  Plus, Search, X, Check, Circle, Shield, Calendar
 } from 'lucide-react';
 
 const ProFosterFamilies = () => {
@@ -184,6 +184,7 @@ const ProFosterFamilies = () => {
     }
   };
 
+  // ✅ TRI PAR DISPONIBILITÉ + FILTRES
   const filteredFamilies = fosterFamilies
     .filter(family => {
       const matchesSearch = 
@@ -195,6 +196,11 @@ const ProFosterFamilies = () => {
       const matchesStatus = statusFilter === 'tous' || family.status === statusFilter;
       
       return matchesSearch && matchesStatus;
+    })
+    .sort((a, b) => {
+      // ✅ Tri : Disponible d'abord, puis Vacances, puis Complet
+      const statusOrder = { disponible: 1, vacances: 2, complet: 3 };
+      return statusOrder[a.status] - statusOrder[b.status];
     });
 
   const stats = {
@@ -365,7 +371,6 @@ const ProFosterFamilies = () => {
                             {family.is_verified && (
                               <div className="flex items-center gap-1 text-xs text-blue-600">
                                 <Shield size={12} />
-                                <span>Compte vérifié</span>
                               </div>
                             )}
                           </div>
@@ -389,7 +394,24 @@ const ProFosterFamilies = () => {
                     </div>
 
                     {/* Informations de contact */}
-                    <div className="space-y-4">
+                    <div className="space-y-3">
+                      {/* ✅ Date d'ajout */}
+                      {family.created_at && (
+                        <div className="flex items-start gap-3">
+                          <Calendar size={18} className="text-gray-400 mt-0.5 flex-shrink-0" />
+                          <div>
+                            <p className="text-sm text-gray-500">Membre depuis</p>
+                            <p className="text-gray-900">
+                              {new Date(family.created_at).toLocaleDateString('fr-FR', {
+                                day: 'numeric',
+                                month: 'long',
+                                year: 'numeric'
+                              })}
+                            </p>
+                          </div>
+                        </div>
+                      )}
+
                       {family.address && (
                         <div className="flex items-start gap-3">
                           <MapPin size={18} className="text-gray-400 mt-0.5 flex-shrink-0" />
@@ -433,36 +455,40 @@ const ProFosterFamilies = () => {
                       <div className="flex items-start gap-3">
                         <Dog size={18} className="text-gray-400 mt-0.5 flex-shrink-0" />
                         <div>
-                          <p className="text-sm text-gray-500">Capacité</p>
+                          <p className="text-sm text-gray-500">Capacité d'accueil</p>
                           <p className="text-gray-900 font-medium">
-                            {family.current_dogs_count} chien{family.current_dogs_count !== 1 ? 's' : ''} sur {family.max_dogs}
+                            {family.current_dogs_count} / {family.max_dogs} chien{family.max_dogs !== 1 ? 's' : ''}
                           </p>
                         </div>
                       </div>
                     </div>
                   </div>
 
-                  {/* Colonne droite - Chiens */}
+                  {/* Colonne droite - Chiens en GRID */}
                   <div className="lg:w-1/2 p-6">
                     <div className="mb-4">
                       <h3 className="text-lg font-semibold text-gray-900">
-                        Chiens actuellement accueillis
+                        Chiens accueillis
                         <span className="text-sm text-gray-500 font-normal ml-2">
-                          ({family.dogs.length} chien{family.dogs.length !== 1 ? 's' : ''})
+                          ({family.dogs.length})
                         </span>
                       </h3>
                     </div>
 
                     {family.dogs.length > 0 ? (
-                      <div className="space-y-4">
+                      <div 
+                        className={`grid grid-cols-1 sm:grid-cols-2 gap-3 ${
+                          family.dogs.length > 4 ? 'max-h-[400px] overflow-y-auto pr-2' : ''
+                        }`}
+                      >
                         {family.dogs.map((dog) => (
                           <div
                             key={dog.id}
                             onClick={() => navigate(`/pro/dogs/${dog.id}`)}
-                            className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
+                            className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
                           >
-                            {/* Photo du chien */}
-                            <div className="w-16 h-16 rounded-lg overflow-hidden bg-gradient-to-br from-green-100 to-blue-100 flex-shrink-0">
+                            {/* Photo du chien - plus compacte */}
+                            <div className="w-14 h-14 rounded-lg overflow-hidden bg-gradient-to-br from-green-100 to-blue-100 flex-shrink-0">
                               {dog.photo_url ? (
                                 <img
                                   src={dog.photo_url}
@@ -486,16 +512,17 @@ const ProFosterFamilies = () => {
                             
                             {/* Infos du chien */}
                             <div className="flex-1 min-w-0">
-                              <h4 className="font-bold text-gray-900 text-lg mb-1">{dog.name}</h4>
-                              <p className="text-gray-600 text-sm">{dog.breed || 'Race non spécifiée'}</p>
+                              <h4 className="font-bold text-gray-900 text-sm truncate">{dog.name}</h4>
+                              <p className="text-gray-600 text-xs truncate">{dog.breed || 'Race non spécifiée'}</p>
                             </div>
                           </div>
                         ))}
                       </div>
                     ) : (
-                      <div className="text-center py-8 bg-gray-50 rounded-lg">
+                      <div className="text-center py-12 bg-gray-50 rounded-lg">
                         <Dog size={40} className="text-gray-300 mx-auto mb-3" />
-                        <p className="text-gray-600 font-medium">Aucun chien actuellement accueilli</p>
+                        <p className="text-gray-600 font-medium">Aucun chien actuellement</p>
+                        <p className="text-gray-500 text-sm mt-1">Cette famille est disponible</p>
                       </div>
                     )}
                   </div>
