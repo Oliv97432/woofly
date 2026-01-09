@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
-import ProSidebar from '../../components/pro/ProSidebar';
+import TabNavigationPro from '../../components/TabNavigationPro';
 import UserMenuPro from '../../components/UserMenuPro';
 import ContactListModal from '../../components/ContactListModal';
 import VerifiedBadge from '../../components/VerifiedBadge';
@@ -393,7 +393,7 @@ const ProDashboard = () => {
         </div>
       </div>
 
-      <ProSidebar />
+      <TabNavigationPro />
 
       <main className="main-content flex-1">
         <div className="max-w-7xl mx-auto px-3 sm:px-4 py-6">
