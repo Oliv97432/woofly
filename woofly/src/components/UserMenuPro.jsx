@@ -7,6 +7,7 @@ import {
   Dog, 
   Users, 
   Home,
+  List,  // ✅ AJOUTÉ
   Settings, 
   LogOut, 
   ChevronDown,
@@ -83,6 +84,15 @@ const UserMenuPro = () => {
       label: 'Mes chiens',
       onClick: () => {
         navigate('/pro/dogs');
+        setIsOpen(false);
+      }
+    },
+    // ✅ NOUVEAU : LISTE
+    {
+      icon: List,
+      label: 'Liste',
+      onClick: () => {
+        navigate('/pro/adoption-list');
         setIsOpen(false);
       }
     },
