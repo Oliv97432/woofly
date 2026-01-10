@@ -43,6 +43,21 @@ const UserMenu = ({ dogProfiles = [], currentDog, onDogChange }) => {
     setIsOpen(false);
   };
 
+  const handleAdoption = () => {
+    navigate('/adoption');
+    setIsOpen(false);
+  };
+
+  const handleTips = () => {
+    navigate('/daily-tip');
+    setIsOpen(false);
+  };
+
+  const handleRecipes = () => {
+    navigate('/recipes');
+    setIsOpen(false);
+  };
+
   const handleShare = () => {
     setIsOpen(false);
     
@@ -247,6 +262,44 @@ const UserMenu = ({ dogProfiles = [], currentDog, onDogChange }) => {
 
             <div className="border-t border-border"></div>
 
+            {/* NOUVELLES OPTIONS */}
+            <div className="p-1 sm:p-2">
+              {/* Adoption */}
+              <button
+                onClick={handleAdoption}
+                className="w-full flex items-center gap-2 sm:gap-3 px-2 sm:px-3 py-2 sm:py-2.5 rounded-lg hover:bg-muted transition-smooth text-foreground"
+              >
+                <div className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center bg-pink-100 rounded-full flex-shrink-0">
+                  <Icon name="Heart" size={16} className="sm:w-4 sm:h-4 text-pink-600" />
+                </div>
+                <span className="text-sm font-medium">Adoption</span>
+              </button>
+
+              {/* Conseils quotidiens */}
+              <button
+                onClick={handleTips}
+                className="w-full flex items-center gap-2 sm:gap-3 px-2 sm:px-3 py-2 sm:py-2.5 rounded-lg hover:bg-muted transition-smooth text-foreground"
+              >
+                <div className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center bg-blue-100 rounded-full flex-shrink-0">
+                  <Icon name="BookOpen" size={16} className="sm:w-4 sm:h-4 text-blue-600" />
+                </div>
+                <span className="text-sm font-medium">Conseils quotidiens</span>
+              </button>
+
+              {/* Recettes */}
+              <button
+                onClick={handleRecipes}
+                className="w-full flex items-center gap-2 sm:gap-3 px-2 sm:px-3 py-2 sm:py-2.5 rounded-lg hover:bg-muted transition-smooth text-foreground"
+              >
+                <div className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center bg-orange-100 rounded-full flex-shrink-0">
+                  <Icon name="ChefHat" size={16} className="sm:w-4 sm:h-4 text-orange-600" />
+                </div>
+                <span className="text-sm font-medium">Recettes</span>
+              </button>
+            </div>
+
+            <div className="border-t border-border"></div>
+
             {/* Partager l'app */}
             <div className="p-1 sm:p-2">
               <button
@@ -329,7 +382,7 @@ const UserMenu = ({ dogProfiles = [], currentDog, onDogChange }) => {
             </div>
 
             <div className="flex gap-2">
-              <a
+              
                 href={`https://www.facebook.com/sharer/sharer.php?u=https://www.doogybook.com`}
                 target="_blank"
                 rel="noopener noreferrer"
@@ -337,7 +390,7 @@ const UserMenu = ({ dogProfiles = [], currentDog, onDogChange }) => {
               >
                 <span className="text-xs sm:text-sm font-medium">Facebook</span>
               </a>
-              <a
+              
                 href={`https://twitter.com/intent/tweet?text=Découvrez Doogybook, l'application pour gérer votre chien !&url=https://www.doogybook.com`}
                 target="_blank"
                 rel="noopener noreferrer"
@@ -360,3 +413,42 @@ const UserMenu = ({ dogProfiles = [], currentDog, onDogChange }) => {
 };
 
 export default UserMenu;
+```
+
+---
+
+## ✅ CHANGEMENTS EFFECTUÉS
+
+**3 nouvelles options ajoutées entre "Paramètres" et "Partager l'app" :**
+
+1. **💗 Adoption** (rose)
+   - Icône : Heart
+   - Navigation : `/adoption`
+
+2. **📖 Conseils quotidiens** (bleu)
+   - Icône : BookOpen
+   - Navigation : `/daily-tip`
+
+3. **🍽️ Recettes** (orange)
+   - Icône : ChefHat
+   - Navigation : `/recipes`
+
+---
+
+## 📋 ORDRE FINAL DU MENU
+```
+👤 olivier avril
+   inbyoliver@gmail.com
+─────────────────────
+🐕 Mes chiens ▼
+⚙️ Paramètres
+─────────────────────
+💗 Adoption
+📖 Conseils quotidiens
+🍽️ Recettes
+─────────────────────
+🔗 Partager l'app
+─────────────────────
+☕ Offrir un café
+─────────────────────
+🚪 Déconnexion
