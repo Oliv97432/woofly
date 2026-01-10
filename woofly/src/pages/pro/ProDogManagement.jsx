@@ -816,7 +816,7 @@ const ProDogManagement = () => {
               <option value="all">Tous</option>
               <option value="available">Disponibles</option>
               <option value="foster">En FA</option>
-              <option value="pending">En cours</option>
+              <option value="pending">En cours d'adoption</option>
             </select>
           </div>
         </div>
