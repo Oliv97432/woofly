@@ -36,17 +36,17 @@ const PublicAdoptionPage = () => {
 
   const fetchPublicDogs = async () => {
     try {
-      // Compter UNIQUEMENT les chiens des refuges
+      // Compter les chiens disponibles avec un refuge associé
       const { count } = await supabase
         .from('dogs')
-        .select('*, user_profiles!inner(subscription_tier)', { count: 'exact', head: true })
+        .select('*', { count: 'exact', head: true })
         .eq('adoption_status', 'available')
         .eq('is_published', true)
-        .eq('user_profiles.subscription_tier', 'professional');
+        .not('professional_account_id', 'is', null);
 
       setTotalDogs(count || 0);
 
-      // Charger UNIQUEMENT les chiens des refuges
+      // Charger les chiens avec leur refuge
       const query = supabase
         .from('dogs')
         .select(`
@@ -58,15 +58,14 @@ const PublicAdoptionPage = () => {
           photo_url,
           is_urgent,
           adoption_fee,
-          user_profiles!inner(
-            subscription_tier,
-            organization_name,
-            full_name
+          professional_account_id,
+          professional_accounts!dogs_professional_account_id_fkey(
+            organization_name
           )
         `)
         .eq('adoption_status', 'available')
         .eq('is_published', true)
-        .eq('user_profiles.subscription_tier', 'professional')
+        .not('professional_account_id', 'is', null)
         .order('created_at', { ascending: false });
 
       // Limiter à 6 seulement si NON connecté
@@ -81,7 +80,7 @@ const PublicAdoptionPage = () => {
       // Formater les données
       const formattedDogs = data?.map(dog => ({
         ...dog,
-        organization_name: dog.user_profiles?.organization_name || dog.user_profiles?.full_name
+        organization_name: dog.professional_accounts?.organization_name
       })) || [];
 
       setDogs(formattedDogs);
@@ -137,136 +136,156 @@ const PublicAdoptionPage = () => {
           </p>
         </div>
 
-        {/* Grille de chiens */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {/* Tous les chiens */}
-          {dogs.map((dog) => (
-            <div
-              key={dog.id}
-              onClick={() => navigate(`/adoption/${dog.id}`)}
-              className="group bg-card rounded-2xl overflow-hidden shadow-soft border border-border hover:shadow-lg transition-all duration-300 cursor-pointer hover:-translate-y-1"
+        {/* Message si aucun chien */}
+        {dogs.length === 0 ? (
+          <div className="text-center py-20">
+            <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
+              <Heart size={48} className="text-gray-400" />
+            </div>
+            <h3 className="text-2xl font-bold text-foreground mb-2">
+              Aucun chien disponible pour le moment
+            </h3>
+            <p className="text-muted-foreground mb-8">
+              Revenez bientôt pour découvrir de nouveaux compagnons à adopter
+            </p>
+            <button
+              onClick={() => navigate('/')}
+              className="px-6 py-3 bg-primary text-primary-foreground rounded-xl font-medium hover:bg-primary/90 transition-smooth"
             >
-              {/* Photo */}
-              <div className="aspect-square relative overflow-hidden bg-gradient-to-br from-primary/10 to-primary/5">
-                {dog.photo_url ? (
-                  <img
-                    src={dog.photo_url}
-                    alt={dog.name}
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <span className="text-6xl font-bold text-primary/30">
-                      {dog.name?.charAt(0).toUpperCase()}
+              Retour à l'accueil
+            </button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {/* Tous les chiens */}
+            {dogs.map((dog) => (
+              <div
+                key={dog.id}
+                onClick={() => navigate(`/adoption/${dog.id}`)}
+                className="group bg-card rounded-2xl overflow-hidden shadow-soft border border-border hover:shadow-lg transition-all duration-300 cursor-pointer hover:-translate-y-1"
+              >
+                {/* Photo */}
+                <div className="aspect-square relative overflow-hidden bg-gradient-to-br from-primary/10 to-primary/5">
+                  {dog.photo_url ? (
+                    <img
+                      src={dog.photo_url}
+                      alt={dog.name}
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <span className="text-6xl font-bold text-primary/30">
+                        {dog.name?.charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Badge Urgent */}
+                  {dog.is_urgent && (
+                    <div className="absolute top-3 left-3">
+                      <span className="px-3 py-1 bg-red-500 text-white text-xs font-bold rounded-full shadow-lg animate-pulse">
+                        URGENT
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Badge Disponible */}
+                  <div className="absolute top-3 right-3">
+                    <span className="px-3 py-1 bg-green-500 text-white text-xs font-bold rounded-full shadow-lg backdrop-blur-sm">
+                      Disponible
                     </span>
                   </div>
-                )}
 
-                {/* Badge Urgent */}
-                {dog.is_urgent && (
-                  <div className="absolute top-3 left-3">
-                    <span className="px-3 py-1 bg-red-500 text-white text-xs font-bold rounded-full shadow-lg animate-pulse">
-                      URGENT
-                    </span>
-                  </div>
-                )}
-
-                {/* Badge Disponible */}
-                <div className="absolute top-3 right-3">
-                  <span className="px-3 py-1 bg-green-500 text-white text-xs font-bold rounded-full shadow-lg backdrop-blur-sm">
-                    Disponible
-                  </span>
+                  {/* Overlay hover */}
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300" />
                 </div>
 
-                {/* Overlay hover */}
-                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300" />
-              </div>
+                {/* Infos */}
+                <div className="p-4">
+                  <h3 className="font-heading font-bold text-xl text-foreground mb-1 group-hover:text-primary transition-colors">
+                    {dog.name}
+                  </h3>
+                  <p className="text-sm text-muted-foreground mb-3">
+                    {dog.breed}
+                  </p>
 
-              {/* Infos */}
-              <div className="p-4">
-                <h3 className="font-heading font-bold text-xl text-foreground mb-1 group-hover:text-primary transition-colors">
-                  {dog.name}
+                  {/* Détails */}
+                  <div className="flex items-center gap-3 text-xs text-muted-foreground mb-3">
+                    {dog.gender && (
+                      <span>{dog.gender === 'male' ? '♂️ Mâle' : '♀️ Femelle'}</span>
+                    )}
+                    {dog.birth_date && (
+                      <span className="flex items-center gap-1">
+                        <Calendar size={12} />
+                        {calculateAge(dog.birth_date)} an(s)
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Organisation */}
+                  {dog.organization_name && (
+                    <p className="text-xs text-muted-foreground mb-3">
+                      📍 {dog.organization_name}
+                    </p>
+                  )}
+
+                  {/* Frais d'adoption */}
+                  {dog.adoption_fee && (
+                    <div className="bg-primary/10 rounded-lg p-2 mb-3">
+                      <p className="text-sm font-medium text-primary">
+                        Participation aux frais : {dog.adoption_fee}€
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Bouton CTA */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigate(`/adoption/${dog.id}`);
+                    }}
+                    className="w-full px-4 py-2 bg-primary text-primary-foreground rounded-xl font-medium hover:bg-primary/90 transition-smooth flex items-center justify-center gap-2"
+                  >
+                    <Heart size={16} />
+                    <span>Voir le profil</span>
+                  </button>
+                </div>
+              </div>
+            ))}
+
+            {/* Carte Teaser visible UNIQUEMENT si NON connecté */}
+            {!user && totalDogs > 6 && (
+              <div className="bg-gradient-to-br from-primary/5 to-primary/10 rounded-2xl border-2 border-dashed border-primary/30 p-8 flex flex-col items-center justify-center text-center hover:border-primary/50 transition-all duration-300">
+                <div className="w-20 h-20 bg-primary/20 rounded-full flex items-center justify-center mb-4">
+                  <Lock size={40} className="text-primary" />
+                </div>
+                
+                <h3 className="text-2xl font-bold text-foreground mb-2">
+                  +{totalDogs - 6} autres chiens
                 </h3>
-                <p className="text-sm text-muted-foreground mb-3">
-                  {dog.breed}
+                
+                <p className="text-muted-foreground mb-6">
+                  Découvrez les autres chiens à l'adoption
                 </p>
 
-                {/* Détails */}
-                <div className="flex items-center gap-3 text-xs text-muted-foreground mb-3">
-                  {dog.gender && (
-                    <span>{dog.gender === 'male' ? '♂️ Mâle' : '♀️ Femelle'}</span>
-                  )}
-                  {dog.birth_date && (
-                    <span className="flex items-center gap-1">
-                      <Calendar size={12} />
-                      {calculateAge(dog.birth_date)} an(s)
-                    </span>
-                  )}
-                </div>
-
-                {/* Organisation */}
-                {dog.organization_name && (
-                  <p className="text-xs text-muted-foreground mb-3">
-                    📍 {dog.organization_name}
-                  </p>
-                )}
-
-                {/* Frais d'adoption */}
-                {dog.adoption_fee && (
-                  <div className="bg-primary/10 rounded-lg p-2 mb-3">
-                    <p className="text-sm font-medium text-primary">
-                      Participation aux frais : {dog.adoption_fee}€
-                    </p>
-                  </div>
-                )}
-
-                {/* Bouton CTA */}
                 <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    navigate(`/adoption/${dog.id}`);
-                  }}
-                  className="w-full px-4 py-2 bg-primary text-primary-foreground rounded-xl font-medium hover:bg-primary/90 transition-smooth flex items-center justify-center gap-2"
+                  onClick={() => navigate('/register')}
+                  className="px-6 py-3 bg-primary text-primary-foreground rounded-xl font-medium hover:bg-primary/90 transition-smooth flex items-center gap-2 shadow-lg"
                 >
-                  <Heart size={16} />
-                  <span>Voir le profil</span>
+                  <span>Créer un compte gratuit</span>
+                  <ArrowRight size={20} />
                 </button>
+
+                <p className="text-xs text-muted-foreground mt-4">
+                  Inscription en 30 secondes • Gratuit
+                </p>
               </div>
-            </div>
-          ))}
-
-          {/* Carte Teaser visible UNIQUEMENT si NON connecté */}
-          {!user && totalDogs > 6 && (
-            <div className="bg-gradient-to-br from-primary/5 to-primary/10 rounded-2xl border-2 border-dashed border-primary/30 p-8 flex flex-col items-center justify-center text-center hover:border-primary/50 transition-all duration-300">
-              <div className="w-20 h-20 bg-primary/20 rounded-full flex items-center justify-center mb-4">
-                <Lock size={40} className="text-primary" />
-              </div>
-              
-              <h3 className="text-2xl font-bold text-foreground mb-2">
-                +{totalDogs - 6} autres chiens
-              </h3>
-              
-              <p className="text-muted-foreground mb-6">
-                Découvrez les autres chiens à l'adoption
-              </p>
-
-              <button
-                onClick={() => navigate('/register')}
-                className="px-6 py-3 bg-primary text-primary-foreground rounded-xl font-medium hover:bg-primary/90 transition-smooth flex items-center gap-2 shadow-lg"
-              >
-                <span>Créer un compte gratuit</span>
-                <ArrowRight size={20} />
-              </button>
-
-              <p className="text-xs text-muted-foreground mt-4">
-                Inscription en 30 secondes • Gratuit
-              </p>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+        )}
 
         {/* Section CTA visible UNIQUEMENT si NON connecté */}
-        {!user && (
+        {!user && dogs.length > 0 && (
           <div className="mt-16 bg-gradient-to-br from-primary/10 to-purple-100 rounded-3xl p-8 sm:p-12 text-center">
             <h2 className="text-3xl font-bold text-foreground mb-4">
               Prêt à adopter ?
