@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Crown, X, Sparkles, Dog, Camera } from 'lucide-react';
+import { Crown, X, Sparkles, Dog, Camera, ChefHat } from 'lucide-react';
 
 const PremiumModal = ({ isOpen, onClose, reason = 'dogs' }) => {
   const navigate = useNavigate();
@@ -26,6 +26,18 @@ const PremiumModal = ({ isOpen, onClose, reason = 'dogs' }) => {
         'Photos illimitées 📸',
         'Chiens illimités ♾️',
         'Badge Premium 👑'
+      ]
+    },
+    recipes: {
+      icon: <ChefHat size={48} className="text-primary" />,
+      title: 'Recettes Premium',
+      description: 'Créez des recettes personnalisées et équilibrées pour votre chien avec notre générateur intelligent.',
+      features: [
+        'Recettes sur mesure 🍽️',
+        'Calcul nutritionnel automatique 📊',
+        'Ingrédients 100% sécurisés ✅',
+        'Historique illimité 📚',
+        'Export PDF 📄'
       ]
     }
   };
