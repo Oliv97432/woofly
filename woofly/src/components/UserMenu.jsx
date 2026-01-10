@@ -27,12 +27,10 @@ const UserMenu = ({ dogProfiles = [], currentDog, onDogChange }) => {
   }, []);
 
   const handleDogSelect = (dog) => {
-    // Naviguer vers la page du profil du chien
     navigate(`/dog-profile/${dog.id}`);
     setIsOpen(false);
     setShowDogsSubmenu(false);
     
-    // Mettre à jour le chien actuel si onDogChange est fourni
     if (onDogChange) {
       onDogChange(dog);
     }
@@ -61,7 +59,6 @@ const UserMenu = ({ dogProfiles = [], currentDog, onDogChange }) => {
   const handleShare = () => {
     setIsOpen(false);
     
-    // Utiliser l'API Web Share si disponible (mobile)
     if (navigator.share) {
       navigator.share({
         title: 'Doogybook - Gestion de votre chien',
@@ -71,7 +68,6 @@ const UserMenu = ({ dogProfiles = [], currentDog, onDogChange }) => {
         console.log('Erreur partage:', error);
       });
     } else {
-      // Sinon, afficher le modal avec lien à copier
       setShowShareModal(true);
     }
   };
@@ -102,12 +98,10 @@ const UserMenu = ({ dogProfiles = [], currentDog, onDogChange }) => {
     setShowShareModal(false);
   };
 
-  // Récupérer les infos utilisateur
   const userName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Utilisateur';
   const userEmail = user?.email || '';
   const userAvatar = user?.user_metadata?.avatar_url || null;
 
-  // Initiales pour l'avatar par défaut
   const initials = userName
     .split(' ')
     .map(n => n[0])
@@ -118,12 +112,10 @@ const UserMenu = ({ dogProfiles = [], currentDog, onDogChange }) => {
   return (
     <>
       <div className="relative" ref={dropdownRef}>
-        {/* Bouton principal - ajusté pour mobile */}
         <button
           onClick={() => setIsOpen(!isOpen)}
           className="flex items-center gap-2 sm:gap-3 px-2 sm:px-3 py-1.5 sm:py-2 bg-card border border-border rounded-full hover:bg-muted transition-smooth"
         >
-          {/* Avatar utilisateur - taille réduite sur mobile */}
           {userAvatar ? (
             <img
               src={userAvatar}
@@ -136,7 +128,6 @@ const UserMenu = ({ dogProfiles = [], currentDog, onDogChange }) => {
             </div>
           )}
           
-          {/* Nom caché sur très petit mobile, visible sur tablette+ */}
           <span className="font-medium text-foreground hidden xs:inline text-xs sm:text-sm">
             {userName}
           </span>
@@ -148,10 +139,8 @@ const UserMenu = ({ dogProfiles = [], currentDog, onDogChange }) => {
           />
         </button>
 
-        {/* Dropdown - ajusté pour mobile */}
         {isOpen && (
           <div className="absolute right-0 mt-2 w-64 sm:w-72 bg-card border border-border rounded-xl sm:rounded-2xl shadow-elevated z-[100] max-h-[80vh] overflow-y-auto">
-            {/* En-tête utilisateur */}
             <div className="p-3 sm:p-4 border-b border-border">
               <div className="flex items-center gap-2 sm:gap-3">
                 {userAvatar ? (
@@ -176,9 +165,7 @@ const UserMenu = ({ dogProfiles = [], currentDog, onDogChange }) => {
               </div>
             </div>
 
-            {/* Menu items */}
             <div className="p-1 sm:p-2">
-              {/* Mes chiens (avec sous-menu) */}
               <div className="relative">
                 <button
                   onClick={() => setShowDogsSubmenu(!showDogsSubmenu)}
@@ -195,7 +182,6 @@ const UserMenu = ({ dogProfiles = [], currentDog, onDogChange }) => {
                   />
                 </button>
 
-                {/* Sous-menu chiens */}
                 {showDogsSubmenu && (
                   <div className="ml-10 sm:ml-12 mt-1 space-y-1">
                     {dogProfiles.length > 0 ? (
@@ -248,7 +234,6 @@ const UserMenu = ({ dogProfiles = [], currentDog, onDogChange }) => {
                 )}
               </div>
 
-              {/* Paramètres */}
               <button
                 onClick={handleSettings}
                 className="w-full flex items-center gap-2 sm:gap-3 px-2 sm:px-3 py-2 sm:py-2.5 rounded-lg hover:bg-muted transition-smooth text-foreground"
@@ -262,9 +247,7 @@ const UserMenu = ({ dogProfiles = [], currentDog, onDogChange }) => {
 
             <div className="border-t border-border"></div>
 
-            {/* NOUVELLES OPTIONS */}
             <div className="p-1 sm:p-2">
-              {/* Adoption */}
               <button
                 onClick={handleAdoption}
                 className="w-full flex items-center gap-2 sm:gap-3 px-2 sm:px-3 py-2 sm:py-2.5 rounded-lg hover:bg-muted transition-smooth text-foreground"
@@ -275,7 +258,6 @@ const UserMenu = ({ dogProfiles = [], currentDog, onDogChange }) => {
                 <span className="text-sm font-medium">Adoption</span>
               </button>
 
-              {/* Conseils quotidiens */}
               <button
                 onClick={handleTips}
                 className="w-full flex items-center gap-2 sm:gap-3 px-2 sm:px-3 py-2 sm:py-2.5 rounded-lg hover:bg-muted transition-smooth text-foreground"
@@ -286,7 +268,6 @@ const UserMenu = ({ dogProfiles = [], currentDog, onDogChange }) => {
                 <span className="text-sm font-medium">Conseils quotidiens</span>
               </button>
 
-              {/* Recettes */}
               <button
                 onClick={handleRecipes}
                 className="w-full flex items-center gap-2 sm:gap-3 px-2 sm:px-3 py-2 sm:py-2.5 rounded-lg hover:bg-muted transition-smooth text-foreground"
@@ -300,7 +281,6 @@ const UserMenu = ({ dogProfiles = [], currentDog, onDogChange }) => {
 
             <div className="border-t border-border"></div>
 
-            {/* Partager l'app */}
             <div className="p-1 sm:p-2">
               <button
                 onClick={handleShare}
@@ -315,7 +295,6 @@ const UserMenu = ({ dogProfiles = [], currentDog, onDogChange }) => {
 
             <div className="border-t border-border"></div>
 
-            {/* Offrir un café */}
             <div className="p-1 sm:p-2">
               <button
                 onClick={handleDonation}
@@ -330,7 +309,6 @@ const UserMenu = ({ dogProfiles = [], currentDog, onDogChange }) => {
 
             <div className="border-t border-border"></div>
 
-            {/* Déconnexion */}
             <div className="p-1 sm:p-2">
               <button
                 onClick={handleSignOut}
@@ -346,7 +324,6 @@ const UserMenu = ({ dogProfiles = [], currentDog, onDogChange }) => {
         )}
       </div>
 
-      {/* Modal de partage (fallback pour desktop) - ajusté pour mobile */}
       {showShareModal && (
         <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-[9999] flex items-center justify-center p-3 sm:p-4">
           <div className="bg-card rounded-xl sm:rounded-2xl shadow-elevated max-w-sm sm:max-w-md w-full p-4 sm:p-6">
@@ -382,28 +359,23 @@ const UserMenu = ({ dogProfiles = [], currentDog, onDogChange }) => {
             </div>
 
             <div className="flex gap-2">
-              
-                href={`https://www.facebook.com/sharer/sharer.php?u=https://www.doogybook.com`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex-1 flex items-center justify-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 bg-[#1877F2] text-white rounded-lg sm:rounded-xl hover:bg-[#1877F2]/90 transition-smooth"
+              <button
+                onClick={() => window.open('https://www.facebook.com/sharer/sharer.php?u=https://www.doogybook.com', '_blank')}
+                className="flex-1 flex items-center justify-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 bg-blue-600 text-white rounded-lg sm:rounded-xl hover:bg-blue-700 transition-smooth"
               >
                 <span className="text-xs sm:text-sm font-medium">Facebook</span>
-              </a>
-              
-                href={`https://twitter.com/intent/tweet?text=Découvrez Doogybook, l'application pour gérer votre chien !&url=https://www.doogybook.com`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex-1 flex items-center justify-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 bg-[#1DA1F2] text-white rounded-lg sm:rounded-xl hover:bg-[#1DA1F2]/90 transition-smooth"
+              </button>
+              <button
+                onClick={() => window.open('https://twitter.com/intent/tweet?text=Découvrez Doogybook&url=https://www.doogybook.com', '_blank')}
+                className="flex-1 flex items-center justify-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 bg-sky-500 text-white rounded-lg sm:rounded-xl hover:bg-sky-600 transition-smooth"
               >
                 <span className="text-xs sm:text-sm font-medium">Twitter</span>
-              </a>
+              </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Modal de don */}
       <DonationModalUser
         isOpen={showDonationModal}
         onClose={() => setShowDonationModal(false)}
