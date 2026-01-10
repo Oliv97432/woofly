@@ -92,7 +92,7 @@ const UserMenuPro = () => {
       icon: List,
       label: 'Liste',
       onClick: () => {
-        navigate('/pro/adoption-list');
+        navigate('/pro/dogs-list');
         setIsOpen(false);
       }
     },
