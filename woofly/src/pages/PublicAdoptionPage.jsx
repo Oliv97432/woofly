@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
-import { Heart, Calendar, Lock, ArrowRight } from 'lucide-react';
+import { Heart, Calendar, Lock, ArrowRight, ArrowUp } from 'lucide-react';
 
 const PublicAdoptionPage = () => {
   const navigate = useNavigate();
@@ -10,24 +10,43 @@ const PublicAdoptionPage = () => {
   const [dogs, setDogs] = useState([]);
   const [totalDogs, setTotalDogs] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [showScrollTop, setShowScrollTop] = useState(false);
 
   useEffect(() => {
     fetchPublicDogs();
   }, [user]);
 
+  // Détecter le scroll
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowScrollTop(window.scrollY > 300);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // Fonction scroll to top
+  const scrollToTop = () => {
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
+  };
+
   const fetchPublicDogs = async () => {
     try {
-      // ✅ CORRIGÉ - Compter UNIQUEMENT les chiens des refuges
+      // Compter UNIQUEMENT les chiens des refuges
       const { count } = await supabase
         .from('dogs')
         .select('*, user_profiles!inner(subscription_tier)', { count: 'exact', head: true })
         .eq('adoption_status', 'available')
         .eq('is_published', true)
-        .eq('user_profiles.subscription_tier', 'professional'); // ← FILTRE IMPORTANT
+        .eq('user_profiles.subscription_tier', 'professional');
 
       setTotalDogs(count || 0);
 
-      // ✅ CORRIGÉ - Charger UNIQUEMENT les chiens des refuges
+      // Charger UNIQUEMENT les chiens des refuges
       const query = supabase
         .from('dogs')
         .select(`
@@ -47,7 +66,7 @@ const PublicAdoptionPage = () => {
         `)
         .eq('adoption_status', 'available')
         .eq('is_published', true)
-        .eq('user_profiles.subscription_tier', 'professional') // ← FILTRE CRUCIAL
+        .eq('user_profiles.subscription_tier', 'professional')
         .order('created_at', { ascending: false });
 
       // Limiter à 6 seulement si NON connecté
@@ -274,6 +293,17 @@ const PublicAdoptionPage = () => {
           <p>© 2025 Woofly • Plateforme d'adoption responsable</p>
         </div>
       </footer>
+
+      {/* Bouton Scroll To Top */}
+      {showScrollTop && (
+        <button
+          onClick={scrollToTop}
+          className="fixed bottom-8 right-8 z-50 w-14 h-14 bg-primary text-primary-foreground rounded-full shadow-2xl hover:bg-primary/90 transition-all duration-300 flex items-center justify-center hover:scale-110 animate-in fade-in slide-in-from-bottom-4"
+          aria-label="Retour en haut"
+        >
+          <ArrowUp size={24} />
+        </button>
+      )}
     </div>
   );
 };
