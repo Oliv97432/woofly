@@ -801,6 +801,7 @@ const ProDogManagement = () => {
               className="px-3 sm:px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base min-h-[44px]"
             >
               <option value="all">Tous</option>
+              <option value="foster">En FA</option>
               <option value="available">Disponibles</option>
               <option value="pending">En cours</option>
               <option value="adopted">Adoptés</option>
