@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
-import { Heart, Calendar, Lock, ArrowRight, ArrowUp } from 'lucide-react';
+import { Heart, Calendar, Lock, ArrowRight, ArrowUp, ArrowLeft } from 'lucide-react';
 
 const PublicAdoptionPage = () => {
   const navigate = useNavigate();
@@ -32,6 +32,17 @@ const PublicAdoptionPage = () => {
       top: 0,
       behavior: 'smooth'
     });
+  };
+
+  // Fonction retour intelligent
+  const handleBack = () => {
+    if (user) {
+      // Si connecté, retourner à la page précédente
+      navigate(-1);
+    } else {
+      // Si invité, retourner à la landing page
+      navigate('/');
+    }
   };
 
   const fetchPublicDogs = async () => {
@@ -110,16 +121,28 @@ const PublicAdoptionPage = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
+      {/* Header avec bouton retour */}
       <header className="bg-card border-b border-border shadow-soft sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 py-6">
-          <div className="text-center">
-            <h1 className="text-3xl sm:text-4xl font-heading font-bold text-foreground mb-2">
-              🏠 Chiens à adopter
-            </h1>
-            <p className="text-muted-foreground text-lg">
-              Donnez une seconde chance à un compagnon fidèle
-            </p>
+          <div className="relative">
+            {/* Bouton Retour - En haut à gauche */}
+            <button
+              onClick={handleBack}
+              className="absolute left-0 top-1/2 -translate-y-1/2 flex items-center gap-2 px-4 py-2 text-foreground hover:text-primary transition-smooth group"
+            >
+              <ArrowLeft size={20} className="group-hover:-translate-x-1 transition-transform" />
+              <span className="hidden sm:inline font-medium">Retour</span>
+            </button>
+
+            {/* Titre centré */}
+            <div className="text-center">
+              <h1 className="text-2xl sm:text-3xl md:text-4xl font-heading font-bold text-foreground mb-2">
+                🏠 Chiens à adopter
+              </h1>
+              <p className="text-muted-foreground text-sm sm:text-base md:text-lg">
+                Donnez une seconde chance à un compagnon fidèle
+              </p>
+            </div>
           </div>
         </div>
       </header>
@@ -149,10 +172,10 @@ const PublicAdoptionPage = () => {
               Revenez bientôt pour découvrir de nouveaux compagnons à adopter
             </p>
             <button
-              onClick={() => navigate('/')}
+              onClick={handleBack}
               className="px-6 py-3 bg-primary text-primary-foreground rounded-xl font-medium hover:bg-primary/90 transition-smooth"
             >
-              Retour à l'accueil
+              Retour
             </button>
           </div>
         ) : (
