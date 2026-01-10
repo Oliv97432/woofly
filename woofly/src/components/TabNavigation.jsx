@@ -1,6 +1,7 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Dog, Users, Heart, BookOpen } from 'lucide-react';  // ← Heart ajouté
+import { Dog, Users, Heart, BookOpen, ChefHat } from 'lucide-react';
+import PremiumBadge from './PremiumBadge';
 
 const TabNavigation = () => {
   const navigate = useNavigate();
@@ -8,24 +9,30 @@ const TabNavigation = () => {
 
   const tabs = [
     { 
-      path: '/dog-profile',    // ✅ Mon Chien
+      path: '/dog-profile',
       label: 'Mon Chien', 
       icon: Dog 
     },
     { 
-      path: '/social-feed',    // ✅ Communauté
+      path: '/social-feed',
       label: 'Communauté', 
       icon: Users 
     },
     { 
-      path: '/adoption',       // ✅ Adoption - NOUVEAU
+      path: '/adoption',
       label: 'Adoption', 
       icon: Heart 
     },
     { 
-      path: '/daily-tip',      // ✅ Conseils
+      path: '/daily-tip',
       label: 'Conseils', 
       icon: BookOpen 
+    },
+    { 
+      path: '/recipes',
+      label: 'Recettes', 
+      icon: ChefHat,
+      premium: true // Badge premium
     }
   ];
 
@@ -56,6 +63,11 @@ const TabNavigation = () => {
               >
                 <Icon size={20} />
                 <span>{tab.label}</span>
+                
+                {/* Badge Premium */}
+                {tab.premium && (
+                  <PremiumBadge size="sm" variant="minimal" />
+                )}
                 
                 {active && (
                   <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600" />
