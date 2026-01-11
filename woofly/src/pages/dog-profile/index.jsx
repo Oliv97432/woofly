@@ -770,7 +770,7 @@ const DogProfile = () => {
       pdf.setFontSize(16);
       pdf.setFont('helvetica', 'bold');
       pdf.setTextColor(0, 0, 0);
-      pdf.text('VACCINATIONS', margin, yPos);
+      pdf.text('vaccinations', margin, yPos);
       yPos += 8;
 
       if (vaccinations.length === 0) {
@@ -820,7 +820,7 @@ const DogProfile = () => {
       pdf.setFontSize(16);
       pdf.setFont('helvetica', 'bold');
       pdf.setTextColor(0, 0, 0);
-      pdf.text('TRAITEMENTS', margin, yPos);
+      pdf.text('traitements', margin, yPos);
       yPos += 8;
 
       if (treatments.length === 0) {
@@ -903,7 +903,7 @@ const DogProfile = () => {
       pdf.setFontSize(16);
       pdf.setFont('helvetica', 'bold');
       pdf.setTextColor(0, 0, 0);
-      pdf.text('NOTES MEDICALES', margin, yPos);
+      pdf.text('notes médicales', margin, yPos);
       yPos += 8;
 
       pdf.setFontSize(10);
