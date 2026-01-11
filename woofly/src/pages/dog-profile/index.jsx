@@ -679,7 +679,7 @@ const DogProfile = () => {
     }
   };
 
-  // Export PDF du carnet de santé - PREMIUM
+  // Export PDF du carnet de santé - PREMIUM (SANS EMOJIS)
   const handleExportPDF = async () => {
     if (!isPremium) {
       setShowPremiumModal(true);
@@ -702,11 +702,11 @@ const DogProfile = () => {
       pdf.setTextColor(255, 255, 255);
       pdf.setFontSize(28);
       pdf.setFont('helvetica', 'bold');
-      pdf.text('🐕 Woofly', margin, 25);
+      pdf.text('WOOFLY', margin, 25);
       
       pdf.setFontSize(14);
       pdf.setFont('helvetica', 'normal');
-      pdf.text('Carnet de Santé', margin, 38);
+      pdf.text('Carnet de Sante', margin, 38);
 
       yPos = 60;
 
@@ -720,10 +720,11 @@ const DogProfile = () => {
       pdf.setFontSize(11);
       pdf.setFont('helvetica', 'normal');
       pdf.setTextColor(100, 100, 100);
-      pdf.text(`${currentProfile.breed} • ${currentProfile.age} • ${currentProfile.gender}`, margin, yPos);
+      const gender = currentProfile.gender === 'male' ? 'Male' : 'Femelle';
+      pdf.text(`${currentProfile.breed} - ${currentProfile.age} - ${gender}`, margin, yPos);
       yPos += 6;
       
-      if (currentProfile.weight !== 'Non renseigné') {
+      if (currentProfile.weight !== 'Non renseigne') {
         pdf.text(`Poids: ${currentProfile.weight}`, margin, yPos);
         yPos += 6;
       }
@@ -733,21 +734,21 @@ const DogProfile = () => {
         yPos += 6;
       }
 
-      pdf.text(`Stérilisation: ${currentProfile.sterilized}`, margin, yPos);
+      pdf.text(`Sterilisation: ${currentProfile.sterilized}`, margin, yPos);
       yPos += 15;
 
       // Section Vaccinations
       pdf.setFontSize(16);
       pdf.setFont('helvetica', 'bold');
       pdf.setTextColor(0, 0, 0);
-      pdf.text('💉 Vaccinations', margin, yPos);
+      pdf.text('VACCINATIONS', margin, yPos);
       yPos += 8;
 
       if (vaccinations.length === 0) {
         pdf.setFontSize(10);
         pdf.setFont('helvetica', 'italic');
         pdf.setTextColor(150, 150, 150);
-        pdf.text('Aucune vaccination enregistrée', margin + 5, yPos);
+        pdf.text('Aucune vaccination enregistree', margin + 5, yPos);
         yPos += 10;
       } else {
         pdf.setFontSize(10);
@@ -761,18 +762,18 @@ const DogProfile = () => {
 
           pdf.setFont('helvetica', 'bold');
           pdf.setTextColor(0, 0, 0);
-          pdf.text(`• ${vac.name}`, margin + 5, yPos);
+          pdf.text(`- ${vac.name}`, margin + 5, yPos);
           yPos += 5;
           
           pdf.setFont('helvetica', 'normal');
           pdf.setTextColor(80, 80, 80);
-          pdf.text(`  Dernière date: ${vac.lastDate}`, margin + 5, yPos);
+          pdf.text(`  Derniere date: ${vac.lastDate}`, margin + 5, yPos);
           yPos += 5;
           pdf.text(`  Prochaine date: ${vac.nextDate}`, margin + 5, yPos);
           yPos += 5;
           
           if (vac.veterinarian) {
-            pdf.text(`  Vétérinaire: ${vac.veterinarian}`, margin + 5, yPos);
+            pdf.text(`  Veterinaire: ${vac.veterinarian}`, margin + 5, yPos);
             yPos += 5;
           }
           
@@ -790,14 +791,14 @@ const DogProfile = () => {
       pdf.setFontSize(16);
       pdf.setFont('helvetica', 'bold');
       pdf.setTextColor(0, 0, 0);
-      pdf.text('💊 Traitements', margin, yPos);
+      pdf.text('TRAITEMENTS', margin, yPos);
       yPos += 8;
 
       if (treatments.length === 0) {
         pdf.setFontSize(10);
         pdf.setFont('helvetica', 'italic');
         pdf.setTextColor(150, 150, 150);
-        pdf.text('Aucun traitement enregistré', margin + 5, yPos);
+        pdf.text('Aucun traitement enregistre', margin + 5, yPos);
         yPos += 10;
       } else {
         pdf.setFontSize(10);
@@ -813,12 +814,12 @@ const DogProfile = () => {
           
           pdf.setFont('helvetica', 'bold');
           pdf.setTextColor(0, 0, 0);
-          pdf.text(`• ${treat.product} (${typeLabel})`, margin + 5, yPos);
+          pdf.text(`- ${treat.product} (${typeLabel})`, margin + 5, yPos);
           yPos += 5;
           
           pdf.setFont('helvetica', 'normal');
           pdf.setTextColor(80, 80, 80);
-          pdf.text(`  Dernière date: ${treat.lastDate}`, margin + 5, yPos);
+          pdf.text(`  Derniere date: ${treat.lastDate}`, margin + 5, yPos);
           yPos += 5;
           pdf.text(`  Prochaine date: ${treat.nextDate}`, margin + 5, yPos);
           yPos += 8;
@@ -835,14 +836,14 @@ const DogProfile = () => {
       pdf.setFontSize(16);
       pdf.setFont('helvetica', 'bold');
       pdf.setTextColor(0, 0, 0);
-      pdf.text('⚖️ Évolution du poids', margin, yPos);
+      pdf.text('EVOLUTION DU POIDS', margin, yPos);
       yPos += 8;
 
       if (weightData.length === 0) {
         pdf.setFontSize(10);
         pdf.setFont('helvetica', 'italic');
         pdf.setTextColor(150, 150, 150);
-        pdf.text('Aucune pesée enregistrée', margin + 5, yPos);
+        pdf.text('Aucune pesee enregistree', margin + 5, yPos);
         yPos += 10;
       } else {
         pdf.setFontSize(10);
@@ -852,14 +853,14 @@ const DogProfile = () => {
         // Afficher les 5 dernières pesées
         const recentWeights = weightData.slice(-5);
         recentWeights.forEach((weight) => {
-          pdf.text(`• ${weight.date}: ${weight.weight} kg`, margin + 5, yPos);
+          pdf.text(`- ${weight.date}: ${weight.weight} kg`, margin + 5, yPos);
           yPos += 5;
         });
         
         if (weightData.length > 5) {
           yPos += 3;
           pdf.setFont('helvetica', 'italic');
-          pdf.text(`(${weightData.length - 5} autres pesées non affichées)`, margin + 5, yPos);
+          pdf.text(`(${weightData.length - 5} autres pesees non affichees)`, margin + 5, yPos);
         }
       }
       yPos += 12;
@@ -873,7 +874,7 @@ const DogProfile = () => {
       pdf.setFontSize(16);
       pdf.setFont('helvetica', 'bold');
       pdf.setTextColor(0, 0, 0);
-      pdf.text('📋 Notes Médicales', margin, yPos);
+      pdf.text('NOTES MEDICALES', margin, yPos);
       yPos += 8;
 
       pdf.setFontSize(10);
@@ -892,7 +893,7 @@ const DogProfile = () => {
 
       if (healthNotes.medications) {
         pdf.setFont('helvetica', 'bold');
-        pdf.text('Médicaments:', margin + 5, yPos);
+        pdf.text('Medicaments:', margin + 5, yPos);
         yPos += 5;
         pdf.setFont('helvetica', 'normal');
         const medsText = pdf.splitTextToSize(healthNotes.medications, pageWidth - margin * 2 - 10);
@@ -902,7 +903,7 @@ const DogProfile = () => {
 
       if (healthNotes.veterinarian) {
         pdf.setFont('helvetica', 'bold');
-        pdf.text('Vétérinaire:', margin + 5, yPos);
+        pdf.text('Veterinaire:', margin + 5, yPos);
         yPos += 5;
         pdf.setFont('helvetica', 'normal');
         pdf.text(healthNotes.veterinarian, margin + 5, yPos);
@@ -910,30 +911,30 @@ const DogProfile = () => {
       }
 
       if (healthNotes.veterinarianPhone) {
-        pdf.text(`Téléphone: ${healthNotes.veterinarianPhone}`, margin + 5, yPos);
+        pdf.text(`Telephone: ${healthNotes.veterinarianPhone}`, margin + 5, yPos);
         yPos += 5;
       }
 
       if (!healthNotes.allergies && !healthNotes.medications && !healthNotes.veterinarian) {
         pdf.setFont('helvetica', 'italic');
         pdf.setTextColor(150, 150, 150);
-        pdf.text('Aucune note médicale enregistrée', margin + 5, yPos);
+        pdf.text('Aucune note medicale enregistree', margin + 5, yPos);
       }
 
       // Footer
       pdf.setTextColor(150, 150, 150);
       pdf.setFontSize(8);
-      pdf.text('Généré avec Woofly - www.doogybook.com', pageWidth / 2, pageHeight - 10, { align: 'center' });
+      pdf.text('Genere avec Woofly - www.doogybook.com', pageWidth / 2, pageHeight - 10, { align: 'center' });
       pdf.text(`Date: ${new Date().toLocaleDateString('fr-FR')}`, pageWidth - margin, pageHeight - 10, { align: 'right' });
 
       // Télécharger
       const fileName = `carnet-sante-${currentProfile.name.toLowerCase().replace(/\s+/g, '-')}-${new Date().toISOString().split('T')[0]}.pdf`;
       pdf.save(fileName);
 
-      alert('✅ Carnet de santé téléchargé !');
+      alert('Carnet de sante telecharge avec succes !');
     } catch (error) {
-      console.error('Erreur génération PDF:', error);
-      alert('❌ Erreur lors de la génération du PDF');
+      console.error('Erreur generation PDF:', error);
+      alert('Erreur lors de la generation du PDF');
     } finally {
       setGeneratingPDF(false);
     }
