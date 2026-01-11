@@ -708,267 +708,302 @@ const DogProfile = () => {
     return normalized;
   };
 
-  // Export PDF du carnet de santé - PREMIUM (AVEC FONCTION AMÉLIORÉE)
-  const handleExportPDF = async () => {
-    if (!isPremium) {
-      setShowPremiumModal(true);
-      return;
+  // Export PDF du carnet de santé - PREMIUM (VERSION ULTRA-SÉCURISÉE)
+const handleExportPDF = async () => {
+  console.log('🔍 VERSION PDF: 2025-01-11-FIX-ENCODING');
+  
+  if (!isPremium) {
+    setShowPremiumModal(true);
+    return;
+  }
+
+  setGeneratingPDF(true);
+
+  try {
+    // Créer le PDF avec options d'encodage
+    const pdf = new jsPDF({
+      orientation: 'p',
+      unit: 'mm',
+      format: 'a4',
+      compress: true
+    });
+    
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+    const margin = 20;
+    let yPos = margin;
+
+    // Fonction pour ajouter du texte de manière sûre
+    const safeText = (text, x, y, options = {}) => {
+      try {
+        // Nettoyer et convertir le texte
+        const cleanText = String(text || '')
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+          .replace(/[^\x00-\x7F]/g, ''); // Garde uniquement ASCII
+        
+        pdf.text(cleanText, x, y, options);
+      } catch (error) {
+        console.error('Erreur ajout texte:', error);
+        pdf.text('Error', x, y, options);
+      }
+    };
+
+    // Header bleu avec logo
+    pdf.setFillColor(59, 130, 246);
+    pdf.rect(0, 0, pageWidth, 50, 'F');
+    
+    pdf.setTextColor(255, 255, 255);
+    pdf.setFontSize(28);
+    pdf.setFont('helvetica', 'bold');
+    safeText('WOOFLY', margin, 25);
+    
+    pdf.setFontSize(14);
+    pdf.setFont('helvetica', 'normal');
+    safeText('Carnet de Sante', margin, 38);
+
+    yPos = 60;
+
+    // Infos du chien
+    pdf.setTextColor(0, 0, 0);
+    pdf.setFontSize(22);
+    pdf.setFont('helvetica', 'bold');
+    safeText(currentProfile.name, margin, yPos);
+    yPos += 10;
+
+    pdf.setFontSize(11);
+    pdf.setFont('helvetica', 'normal');
+    pdf.setTextColor(100, 100, 100);
+    const gender = currentProfile.gender === 'male' ? 'Male' : 'Femelle';
+    safeText(`${currentProfile.breed} - ${currentProfile.age} - ${gender}`, margin, yPos);
+    yPos += 6;
+    
+    if (currentProfile.weight !== 'Non renseigne') {
+      safeText(`Poids: ${currentProfile.weight}`, margin, yPos);
+      yPos += 6;
+    }
+    
+    if (currentProfile.microchip_number) {
+      safeText(`Puce: ${currentProfile.microchip_number}`, margin, yPos);
+      yPos += 6;
     }
 
-    setGeneratingPDF(true);
+    safeText(`Sterilisation: ${currentProfile.sterilized}`, margin, yPos);
+    yPos += 15;
 
-    try {
-      const pdf = new jsPDF('p', 'mm', 'a4');
-      const pageWidth = pdf.internal.pageSize.getWidth();
-      const pageHeight = pdf.internal.pageSize.getHeight();
-      const margin = 20;
-      let yPos = margin;
+    // Section Vaccinations
+    pdf.setFontSize(16);
+    pdf.setFont('helvetica', 'bold');
+    pdf.setTextColor(0, 0, 0);
+    safeText('VACCINATIONS', margin, yPos);
+    yPos += 8;
 
-      // Header bleu avec logo
-      pdf.setFillColor(59, 130, 246);
-      pdf.rect(0, 0, pageWidth, 50, 'F');
-      
-      pdf.setTextColor(255, 255, 255);
-      pdf.setFontSize(28);
-      pdf.setFont('helvetica', 'bold');
-      pdf.text('WOOFLY', margin, 25);
-      
-      pdf.setFontSize(14);
-      pdf.setFont('helvetica', 'normal');
-      pdf.text('Carnet de Sante', margin, 38);
-
-      yPos = 60;
-
-      // Infos du chien (avec fonction améliorée)
-      pdf.setTextColor(0, 0, 0);
-      pdf.setFontSize(22);
-      pdf.setFont('helvetica', 'bold');
-      pdf.text(removeAccents(currentProfile.name), margin, yPos);
+    if (vaccinations.length === 0) {
+      pdf.setFontSize(10);
+      pdf.setFont('helvetica', 'italic');
+      pdf.setTextColor(150, 150, 150);
+      safeText('Aucune vaccination enregistree', margin + 5, yPos);
       yPos += 10;
-
-      pdf.setFontSize(11);
+    } else {
+      pdf.setFontSize(10);
       pdf.setFont('helvetica', 'normal');
-      pdf.setTextColor(100, 100, 100);
-      const gender = currentProfile.gender === 'male' ? 'Male' : 'Femelle';
-      pdf.text(`${removeAccents(currentProfile.breed)} - ${removeAccents(currentProfile.age)} - ${gender}`, margin, yPos);
-      yPos += 6;
       
-      if (currentProfile.weight !== 'Non renseigne') {
-        pdf.text(`Poids: ${removeAccents(currentProfile.weight)}`, margin, yPos);
-        yPos += 6;
-      }
-      
-      if (currentProfile.microchip_number) {
-        pdf.text(`Puce: ${removeAccents(currentProfile.microchip_number)}`, margin, yPos);
-        yPos += 6;
-      }
+      vaccinations.forEach((vac) => {
+        if (yPos > pageHeight - 40) {
+          pdf.addPage();
+          yPos = margin;
+        }
 
-      pdf.text(`Sterilisation: ${removeAccents(currentProfile.sterilized)}`, margin, yPos);
-      yPos += 15;
-
-      // Section Vaccinations
-      pdf.setFontSize(16);
-      pdf.setFont('helvetica', 'bold');
-      pdf.setTextColor(0, 0, 0);
-      pdf.text('vaccinations', margin, yPos);
-      yPos += 8;
-
-      if (vaccinations.length === 0) {
-        pdf.setFontSize(10);
-        pdf.setFont('helvetica', 'italic');
-        pdf.setTextColor(150, 150, 150);
-        pdf.text('Aucune vaccination enregistree', margin + 5, yPos);
-        yPos += 10;
-      } else {
-        pdf.setFontSize(10);
-        pdf.setFont('helvetica', 'normal');
+        pdf.setFont('helvetica', 'bold');
+        pdf.setTextColor(0, 0, 0);
+        safeText(`- ${vac.name}`, margin + 5, yPos);
+        yPos += 5;
         
-        vaccinations.forEach((vac) => {
-          if (yPos > pageHeight - 40) {
-            pdf.addPage();
-            yPos = margin;
-          }
-
-          pdf.setFont('helvetica', 'bold');
-          pdf.setTextColor(0, 0, 0);
-          pdf.text(`- ${removeAccents(vac.name)}`, margin + 5, yPos);
-          yPos += 5;
-          
-          pdf.setFont('helvetica', 'normal');
-          pdf.setTextColor(80, 80, 80);
-          pdf.text(`  Derniere date: ${vac.lastDate}`, margin + 5, yPos);
-          yPos += 5;
-          pdf.text(`  Prochaine date: ${vac.nextDate}`, margin + 5, yPos);
-          yPos += 5;
-          
-          if (vac.veterinarian) {
-            pdf.text(`  Veterinaire: ${removeAccents(vac.veterinarian)}`, margin + 5, yPos);
-            yPos += 5;
-          }
-          
-          yPos += 3;
-        });
-      }
-      yPos += 8;
-
-      // Section Traitements
-      if (yPos > pageHeight - 60) {
-        pdf.addPage();
-        yPos = margin;
-      }
-
-      pdf.setFontSize(16);
-      pdf.setFont('helvetica', 'bold');
-      pdf.setTextColor(0, 0, 0);
-      pdf.text('traitements', margin, yPos);
-      yPos += 8;
-
-      if (treatments.length === 0) {
-        pdf.setFontSize(10);
-        pdf.setFont('helvetica', 'italic');
-        pdf.setTextColor(150, 150, 150);
-        pdf.text('Aucun traitement enregistre', margin + 5, yPos);
-        yPos += 10;
-      } else {
-        pdf.setFontSize(10);
-        pdf.setFont('helvetica', 'normal');
-        
-        treatments.forEach((treat) => {
-          if (yPos > pageHeight - 40) {
-            pdf.addPage();
-            yPos = margin;
-          }
-
-          const typeLabel = treat.type === 'worm' ? 'Vermifuge' : 'Anti-puces/tiques';
-          
-          pdf.setFont('helvetica', 'bold');
-          pdf.setTextColor(0, 0, 0);
-          pdf.text(`- ${removeAccents(treat.product)} (${typeLabel})`, margin + 5, yPos);
-          yPos += 5;
-          
-          pdf.setFont('helvetica', 'normal');
-          pdf.setTextColor(80, 80, 80);
-          pdf.text(`  Derniere date: ${treat.lastDate}`, margin + 5, yPos);
-          yPos += 5;
-          pdf.text(`  Prochaine date: ${treat.nextDate}`, margin + 5, yPos);
-          yPos += 8;
-        });
-      }
-      yPos += 8;
-
-      // Section Poids
-      if (yPos > pageHeight - 60) {
-        pdf.addPage();
-        yPos = margin;
-      }
-
-      pdf.setFontSize(16);
-      pdf.setFont('helvetica', 'bold');
-      pdf.setTextColor(0, 0, 0);
-      pdf.text('EVOLUTION DU POIDS', margin, yPos);
-      yPos += 8;
-
-      if (weightData.length === 0) {
-        pdf.setFontSize(10);
-        pdf.setFont('helvetica', 'italic');
-        pdf.setTextColor(150, 150, 150);
-        pdf.text('Aucune pesee enregistree', margin + 5, yPos);
-        yPos += 10;
-      } else {
-        pdf.setFontSize(10);
         pdf.setFont('helvetica', 'normal');
         pdf.setTextColor(80, 80, 80);
+        safeText(`  Derniere date: ${vac.lastDate}`, margin + 5, yPos);
+        yPos += 5;
+        safeText(`  Prochaine date: ${vac.nextDate}`, margin + 5, yPos);
+        yPos += 5;
         
-        // Afficher les 5 dernières pesées
-        const recentWeights = weightData.slice(-5);
-        recentWeights.forEach((weight) => {
-          pdf.text(`- ${weight.date}: ${weight.weight} kg`, margin + 5, yPos);
+        if (vac.veterinarian) {
+          safeText(`  Veterinaire: ${vac.veterinarian}`, margin + 5, yPos);
           yPos += 5;
-        });
-        
-        if (weightData.length > 5) {
-          yPos += 3;
-          pdf.setFont('helvetica', 'italic');
-          pdf.text(`(${weightData.length - 5} autres pesees non affichees)`, margin + 5, yPos);
         }
-      }
-      yPos += 12;
+        
+        yPos += 3;
+      });
+    }
+    yPos += 8;
 
-      // Section Notes médicales
-      if (yPos > pageHeight - 80) {
-        pdf.addPage();
-        yPos = margin;
-      }
+    // Section Traitements
+    if (yPos > pageHeight - 60) {
+      pdf.addPage();
+      yPos = margin;
+    }
 
-      pdf.setFontSize(16);
-      pdf.setFont('helvetica', 'bold');
-      pdf.setTextColor(0, 0, 0);
-      pdf.text('notes médicales', margin, yPos);
-      yPos += 8;
+    pdf.setFontSize(16);
+    pdf.setFont('helvetica', 'bold');
+    pdf.setTextColor(0, 0, 0);
+    safeText('TRAITEMENTS', margin, yPos);
+    yPos += 8;
 
+    if (treatments.length === 0) {
+      pdf.setFontSize(10);
+      pdf.setFont('helvetica', 'italic');
+      pdf.setTextColor(150, 150, 150);
+      safeText('Aucun traitement enregistre', margin + 5, yPos);
+      yPos += 10;
+    } else {
+      pdf.setFontSize(10);
+      pdf.setFont('helvetica', 'normal');
+      
+      treatments.forEach((treat) => {
+        if (yPos > pageHeight - 40) {
+          pdf.addPage();
+          yPos = margin;
+        }
+
+        const typeLabel = treat.type === 'worm' ? 'Vermifuge' : 'Anti-puces/tiques';
+        
+        pdf.setFont('helvetica', 'bold');
+        pdf.setTextColor(0, 0, 0);
+        safeText(`- ${treat.product} (${typeLabel})`, margin + 5, yPos);
+        yPos += 5;
+        
+        pdf.setFont('helvetica', 'normal');
+        pdf.setTextColor(80, 80, 80);
+        safeText(`  Derniere date: ${treat.lastDate}`, margin + 5, yPos);
+        yPos += 5;
+        safeText(`  Prochaine date: ${treat.nextDate}`, margin + 5, yPos);
+        yPos += 8;
+      });
+    }
+    yPos += 8;
+
+    // Section Poids
+    if (yPos > pageHeight - 60) {
+      pdf.addPage();
+      yPos = margin;
+    }
+
+    pdf.setFontSize(16);
+    pdf.setFont('helvetica', 'bold');
+    pdf.setTextColor(0, 0, 0);
+    safeText('EVOLUTION DU POIDS', margin, yPos);
+    yPos += 8;
+
+    if (weightData.length === 0) {
+      pdf.setFontSize(10);
+      pdf.setFont('helvetica', 'italic');
+      pdf.setTextColor(150, 150, 150);
+      safeText('Aucune pesee enregistree', margin + 5, yPos);
+      yPos += 10;
+    } else {
       pdf.setFontSize(10);
       pdf.setFont('helvetica', 'normal');
       pdf.setTextColor(80, 80, 80);
-
-      if (healthNotes.allergies) {
-        pdf.setFont('helvetica', 'bold');
-        pdf.text('Allergies:', margin + 5, yPos);
+      
+      const recentWeights = weightData.slice(-5);
+      recentWeights.forEach((weight) => {
+        safeText(`- ${weight.date}: ${weight.weight} kg`, margin + 5, yPos);
         yPos += 5;
-        pdf.setFont('helvetica', 'normal');
-        const allergiesText = pdf.splitTextToSize(removeAccents(healthNotes.allergies), pageWidth - margin * 2 - 10);
-        pdf.text(allergiesText, margin + 5, yPos);
-        yPos += (allergiesText.length * 5) + 5;
-      }
-
-      if (healthNotes.medications) {
-        pdf.setFont('helvetica', 'bold');
-        pdf.text('Medicaments:', margin + 5, yPos);
-        yPos += 5;
-        pdf.setFont('helvetica', 'normal');
-        const medsText = pdf.splitTextToSize(removeAccents(healthNotes.medications), pageWidth - margin * 2 - 10);
-        pdf.text(medsText, margin + 5, yPos);
-        yPos += (medsText.length * 5) + 5;
-      }
-
-      if (healthNotes.veterinarian) {
-        pdf.setFont('helvetica', 'bold');
-        pdf.text('Veterinaire:', margin + 5, yPos);
-        yPos += 5;
-        pdf.setFont('helvetica', 'normal');
-        pdf.text(removeAccents(healthNotes.veterinarian), margin + 5, yPos);
-        yPos += 5;
-      }
-
-      if (healthNotes.veterinarianPhone) {
-        pdf.text(`Telephone: ${removeAccents(healthNotes.veterinarianPhone)}`, margin + 5, yPos);
-        yPos += 5;
-      }
-
-      if (!healthNotes.allergies && !healthNotes.medications && !healthNotes.veterinarian) {
+      });
+      
+      if (weightData.length > 5) {
+        yPos += 3;
         pdf.setFont('helvetica', 'italic');
-        pdf.setTextColor(150, 150, 150);
-        pdf.text('Aucune note medicale enregistree', margin + 5, yPos);
+        safeText(`(${weightData.length - 5} autres pesees non affichees)`, margin + 5, yPos);
       }
-
-      // Footer
-      pdf.setTextColor(150, 150, 150);
-      pdf.setFontSize(8);
-      pdf.text('Genere avec Woofly - www.doogybook.com', pageWidth / 2, pageHeight - 10, { align: 'center' });
-      pdf.text(`Date: ${new Date().toLocaleDateString('fr-FR')}`, pageWidth - margin, pageHeight - 10, { align: 'right' });
-
-      // Télécharger
-      const fileName = `carnet-sante-${removeAccents(currentProfile.name).toLowerCase().replace(/\s+/g, '-')}-${new Date().toISOString().split('T')[0]}.pdf`;
-      pdf.save(fileName);
-
-      alert('Carnet de sante telecharge avec succes !');
-    } catch (error) {
-      console.error('Erreur generation PDF:', error);
-      alert('Erreur lors de la generation du PDF');
-    } finally {
-      setGeneratingPDF(false);
     }
-  };
+    yPos += 12;
 
+    // Section Notes médicales
+    if (yPos > pageHeight - 80) {
+      pdf.addPage();
+      yPos = margin;
+    }
+
+    pdf.setFontSize(16);
+    pdf.setFont('helvetica', 'bold');
+    pdf.setTextColor(0, 0, 0);
+    safeText('NOTES MEDICALES', margin, yPos);
+    yPos += 8;
+
+    pdf.setFontSize(10);
+    pdf.setFont('helvetica', 'normal');
+    pdf.setTextColor(80, 80, 80);
+
+    if (healthNotes.allergies) {
+      pdf.setFont('helvetica', 'bold');
+      safeText('Allergies:', margin + 5, yPos);
+      yPos += 5;
+      pdf.setFont('helvetica', 'normal');
+      const allergiesText = pdf.splitTextToSize(removeAccents(healthNotes.allergies), pageWidth - margin * 2 - 10);
+      allergiesText.forEach(line => {
+        safeText(line, margin + 5, yPos);
+        yPos += 5;
+      });
+      yPos += 5;
+    }
+
+    if (healthNotes.medications) {
+      pdf.setFont('helvetica', 'bold');
+      safeText('Medicaments:', margin + 5, yPos);
+      yPos += 5;
+      pdf.setFont('helvetica', 'normal');
+      const medsText = pdf.splitTextToSize(removeAccents(healthNotes.medications), pageWidth - margin * 2 - 10);
+      medsText.forEach(line => {
+        safeText(line, margin + 5, yPos);
+        yPos += 5;
+      });
+      yPos += 5;
+    }
+
+    if (healthNotes.veterinarian) {
+      pdf.setFont('helvetica', 'bold');
+      safeText('Veterinaire:', margin + 5, yPos);
+      yPos += 5;
+      pdf.setFont('helvetica', 'normal');
+      safeText(healthNotes.veterinarian, margin + 5, yPos);
+      yPos += 5;
+    }
+
+    if (healthNotes.veterinarianPhone) {
+      safeText(`Telephone: ${healthNotes.veterinarianPhone}`, margin + 5, yPos);
+      yPos += 5;
+    }
+
+    if (!healthNotes.allergies && !healthNotes.medications && !healthNotes.veterinarian) {
+      pdf.setFont('helvetica', 'italic');
+      pdf.setTextColor(150, 150, 150);
+      safeText('Aucune note medicale enregistree', margin + 5, yPos);
+    }
+
+    // Footer
+    pdf.setTextColor(150, 150, 150);
+    pdf.setFontSize(8);
+    safeText('Genere avec Woofly - www.doogybook.com', pageWidth / 2, pageHeight - 10, { align: 'center' });
+    safeText(`Date: ${new Date().toLocaleDateString('fr-FR')}`, pageWidth - margin, pageHeight - 10, { align: 'right' });
+
+    // Télécharger
+    const cleanName = currentProfile.name
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, '-');
+    const fileName = `carnet-sante-${cleanName}-${new Date().toISOString().split('T')[0]}.pdf`;
+    
+    pdf.save(fileName);
+
+    alert('Carnet de sante telecharge avec succes !');
+  } catch (error) {
+    console.error('Erreur generation PDF:', error);
+    alert('Erreur lors de la generation du PDF: ' + error.message);
+  } finally {
+    setGeneratingPDF(false);
+  }
+};
   const handleProfileChange = (profile) => {
     setCurrentProfile(profile);
   };
