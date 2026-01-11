@@ -17,12 +17,17 @@ import AddWeightModal from './components/AddWeightModal';
 import EditProfileModal from './components/EditProfileModal';
 import PhotoGalleryModal from './components/PhotoGalleryModal';
 import Footer from '../../components/Footer';
+import PremiumModal from '../../components/PremiumModal';
+import jsPDF from 'jspdf';
 
 const DogProfile = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('vaccinations');
   const [loading, setLoading] = useState(true);
+  const [isPremium, setIsPremium] = useState(false);
+  const [showPremiumModal, setShowPremiumModal] = useState(false);
+  const [generatingPDF, setGeneratingPDF] = useState(false);
 
   // États pour les données
   const [dogProfiles, setDogProfiles] = useState([]);
@@ -50,6 +55,28 @@ const DogProfile = () => {
   });
 
   const [editingItem, setEditingItem] = useState(null);
+
+  // Vérifier statut Premium
+  useEffect(() => {
+    const checkPremiumStatus = async () => {
+      if (!user?.id) return;
+
+      try {
+        const { data: profile } = await supabase
+          .from('user_profiles')
+          .select('subscription_tier')
+          .eq('id', user.id)
+          .single();
+
+        const premiumTiers = ['premium', 'professional'];
+        setIsPremium(premiumTiers.includes(profile?.subscription_tier));
+      } catch (error) {
+        console.error('Erreur vérification premium:', error);
+      }
+    };
+
+    checkPremiumStatus();
+  }, [user?.id]);
 
   // Charger les chiens de l'utilisateur
   useEffect(() => {
@@ -88,7 +115,8 @@ const DogProfile = () => {
             imageAlt: `${dog.name} - ${dog.breed}`,
             microchip_number: dog.microchip_number,
             notes: dog.notes,
-            cover_photo_url: dog.cover_photo_url || null
+            cover_photo_url: dog.cover_photo_url || null,
+            birth_date: dog.birth_date
           };
         });
 
@@ -651,9 +679,264 @@ const DogProfile = () => {
     }
   };
 
-  // Export PDF avec nom du chien
-  const handleExportPDF = () => {
-    alert(`📄 Export PDF en développement\n\nLe fichier "${currentProfile.name}_fiche_sante.pdf" sera généré avec:\n\n✅ Vaccinations\n✅ Traitements\n✅ Courbe de poids\n✅ Notes médicales\n✅ Informations du chien`);
+  // Export PDF du carnet de santé - PREMIUM
+  const handleExportPDF = async () => {
+    if (!isPremium) {
+      setShowPremiumModal(true);
+      return;
+    }
+
+    setGeneratingPDF(true);
+
+    try {
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const margin = 20;
+      let yPos = margin;
+
+      // Header bleu avec logo
+      pdf.setFillColor(59, 130, 246);
+      pdf.rect(0, 0, pageWidth, 50, 'F');
+      
+      pdf.setTextColor(255, 255, 255);
+      pdf.setFontSize(28);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('🐕 Woofly', margin, 25);
+      
+      pdf.setFontSize(14);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text('Carnet de Santé', margin, 38);
+
+      yPos = 60;
+
+      // Infos du chien
+      pdf.setTextColor(0, 0, 0);
+      pdf.setFontSize(22);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text(currentProfile.name, margin, yPos);
+      yPos += 10;
+
+      pdf.setFontSize(11);
+      pdf.setFont('helvetica', 'normal');
+      pdf.setTextColor(100, 100, 100);
+      pdf.text(`${currentProfile.breed} • ${currentProfile.age} • ${currentProfile.gender}`, margin, yPos);
+      yPos += 6;
+      
+      if (currentProfile.weight !== 'Non renseigné') {
+        pdf.text(`Poids: ${currentProfile.weight}`, margin, yPos);
+        yPos += 6;
+      }
+      
+      if (currentProfile.microchip_number) {
+        pdf.text(`Puce: ${currentProfile.microchip_number}`, margin, yPos);
+        yPos += 6;
+      }
+
+      pdf.text(`Stérilisation: ${currentProfile.sterilized}`, margin, yPos);
+      yPos += 15;
+
+      // Section Vaccinations
+      pdf.setFontSize(16);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(0, 0, 0);
+      pdf.text('💉 Vaccinations', margin, yPos);
+      yPos += 8;
+
+      if (vaccinations.length === 0) {
+        pdf.setFontSize(10);
+        pdf.setFont('helvetica', 'italic');
+        pdf.setTextColor(150, 150, 150);
+        pdf.text('Aucune vaccination enregistrée', margin + 5, yPos);
+        yPos += 10;
+      } else {
+        pdf.setFontSize(10);
+        pdf.setFont('helvetica', 'normal');
+        
+        vaccinations.forEach((vac) => {
+          if (yPos > pageHeight - 40) {
+            pdf.addPage();
+            yPos = margin;
+          }
+
+          pdf.setFont('helvetica', 'bold');
+          pdf.setTextColor(0, 0, 0);
+          pdf.text(`• ${vac.name}`, margin + 5, yPos);
+          yPos += 5;
+          
+          pdf.setFont('helvetica', 'normal');
+          pdf.setTextColor(80, 80, 80);
+          pdf.text(`  Dernière date: ${vac.lastDate}`, margin + 5, yPos);
+          yPos += 5;
+          pdf.text(`  Prochaine date: ${vac.nextDate}`, margin + 5, yPos);
+          yPos += 5;
+          
+          if (vac.veterinarian) {
+            pdf.text(`  Vétérinaire: ${vac.veterinarian}`, margin + 5, yPos);
+            yPos += 5;
+          }
+          
+          yPos += 3;
+        });
+      }
+      yPos += 8;
+
+      // Section Traitements
+      if (yPos > pageHeight - 60) {
+        pdf.addPage();
+        yPos = margin;
+      }
+
+      pdf.setFontSize(16);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(0, 0, 0);
+      pdf.text('💊 Traitements', margin, yPos);
+      yPos += 8;
+
+      if (treatments.length === 0) {
+        pdf.setFontSize(10);
+        pdf.setFont('helvetica', 'italic');
+        pdf.setTextColor(150, 150, 150);
+        pdf.text('Aucun traitement enregistré', margin + 5, yPos);
+        yPos += 10;
+      } else {
+        pdf.setFontSize(10);
+        pdf.setFont('helvetica', 'normal');
+        
+        treatments.forEach((treat) => {
+          if (yPos > pageHeight - 40) {
+            pdf.addPage();
+            yPos = margin;
+          }
+
+          const typeLabel = treat.type === 'worm' ? 'Vermifuge' : 'Anti-puces/tiques';
+          
+          pdf.setFont('helvetica', 'bold');
+          pdf.setTextColor(0, 0, 0);
+          pdf.text(`• ${treat.product} (${typeLabel})`, margin + 5, yPos);
+          yPos += 5;
+          
+          pdf.setFont('helvetica', 'normal');
+          pdf.setTextColor(80, 80, 80);
+          pdf.text(`  Dernière date: ${treat.lastDate}`, margin + 5, yPos);
+          yPos += 5;
+          pdf.text(`  Prochaine date: ${treat.nextDate}`, margin + 5, yPos);
+          yPos += 8;
+        });
+      }
+      yPos += 8;
+
+      // Section Poids
+      if (yPos > pageHeight - 60) {
+        pdf.addPage();
+        yPos = margin;
+      }
+
+      pdf.setFontSize(16);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(0, 0, 0);
+      pdf.text('⚖️ Évolution du poids', margin, yPos);
+      yPos += 8;
+
+      if (weightData.length === 0) {
+        pdf.setFontSize(10);
+        pdf.setFont('helvetica', 'italic');
+        pdf.setTextColor(150, 150, 150);
+        pdf.text('Aucune pesée enregistrée', margin + 5, yPos);
+        yPos += 10;
+      } else {
+        pdf.setFontSize(10);
+        pdf.setFont('helvetica', 'normal');
+        pdf.setTextColor(80, 80, 80);
+        
+        // Afficher les 5 dernières pesées
+        const recentWeights = weightData.slice(-5);
+        recentWeights.forEach((weight) => {
+          pdf.text(`• ${weight.date}: ${weight.weight} kg`, margin + 5, yPos);
+          yPos += 5;
+        });
+        
+        if (weightData.length > 5) {
+          yPos += 3;
+          pdf.setFont('helvetica', 'italic');
+          pdf.text(`(${weightData.length - 5} autres pesées non affichées)`, margin + 5, yPos);
+        }
+      }
+      yPos += 12;
+
+      // Section Notes médicales
+      if (yPos > pageHeight - 80) {
+        pdf.addPage();
+        yPos = margin;
+      }
+
+      pdf.setFontSize(16);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(0, 0, 0);
+      pdf.text('📋 Notes Médicales', margin, yPos);
+      yPos += 8;
+
+      pdf.setFontSize(10);
+      pdf.setFont('helvetica', 'normal');
+      pdf.setTextColor(80, 80, 80);
+
+      if (healthNotes.allergies) {
+        pdf.setFont('helvetica', 'bold');
+        pdf.text('Allergies:', margin + 5, yPos);
+        yPos += 5;
+        pdf.setFont('helvetica', 'normal');
+        const allergiesText = pdf.splitTextToSize(healthNotes.allergies, pageWidth - margin * 2 - 10);
+        pdf.text(allergiesText, margin + 5, yPos);
+        yPos += (allergiesText.length * 5) + 5;
+      }
+
+      if (healthNotes.medications) {
+        pdf.setFont('helvetica', 'bold');
+        pdf.text('Médicaments:', margin + 5, yPos);
+        yPos += 5;
+        pdf.setFont('helvetica', 'normal');
+        const medsText = pdf.splitTextToSize(healthNotes.medications, pageWidth - margin * 2 - 10);
+        pdf.text(medsText, margin + 5, yPos);
+        yPos += (medsText.length * 5) + 5;
+      }
+
+      if (healthNotes.veterinarian) {
+        pdf.setFont('helvetica', 'bold');
+        pdf.text('Vétérinaire:', margin + 5, yPos);
+        yPos += 5;
+        pdf.setFont('helvetica', 'normal');
+        pdf.text(healthNotes.veterinarian, margin + 5, yPos);
+        yPos += 5;
+      }
+
+      if (healthNotes.veterinarianPhone) {
+        pdf.text(`Téléphone: ${healthNotes.veterinarianPhone}`, margin + 5, yPos);
+        yPos += 5;
+      }
+
+      if (!healthNotes.allergies && !healthNotes.medications && !healthNotes.veterinarian) {
+        pdf.setFont('helvetica', 'italic');
+        pdf.setTextColor(150, 150, 150);
+        pdf.text('Aucune note médicale enregistrée', margin + 5, yPos);
+      }
+
+      // Footer
+      pdf.setTextColor(150, 150, 150);
+      pdf.setFontSize(8);
+      pdf.text('Généré avec Woofly - www.doogybook.com', pageWidth / 2, pageHeight - 10, { align: 'center' });
+      pdf.text(`Date: ${new Date().toLocaleDateString('fr-FR')}`, pageWidth - margin, pageHeight - 10, { align: 'right' });
+
+      // Télécharger
+      const fileName = `carnet-sante-${currentProfile.name.toLowerCase().replace(/\s+/g, '-')}-${new Date().toISOString().split('T')[0]}.pdf`;
+      pdf.save(fileName);
+
+      alert('✅ Carnet de santé téléchargé !');
+    } catch (error) {
+      console.error('Erreur génération PDF:', error);
+      alert('❌ Erreur lors de la génération du PDF');
+    } finally {
+      setGeneratingPDF(false);
+    }
   };
 
   const handleProfileChange = (profile) => {
@@ -715,19 +998,37 @@ const DogProfile = () => {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      {/* Header mobile optimisé */}
+      {/* Header mobile optimisé avec bouton PDF */}
       <div className="sticky top-0 z-50 bg-card border-b border-border shadow-soft px-4 py-3">
-        <div className="flex items-center justify-between">
-          <h1 className="text-xl font-heading font-semibold text-foreground truncate max-w-[60%]">
+        <div className="flex items-center justify-between gap-2">
+          <h1 className="text-xl font-heading font-semibold text-foreground truncate flex-1">
             {currentProfile.name}
           </h1>
-          <div className="flex items-center gap-2">
-            <UserMenu
-              dogProfiles={dogProfiles}
-              currentDog={currentProfile}
-              onDogChange={handleProfileChange}
-            />
-          </div>
+          
+          {/* Bouton Export PDF - Desktop */}
+          <button
+            onClick={handleExportPDF}
+            disabled={generatingPDF}
+            className="hidden sm:flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg font-medium hover:shadow-lg transition-all disabled:opacity-50"
+          >
+            {generatingPDF ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                <span className="text-sm">Export...</span>
+              </>
+            ) : (
+              <>
+                <Icon name="Download" size={16} />
+                <span className="text-sm">Carnet PDF</span>
+              </>
+            )}
+          </button>
+
+          <UserMenu
+            dogProfiles={dogProfiles}
+            currentDog={currentProfile}
+            onDogChange={handleProfileChange}
+          />
         </div>
       </div>
 
@@ -1050,18 +1351,18 @@ const DogProfile = () => {
         </div>
       </main>
 
-      {/* Bouton flottant pour exporter PDF sur mobile */}
-      <div className="fixed bottom-20 right-4 z-40 sm:hidden">
-        <Button
-          variant="default"
-          iconName="Download"
-          size="icon"
-          onClick={handleExportPDF}
-          className="w-14 h-14 rounded-full shadow-lg"
-        >
-          <Icon name="Download" size={20} />
-        </Button>
-      </div>
+      {/* Bouton flottant Export PDF sur mobile */}
+      <button
+        onClick={handleExportPDF}
+        disabled={generatingPDF}
+        className="sm:hidden fixed bottom-20 right-4 z-40 w-14 h-14 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-full shadow-lg flex items-center justify-center disabled:opacity-50"
+      >
+        {generatingPDF ? (
+          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
+        ) : (
+          <Icon name="Download" size={24} />
+        )}
+      </button>
 
       <AddVaccinationModal
         isOpen={modals.vaccination}
@@ -1106,6 +1407,13 @@ const DogProfile = () => {
         onAddPhoto={handleAddPhoto}
         currentProfilePhotoUrl={currentProfile?.image}
         onSetProfilePhoto={handleSetProfilePhoto}
+      />
+
+      {/* Modal Premium */}
+      <PremiumModal
+        isOpen={showPremiumModal}
+        onClose={() => setShowPremiumModal(false)}
+        reason="health-pdf"
       />
 
       <Footer />
