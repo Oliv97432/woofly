@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { supabase } from '../../lib/supabase';
-import { Calendar, Trash2, Check, X, Clock, Syringe, Bug, Shield, Cake } from 'lucide-react';
+import { Calendar, Trash2, Check, X, Clock, Syringe, Bug, Shield } from 'lucide-react';
 import { format, isPast, isToday, isTomorrow, differenceInDays } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
@@ -16,8 +16,6 @@ const ReminderCard = ({ reminder, onDeleted, onCompleted }) => {
         return <Bug className="text-orange-500" size={20} />;
       case 'antiparasitaire':
         return <Shield className="text-green-500" size={20} />;
-      case 'anniversaire':
-        return <Cake className="text-pink-500" size={20} />;
       default:
         return <Calendar className="text-blue-500" size={20} />;
     }
@@ -31,23 +29,21 @@ const ReminderCard = ({ reminder, onDeleted, onCompleted }) => {
         return 'Vermifuge';
       case 'antiparasitaire':
         return 'Antiparasitaire';
-      case 'anniversaire':
-        return 'Anniversaire';
       default:
         return 'Rappel';
     }
   };
 
   const getUrgencyColor = (dueDate, isCompleted) => {
-    if (isCompleted) return 'bg-gray-50 border-gray-200';
+    if (isCompleted) return 'bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700';
     
     const date = new Date(dueDate);
     const daysUntil = differenceInDays(date, new Date());
 
-    if (isPast(date) && !isToday(date)) return 'bg-red-50 border-red-300';
-    if (isToday(date)) return 'bg-orange-50 border-orange-300';
-    if (daysUntil <= 7) return 'bg-yellow-50 border-yellow-300';
-    return 'bg-white border-gray-200';
+    if (isPast(date) && !isToday(date)) return 'bg-red-50 dark:bg-red-900/20 border-red-300 dark:border-red-700';
+    if (isToday(date)) return 'bg-orange-50 dark:bg-orange-900/20 border-orange-300 dark:border-orange-700';
+    if (daysUntil <= 7) return 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-300 dark:border-yellow-700';
+    return 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700';
   };
 
   const getDateText = (dueDate) => {
@@ -70,40 +66,33 @@ const ReminderCard = ({ reminder, onDeleted, onCompleted }) => {
     setCompleting(true);
     
     try {
-      const newCompletedState = !reminder.is_completed;
+      // Marquer comme complété localement
+      onCompleted(reminder.id, !reminder.is_completed);
       
-      const { error } = await supabase
-        .from('reminders')
-        .update({
-          is_completed: newCompletedState,
-          completed_at: newCompletedState ? new Date().toISOString() : null,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', reminder.id);
-
-      if (error) throw error;
-
-      onCompleted(reminder.id, newCompletedState);
+      // Note: Si tu veux persister l'état, il faudrait ajouter une colonne
+      // "is_completed" dans les tables vaccinations et treatments
     } catch (error) {
       console.error('Erreur marquage rappel:', error);
-      alert('Erreur lors du marquage du rappel');
     } finally {
       setCompleting(false);
     }
   };
 
   const handleDelete = async () => {
-    if (!window.confirm('Êtes-vous sûr de vouloir supprimer ce rappel ?')) {
+    if (!window.confirm(`Êtes-vous sûr de vouloir supprimer ce rappel ?\n\nNote: Cela supprimera la ${reminder.source === 'vaccination' ? 'vaccination' : 'traitement'} associé(e).`)) {
       return;
     }
 
     setDeleting(true);
 
     try {
+      // Supprimer depuis la table source
+      const tableName = reminder.source === 'vaccination' ? 'vaccinations' : 'treatments';
+      
       const { error } = await supabase
-        .from('reminders')
+        .from(tableName)
         .delete()
-        .eq('id', reminder.id);
+        .eq('id', reminder.original_id);
 
       if (error) throw error;
 
@@ -137,38 +126,31 @@ const ReminderCard = ({ reminder, onDeleted, onCompleted }) => {
                 />
               )}
               <div>
-                <p className="font-bold text-gray-900 text-sm">{reminder.dogs?.name}</p>
-                <p className="text-xs text-gray-500">{getReminderLabel(reminder.reminder_type)}</p>
+                <p className="font-bold text-gray-900 dark:text-gray-100 text-sm">{reminder.dogs?.name}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">{getReminderLabel(reminder.reminder_type)}</p>
               </div>
             </div>
           </div>
 
           {/* Titre */}
-          <h3 className={`text-lg font-bold mb-2 ${reminder.is_completed ? 'text-gray-500 line-through' : 'text-gray-900'}`}>
+          <h3 className={`text-lg font-bold mb-2 ${reminder.is_completed ? 'text-gray-500 line-through' : 'text-gray-900 dark:text-gray-100'}`}>
             {reminder.title}
           </h3>
 
           {/* Description */}
           {reminder.description && (
-            <p className="text-sm text-gray-600 mb-3">
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
               {reminder.description}
             </p>
           )}
 
           {/* Date */}
           <div className="flex items-center gap-2 text-sm">
-            <Clock size={16} className="text-gray-500" />
-            <span className={`font-medium ${reminder.is_completed ? 'text-gray-500' : isPast(new Date(reminder.due_date)) && !isToday(new Date(reminder.due_date)) ? 'text-red-600' : 'text-gray-700'}`}>
+            <Clock size={16} className="text-gray-500 dark:text-gray-400" />
+            <span className={`font-medium ${reminder.is_completed ? 'text-gray-500' : isPast(new Date(reminder.due_date)) && !isToday(new Date(reminder.due_date)) ? 'text-red-600 dark:text-red-400' : 'text-gray-700 dark:text-gray-300'}`}>
               {getDateText(reminder.due_date)}
             </span>
           </div>
-
-          {/* Date de complétion */}
-          {reminder.is_completed && reminder.completed_at && (
-            <div className="mt-2 text-xs text-gray-500">
-              ✓ Complété le {format(new Date(reminder.completed_at), 'dd MMMM yyyy', { locale: fr })}
-            </div>
-          )}
         </div>
 
         {/* Actions */}
@@ -178,7 +160,7 @@ const ReminderCard = ({ reminder, onDeleted, onCompleted }) => {
             disabled={completing}
             className={`p-2 rounded-lg transition-smooth ${
               reminder.is_completed
-                ? 'bg-gray-200 text-gray-600 hover:bg-gray-300'
+                ? 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-300 dark:hover:bg-gray-600'
                 : 'bg-green-500 text-white hover:bg-green-600'
             }`}
             title={reminder.is_completed ? 'Marquer comme non complété' : 'Marquer comme complété'}
