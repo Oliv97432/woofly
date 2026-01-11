@@ -22,21 +22,30 @@ export const ThemeProvider = ({ children }) => {
       try {
         // Vérifier le statut Premium
         const { data: { user } } = await supabase.auth.getUser();
+        console.log('🔍 User ID:', user?.id);
         
         if (user) {
-          const { data: profile } = await supabase
+          const { data: profile, error } = await supabase
             .from('user_profiles')
             .select('subscription_tier')
             .eq('id', user.id)
             .single();
 
+          console.log('🔍 Profile data:', profile);
+          console.log('🔍 Error:', error);
+          console.log('🔍 Subscription tier:', profile?.subscription_tier);
+
           const premiumTiers = ['premium', 'professional'];
           const userIsPremium = premiumTiers.includes(profile?.subscription_tier);
+          
+          console.log('🔍 Is Premium?', userIsPremium);
+          
           setIsPremium(userIsPremium);
 
           // Charger le thème seulement si Premium
           if (userIsPremium) {
             const savedTheme = localStorage.getItem('woofly-theme') || 'light';
+            console.log('🔍 Saved theme:', savedTheme);
             setTheme(savedTheme);
             
             // Appliquer la classe au HTML
@@ -46,6 +55,7 @@ export const ThemeProvider = ({ children }) => {
               document.documentElement.classList.remove('dark');
             }
           } else {
+            console.log('⚠️ Pas Premium - forçage mode clair');
             // Forcer le mode clair si pas Premium
             setTheme('light');
             document.documentElement.classList.remove('dark');
@@ -53,7 +63,7 @@ export const ThemeProvider = ({ children }) => {
           }
         }
       } catch (error) {
-        console.error('Erreur chargement thème:', error);
+        console.error('❌ Erreur chargement thème:', error);
       } finally {
         setLoading(false);
       }
@@ -64,10 +74,12 @@ export const ThemeProvider = ({ children }) => {
 
   const toggleTheme = () => {
     if (!isPremium) {
+      console.log('⚠️ Toggle bloqué - pas Premium');
       return; // Ne rien faire si pas Premium
     }
 
     const newTheme = theme === 'light' ? 'dark' : 'light';
+    console.log('🔄 Toggle theme:', theme, '->', newTheme);
     setTheme(newTheme);
     
     // Sauvegarder dans localStorage
