@@ -2,10 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   User, Crown, Trash2, ChevronLeft, Mail, Phone, 
-  MapPin, Save, AlertCircle, X, Check
+  MapPin, Save, AlertCircle, X, Check, Moon, Sun
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
+import { useTheme } from '../../contexts/ThemeContext';
 import UserMenu from '../../components/UserMenu';
 import UserMenuPro from '../../components/UserMenuPro';
 import Footer from '../../components/Footer';
@@ -13,6 +14,7 @@ import SubscriptionBadge from '../../components/SubscriptionBadge';
 
 const Settings = () => {
   const { user, signOut } = useAuth();
+  const { theme, setTheme, isPremium: isThemePremium } = useTheme();
   const navigate = useNavigate();
   
   const [isProAccount, setIsProAccount] = useState(false);
@@ -165,6 +167,14 @@ const Settings = () => {
     }
   };
 
+  const handleThemeToggle = () => {
+    if (!isThemePremium) {
+      navigate('/premium');
+      return;
+    }
+    setTheme(); // Toggle le thème
+  };
+
   // Vérifier si l'utilisateur est Premium ou Professional
   const isPremiumUser = subscriptionTier === 'premium' || subscriptionTier === 'professional';
 
@@ -262,7 +272,7 @@ const Settings = () => {
                   value={profile.full_name}
                   onChange={(e) => setProfile({ ...profile, full_name: e.target.value })}
                   placeholder="Votre nom"
-                  className="w-full px-4 py-3 border border-border rounded-lg bg-card focus:outline-none focus:ring-2 focus:ring-primary"
+                  className="w-full px-4 py-3 border border-border rounded-lg bg-card text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
                 />
               </div>
 
@@ -297,7 +307,7 @@ const Settings = () => {
                     value={profile.phone}
                     onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
                     placeholder="06 12 34 56 78"
-                    className="flex-1 bg-transparent outline-none focus:ring-0"
+                    className="flex-1 bg-transparent text-foreground outline-none focus:ring-0"
                   />
                 </div>
               </div>
@@ -314,7 +324,7 @@ const Settings = () => {
                     value={profile.location}
                     onChange={(e) => setProfile({ ...profile, location: e.target.value })}
                     placeholder="Ville, Pays"
-                    className="flex-1 bg-transparent outline-none focus:ring-0"
+                    className="flex-1 bg-transparent text-foreground outline-none focus:ring-0"
                   />
                 </div>
               </div>
@@ -340,20 +350,95 @@ const Settings = () => {
             </div>
           </section>
 
+          {/* Section Apparence - MODE SOMBRE (Premium) */}
+          <section className="bg-card rounded-xl border border-border p-6 mx-4">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center flex-shrink-0">
+                {theme === 'dark' ? (
+                  <Moon className="text-purple-600" size={24} />
+                ) : (
+                  <Sun className="text-purple-600" size={24} />
+                )}
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-lg font-heading font-semibold text-foreground">
+                    Apparence
+                  </h3>
+                  {isThemePremium && (
+                    <span className="px-2 py-0.5 bg-gradient-to-r from-amber-400 to-yellow-500 text-white text-xs font-bold rounded-full">
+                      👑 PREMIUM
+                    </span>
+                  )}
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  {isThemePremium ? 'Mode sombre disponible' : 'Réservé aux membres Premium'}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className={`p-3 rounded-lg ${theme === 'dark' ? 'bg-gray-800' : 'bg-gray-100'}`}>
+                  {theme === 'dark' ? (
+                    <Moon className="text-gray-300" size={20} />
+                  ) : (
+                    <Sun className="text-gray-600" size={20} />
+                  )}
+                </div>
+                <div>
+                  <p className="font-medium text-foreground">
+                    {theme === 'dark' ? 'Mode sombre' : 'Mode clair'}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {theme === 'dark' ? 'Repose tes yeux 🌙' : 'Lumineux et clair ☀️'}
+                  </p>
+                </div>
+              </div>
+
+              {/* Toggle Switch */}
+              <button
+                onClick={handleThemeToggle}
+                disabled={!isThemePremium}
+                className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${
+                  theme === 'dark' 
+                    ? 'bg-purple-600' 
+                    : isThemePremium 
+                      ? 'bg-gray-300' 
+                      : 'bg-gray-200'
+                } ${!isThemePremium ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+              >
+                <span
+                  className={`inline-block h-6 w-6 transform rounded-full bg-white transition-transform ${
+                    theme === 'dark' ? 'translate-x-7' : 'translate-x-1'
+                  }`}
+                />
+              </button>
+            </div>
+
+            {!isThemePremium && (
+              <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                <p className="text-sm text-amber-800">
+                  💡 <strong>Passez à Premium</strong> pour débloquer le mode sombre et bien plus encore !
+                </p>
+              </div>
+            )}
+          </section>
+
           {/* Section Premium - CONDITIONNEL */}
           {isPremiumUser ? (
             // SI PREMIUM : Badge actif (vert)
-            <section className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl border-2 border-green-200 p-6 mx-4">
+            <section className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-xl border-2 border-green-200 dark:border-green-700 p-6 mx-4">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center flex-shrink-0 shadow-md">
                   <Crown className="text-white" size={24} />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h3 className="text-lg font-heading font-semibold text-green-900 flex items-center gap-2">
+                  <h3 className="text-lg font-heading font-semibold text-green-900 dark:text-green-100 flex items-center gap-2">
                     Compte Premium actif
-                    <Check size={20} className="text-green-600" />
+                    <Check size={20} className="text-green-600 dark:text-green-400" />
                   </h3>
-                  <p className="text-sm text-green-700 font-medium">
+                  <p className="text-sm text-green-700 dark:text-green-300 font-medium">
                     Chiens illimités • Photos illimitées • Recettes personnalisées
                   </p>
                 </div>
@@ -363,7 +448,7 @@ const Settings = () => {
             // SI GRATUIT : Bouton Passer à Premium (jaune/ambre)
             <section 
               onClick={() => navigate('/premium')}
-              className="bg-gradient-to-br from-amber-50 to-yellow-50 rounded-xl border-2 border-amber-200 p-6 mx-4 cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-[1.02]"
+              className="bg-gradient-to-br from-amber-50 to-yellow-50 dark:from-amber-900/20 dark:to-yellow-900/20 rounded-xl border-2 border-amber-200 dark:border-amber-700 p-6 mx-4 cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-[1.02]"
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
@@ -371,30 +456,30 @@ const Settings = () => {
                     <Crown className="text-white" size={24} />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="text-lg font-heading font-semibold text-amber-900 flex items-center gap-2">
+                    <h3 className="text-lg font-heading font-semibold text-amber-900 dark:text-amber-100 flex items-center gap-2">
                       Passer à Premium
                     </h3>
-                    <p className="text-sm text-amber-700 font-medium">
+                    <p className="text-sm text-amber-700 dark:text-amber-300 font-medium">
                       Chiens et photos illimités • 3,99€/mois
                     </p>
                   </div>
                 </div>
-                <ChevronLeft size={24} className="text-amber-600 flex-shrink-0 rotate-180" />
+                <ChevronLeft size={24} className="text-amber-600 dark:text-amber-400 flex-shrink-0 rotate-180" />
               </div>
             </section>
           )}
 
           {/* Supprimer compte */}
-          <section className="bg-card rounded-xl border border-red-200 p-6 mx-4">
+          <section className="bg-card rounded-xl border border-red-200 dark:border-red-800 p-6 mx-4">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 bg-red-500 rounded-lg flex items-center justify-center flex-shrink-0">
                 <AlertCircle className="text-white" size={20} />
               </div>
               <div className="flex-1 min-w-0">
-                <h3 className="text-lg font-heading font-semibold text-red-900">
+                <h3 className="text-lg font-heading font-semibold text-red-900 dark:text-red-100">
                   Supprimer mon compte
                 </h3>
-                <p className="text-sm text-red-700">
+                <p className="text-sm text-red-700 dark:text-red-300">
                   Action irréversible - Toutes vos données seront perdues
                 </p>
               </div>
@@ -412,7 +497,7 @@ const Settings = () => {
           {/* Info version */}
           <div className="text-center text-sm text-muted-foreground px-4">
             <p>Doogybook v1.0.0</p>
-            <p className="mt-1">© 2024 Doogybook. Tous droits réservés.</p>
+            <p className="mt-1">© 2025 Doogybook. Tous droits réservés.</p>
           </div>
 
         </div>
@@ -437,12 +522,12 @@ const Settings = () => {
               </button>
             </div>
 
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-              <h4 className="font-semibold text-red-900 mb-2 flex items-center gap-2">
-                <AlertCircle size={20} className="text-red-900" />
+            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-6">
+              <h4 className="font-semibold text-red-900 dark:text-red-100 mb-2 flex items-center gap-2">
+                <AlertCircle size={20} className="text-red-900 dark:text-red-100" />
                 Données qui seront supprimées :
               </h4>
-              <ul className="text-sm text-red-800 space-y-1">
+              <ul className="text-sm text-red-800 dark:text-red-200 space-y-1">
                 <li>• Tous vos chiens et leurs profils</li>
                 <li>• Toutes les photos</li>
                 <li>• Toutes les vaccinations et traitements</li>
@@ -460,7 +545,7 @@ const Settings = () => {
                 value={deleteConfirmEmail}
                 onChange={(e) => setDeleteConfirmEmail(e.target.value)}
                 placeholder={user?.email}
-                className="w-full px-4 py-3 border border-border rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                className="w-full px-4 py-3 border border-border rounded-lg bg-card text-foreground focus:ring-2 focus:ring-red-500 focus:border-transparent"
               />
             </div>
 
