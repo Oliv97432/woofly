@@ -678,7 +678,12 @@ const DogProfile = () => {
       alert('❌ Erreur lors de l\'upload: ' + err.message);
     }
   };
-
+// Fonction pour enlever les accents
+const removeAccents = (str) => {
+  if (!str) return '';
+  return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+};
+  
   // Export PDF du carnet de santé - PREMIUM (SANS EMOJIS)
   const handleExportPDF = async () => {
     if (!isPremium) {
