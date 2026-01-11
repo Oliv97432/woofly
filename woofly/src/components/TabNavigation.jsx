@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Dog, Users, Heart, BookOpen, ChefHat } from 'lucide-react';
+import { Dog, Users, Heart, BookOpen, ChefHat, Bell } from 'lucide-react';
 import PremiumBadge from './PremiumBadge';
 
 const TabNavigation = () => {
@@ -32,6 +32,12 @@ const TabNavigation = () => {
       path: '/recipes',
       label: 'Recettes', 
       icon: ChefHat,
+      premium: true
+    },
+    { 
+      path: '/reminders',
+      label: 'Rappels', 
+      icon: Bell,
       premium: true // Badge premium
     }
   ];
@@ -43,7 +49,7 @@ const TabNavigation = () => {
   return (
     <div className="sticky top-[73px] z-40 bg-white border-b border-gray-200">
       <div className="max-w-screen-xl mx-auto">
-        <div className="flex">
+        <div className="flex overflow-x-auto scrollbar-hide">
           {tabs.map((tab) => {
             const Icon = tab.icon;
             const active = isActive(tab.path);
@@ -53,7 +59,7 @@ const TabNavigation = () => {
                 key={tab.path}
                 onClick={() => navigate(tab.path)}
                 className={`
-                  flex-1 flex items-center justify-center gap-2 py-4 px-4
+                  flex-shrink-0 flex items-center justify-center gap-2 py-4 px-4
                   font-medium text-sm transition-all relative
                   ${active 
                     ? 'text-blue-600' 
@@ -62,7 +68,7 @@ const TabNavigation = () => {
                 `}
               >
                 <Icon size={20} />
-                <span>{tab.label}</span>
+                <span className="whitespace-nowrap">{tab.label}</span>
                 
                 {/* Badge Premium */}
                 {tab.premium && (
