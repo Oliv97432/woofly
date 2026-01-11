@@ -1,8 +1,11 @@
+/* AJOUTER EN TOUT PREMIER LIGNE */
+@import './themes.css';
+
+/* Puis le reste du fichier existant */
 body {
   margin: 0;
   padding: 0;
   font-family: Inter;
-  /* Nouvelles règles pour empêcher le zoom */
   overflow-x: hidden;
   position: relative;
   touch-action: pan-y;
@@ -18,31 +21,26 @@ body {
   line-height: normal;
   font-family: inherit;
   margin: unset;
-  /* Nouvelles règles pour empêcher le zoom */
   -webkit-tap-highlight-color: transparent;
   -webkit-touch-callout: none;
 }
 
 /* Règles spécifiques pour mobile */
 @media screen and (max-width: 768px) {
-  /* Empêcher le zoom sur les inputs (iOS spécifique) */
   input, select, textarea {
     font-size: 16px !important;
   }
   
-  /* Taille minimale pour les zones cliquables (accessibilité) */
   button, [role="button"], a[href] {
     min-height: 44px !important;
     min-width: 44px !important;
   }
   
-  /* Désactiver le zoom avec double-tap */
   * {
     touch-action: pan-y;
   }
 }
 
-/* Désactiver la sélection de texte non désirée sur mobile */
 @media (hover: none) and (pointer: coarse) {
   * {
     -webkit-user-select: none;
@@ -51,7 +49,6 @@ body {
     user-select: none;
   }
   
-  /* Permettre la sélection sur les champs de saisie */
   input[type="text"],
   input[type="email"],
   input[type="password"],
@@ -66,7 +63,6 @@ body {
   }
 }
 
-/* Fix pour iOS qui zoom automatiquement sur certains éléments */
 @supports (-webkit-touch-callout: none) {
   input, textarea, select {
     font-size: 16px;
