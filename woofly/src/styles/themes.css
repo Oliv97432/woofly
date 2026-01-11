@@ -1,0 +1,116 @@
+/* ===================================
+   THÈME CLAIR (PAR DÉFAUT)
+   =================================== */
+:root {
+  /* Couleurs de base */
+  --color-border: #e5e7eb;
+  --color-input: #e5e7eb;
+  --color-ring: #15803d;
+  --color-background: #f9fafb;
+  --color-foreground: #1f2937;
+
+  /* Couleur principale (Primary) */
+  --color-primary: #3b82f6;
+  --color-primary-foreground: #ffffff;
+
+  /* Couleur secondaire */
+  --color-secondary: #60a5fa;
+  --color-secondary-foreground: #ffffff;
+
+  /* Couleur accent */
+  --color-accent: #fcd34d;
+  --color-accent-foreground: #1f2937;
+
+  /* États */
+  --color-destructive: #ef4444;
+  --color-destructive-foreground: #ffffff;
+  
+  --color-success: #10b981;
+  --color-success-foreground: #ffffff;
+  
+  --color-warning: #f59e0b;
+  --color-warning-foreground: #ffffff;
+  
+  --color-error: #ef4444;
+  --color-error-foreground: #ffffff;
+
+  /* Muted */
+  --color-muted: #f3f4f6;
+  --color-muted-foreground: #6b7280;
+
+  /* Card */
+  --color-card: #ffffff;
+  --color-card-foreground: #1f2937;
+
+  /* Popover */
+  --color-popover: #ffffff;
+  --color-popover-foreground: #1f2937;
+
+  /* Radius */
+  --radius: 0.5rem;
+}
+
+/* ===================================
+   THÈME SOMBRE (PREMIUM)
+   =================================== */
+.dark {
+  /* Couleurs de base */
+  --color-border: #374151;
+  --color-input: #374151;
+  --color-ring: #10b981;
+  --color-background: #111827;
+  --color-foreground: #f9fafb;
+
+  /* Couleur principale */
+  --color-primary: #3b82f6;
+  --color-primary-foreground: #ffffff;
+
+  /* Couleur secondaire */
+  --color-secondary: #60a5fa;
+  --color-secondary-foreground: #ffffff;
+
+  /* Couleur accent */
+  --color-accent: #fbbf24;
+  --color-accent-foreground: #111827;
+
+  /* États */
+  --color-destructive: #ef4444;
+  --color-destructive-foreground: #ffffff;
+  
+  --color-success: #10b981;
+  --color-success-foreground: #ffffff;
+  
+  --color-warning: #f59e0b;
+  --color-warning-foreground: #ffffff;
+  
+  --color-error: #ef4444;
+  --color-error-foreground: #ffffff;
+
+  /* Muted */
+  --color-muted: #1f2937;
+  --color-muted-foreground: #9ca3af;
+
+  /* Card */
+  --color-card: #1f2937;
+  --color-card-foreground: #f9fafb;
+
+  /* Popover */
+  --color-popover: #1f2937;
+  --color-popover-foreground: #f9fafb;
+}
+
+/* ===================================
+   TRANSITIONS SMOOTH
+   =================================== */
+* {
+  transition: background-color 200ms ease-in-out,
+              border-color 200ms ease-in-out,
+              color 200ms ease-in-out;
+}
+
+button, a, input, select, textarea {
+  transition: background-color 150ms ease-in-out,
+              border-color 150ms ease-in-out,
+              color 150ms ease-in-out,
+              transform 150ms ease-in-out;
+}
