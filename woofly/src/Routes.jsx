@@ -33,8 +33,11 @@ import PublicDogDetail from './pages/PublicDogDetail';
 // Page Premium
 import PremiumPage from './pages/PremiumPage';
 
-// Page Recettes Premium ⭐ NOUVEAU
+// Page Recettes Premium ⭐
 import RecipesPage from './pages/RecipesPage';
+
+// Page Rappels Premium ⭐ NOUVEAU
+import RemindersPage from './pages/RemindersPage';
 
 // Route hybride /chien/:id
 import HybridDogProfile from './pages/chien/HybridDogProfile';
@@ -104,8 +107,9 @@ const Routes = () => {
         
         <Route path="/premium" element={<PremiumPage />} />
         
-        {/* Route Recettes Premium ⭐ NOUVEAU */}
+        {/* Routes Premium Features ⭐ */}
         <Route path="/recipes" element={<RecipesPage />} />
+        <Route path="/reminders" element={<RemindersPage />} />
         
         {/* Routes Professionnelles */}
         <Route path="/pro/register" element={<ProRegistration />} />
